@@ -1,0 +1,140 @@
+"""Letreiros das lojas paródia (originais, desenhados por código). 1024x146 = proporção 7:1."""
+import sys, math
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+OUT = sys.argv[1]
+D = "/usr/share/fonts/truetype/dejavu/"
+F = "/usr/share/fonts/truetype/freefont/"
+W, H = 1024, 146
+
+def font(path, size): return ImageFont.truetype(path, size)
+
+def fit(draw, text, path, max_w, max_h):
+    s = max_h
+    while s > 10:
+        f = font(path, s)
+        b = draw.textbbox((0, 0), text, font=f)
+        if b[2] - b[0] <= max_w and b[3] - b[1] <= max_h:
+            return f, b
+        s -= 2
+    return font(path, 10), draw.textbbox((0, 0), text, font=font(path, 10))
+
+def sign(name, bg, title, title_font, title_color, slogan, slogan_color, icon=None, outline=None, border=None, deco=None):
+    img = Image.new("RGB", (W, H), bg)
+    d = ImageDraw.Draw(img)
+    if deco: deco(d)
+    left = 150 if icon else 40
+    f, b = fit(d, title, title_font, W - left - 40, 82)
+    tw = b[2] - b[0]
+    x = left + (W - left - 40 - tw) // 2 - b[0]
+    y = 10 - b[1] + (82 - (b[3] - b[1])) // 2
+    # sombra leve
+    d.text((x + 4, y + 4), title, font=f, fill=tuple(max(0, int(c * 0.55)) for c in bg))
+    if outline:
+        d.text((x, y), title, font=f, fill=title_color, stroke_width=4, stroke_fill=outline)
+    else:
+        d.text((x, y), title, font=f, fill=title_color)
+    fs, bs = fit(d, slogan, D + "DejaVuSansCondensed-Bold.ttf", W - left - 60, 30)
+    sx = left + (W - left - 40 - (bs[2] - bs[0])) // 2 - bs[0]
+    d.text((sx, 104 - bs[1]), slogan, font=fs, fill=slogan_color)
+    if icon: icon(d)
+    if border: d.rectangle((4, 4, W - 5, H - 5), outline=border, width=6)
+    img = img.filter(ImageFilter.SMOOTH)
+    img.save(f"{OUT}/sign_{name}.png")
+
+# ---------- ícones (todos simples, desenhados à mão) ----------
+def ic_house(c):
+    def f(d):
+        d.polygon([(30, 70), (75, 28), (120, 70)], fill=c)
+        d.rectangle((42, 70, 108, 118), fill=c)
+        d.rectangle((66, 88, 84, 118), fill=(0, 0, 0))
+    return f
+def ic_bulb(c):
+    def f(d):
+        d.ellipse((42, 22, 108, 88), fill=c)
+        d.rectangle((60, 86, 90, 108), fill=(200, 200, 200))
+        for i in range(3): d.line((60, 92 + i * 6, 90, 92 + i * 6), fill=(90, 90, 90), width=2)
+        for a in range(0, 360, 45):
+            r = math.radians(a); d.line((75 + 42 * math.cos(r), 55 + 42 * math.sin(r), 75 + 54 * math.cos(r), 55 + 54 * math.sin(r)), fill=c, width=4)
+    return f
+def ic_ufo(c):
+    def f(d):
+        d.ellipse((50, 34, 100, 74), fill=(170, 230, 255))
+        d.ellipse((20, 58, 130, 92), fill=c)
+        for x in (40, 65, 90, 112): d.ellipse((x - 5, 70, x + 5, 80), fill=(255, 230, 80))
+        d.polygon([(55, 92), (95, 92), (115, 128), (35, 128)], fill=(255, 255, 160))
+    return f
+def ic_bread(c):
+    def f(d):
+        d.ellipse((22, 48, 128, 108), fill=c)
+        for x in (48, 72, 96): d.arc((x - 14, 52, x + 14, 92), 200, 340, fill=(120, 70, 30), width=5)
+    return f
+def ic_cross(c):
+    def f(d):
+        d.rectangle((60, 25, 90, 121), fill=c); d.rectangle((27, 58, 123, 88), fill=c)
+    return f
+def ic_esfiha(c):
+    def f(d):
+        d.polygon([(75, 22), (130, 118), (20, 118)], fill=c)
+        d.polygon([(75, 46), (108, 104), (42, 104)], fill=(190, 60, 30))
+    return f
+def ic_shake(c):
+    def f(d):
+        d.polygon([(40, 50), (110, 50), (98, 124), (52, 124)], fill=c)
+        d.ellipse((40, 28, 110, 64), fill=(255, 220, 230))
+        d.line((88, 10, 80, 44), fill=(255, 220, 60), width=7)
+    return f
+def ic_perfume(c):
+    def f(d):
+        d.rounded_rectangle((38, 56, 112, 124), radius=14, fill=c)
+        d.rectangle((62, 34, 88, 56), fill=c)
+        d.ellipse((60, 14, 90, 38), fill=c)
+        d.rounded_rectangle((52, 78, 98, 104), radius=6, outline=(20, 60, 50), width=4)
+    return f
+def ic_waves(c):
+    def f(d):
+        for i in range(3):
+            pts = [(20 + t, 50 + i * 26 + 9 * math.sin(t / 14)) for t in range(0, 112, 4)]
+            d.line(pts, fill=c, width=7)
+    return f
+def ic_star(c):
+    def f(d):
+        pts = []
+        for k in range(10):
+            r = 50 if k % 2 == 0 else 21
+            a = math.radians(-90 + k * 36)
+            pts.append((75 + r * math.cos(a), 74 + r * math.sin(a)))
+        d.polygon(pts, fill=c)
+    return f
+def ic_mail(c):
+    def f(d):
+        d.rectangle((36, 42, 126, 104), fill=c)
+        d.line((36, 42, 81, 78, 126, 42), fill=(250, 210, 30), width=6)
+        for i in range(3): d.line((6, 54 + i * 18, 28, 54 + i * 18), fill=c, width=6)
+    return f
+def ic_berries(c):
+    def f(d):
+        for (x, y) in ((50, 60), (82, 56), (66, 86), (98, 84), (40, 92)):
+            d.ellipse((x - 17, y - 17, x + 17, y + 17), fill=c)
+            d.ellipse((x - 9, y - 11, x - 2, y - 4), fill=(200, 150, 230))
+        d.polygon([(66, 20), (82, 38), (60, 40)], fill=(60, 160, 60))
+    return f
+
+def stripes_ends(colors):
+    def f(d):
+        for i, c in enumerate(colors):
+            d.rectangle((W - 28 - i * 14, 0, W - 18 - i * 14, H), fill=c)
+    return f
+
+YEL = (255, 214, 30); WHITE = (255, 255, 255)
+sign("casas_baixa", (16, 50, 150), "CASAS BAIXA", D + "DejaVuSans-Bold.ttf", YEL, "dedicação parcial a você", WHITE, ic_house(YEL))
+sign("magazine_luzia", (0, 110, 220), "MAGAZINE LUZIA", D + "DejaVuSansCondensed-Bold.ttf", WHITE, "vem ser feliz (no carnê)", (210, 235, 255), ic_bulb((255, 240, 120)))
+sign("lojas_marcianas", (210, 22, 26), "LOJAS MARCIANAS", D + "DejaVuSansCondensed-Bold.ttf", WHITE, "tem tudo, menos troco", (255, 220, 220), ic_ufo((190, 200, 210)))
+sign("pao_de_sal", (24, 110, 50), "PÃO DE SAL", F + "FreeSerifBold.ttf", (255, 244, 205), "supermercado · desde 1962", (220, 255, 210), ic_bread((225, 160, 70)))
+sign("droga_arraia", (12, 52, 120), "DROGA ARRAIA", D + "DejaVuSans-Bold.ttf", (240, 60, 60), "farmácia 24h · quase sempre", WHITE, ic_cross((240, 60, 60)), outline=WHITE)
+sign("rabibs", (200, 24, 20), "RABIB'S", D + "DejaVuSans-BoldOblique.ttf", (255, 215, 50), "esfiha a R$ 0,99 (em 1996)", WHITE, ic_esfiha((240, 190, 90)))
+sign("bobos", (230, 26, 40), "BOBO'S", D + "DejaVuSans-Bold.ttf", WHITE, "o milkshake mais ou menos", (255, 225, 230), ic_shake((255, 255, 255)))
+sign("bota_cheiro", (10, 76, 62), "O BOTA-CHEIRO", F + "FreeSerifBold.ttf", (240, 205, 120), "perfumaria · cheiro de novela", (200, 235, 220), ic_perfume((240, 205, 120)), border=(240, 205, 120))
+sign("riacho_velho", (18, 18, 18), "RIACHO VELHO", F + "FreeSerifBold.ttf", WHITE, "moda para toda a família", (190, 190, 190), ic_waves((90, 170, 255)))
+sign("ravan", (245, 245, 245), "RAVAN", D + "DejaVuSans-Bold.ttf", (16, 52, 150), "a loja mais patriota do bairro", (200, 30, 40), ic_star((200, 30, 40)), deco=stripes_ends([(16, 52, 150), (200, 30, 40), (16, 52, 150)]))
+sign("correrios", (250, 205, 25), "CORRERIOS", D + "DejaVuSans-BoldOblique.ttf", (12, 62, 150), "entregamos... um dia", (12, 62, 150), ic_mail((12, 62, 150)))
+sign("acai_atacadista", (245, 120, 15), "AÇAÍ ATACADISTA", D + "DejaVuSansCondensed-Bold.ttf", (16, 36, 110), "compre 12, leve 12", WHITE, ic_berries((90, 20, 110)))

@@ -1,0 +1,384 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/Vehicle/VanController.cs" id="1_van"]
+[ext_resource type="Script" path="res://Scripts/Vehicle/DriverSeatInteractable.cs" id="2_seat"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_paint"]
+albedo_color = Color(0.62, 0.56, 0.4, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="Mat_dark"]
+albedo_color = Color(0.12, 0.12, 0.12, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="Mat_tire"]
+albedo_color = Color(0.05, 0.05, 0.05, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_light"]
+albedo_color = Color(1, 0.95, 0.75, 1)
+emission_enabled = true
+emission = Color(1, 0.92, 0.7, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_rear"]
+albedo_color = Color(0.6, 0.05, 0.05, 1)
+emission_enabled = true
+emission = Color(0.8, 0.05, 0.05, 1)
+
+[sub_resource type="CylinderMesh" id="Mesh_wheel"]
+material = SubResource("Mat_tire")
+top_radius = 0.38
+bottom_radius = 0.38
+height = 0.26
+radial_segments = 16
+
+[sub_resource type="TorusMesh" id="Mesh_steer"]
+material = SubResource("Mat_dark")
+inner_radius = 0.15
+outer_radius = 0.19
+rings = 16
+ring_segments = 8
+
+[sub_resource type="BoxShape3D" id="Chassis_shape"]
+size = Vector3(1.9, 0.5, 4.6)
+
+[sub_resource type="BoxMesh" id="Chassis_mesh"]
+size = Vector3(1.9, 0.5, 4.6)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxShape3D" id="Cabin_shape"]
+size = Vector3(1.9, 1.4, 1.4)
+
+[sub_resource type="BoxMesh" id="Cabin_mesh"]
+size = Vector3(1.9, 1.4, 1.4)
+
+[sub_resource type="BoxShape3D" id="BedWallL_shape"]
+size = Vector3(0.1, 0.45, 3.2)
+
+[sub_resource type="BoxMesh" id="BedWallL_mesh"]
+size = Vector3(0.1, 0.45, 3.2)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxShape3D" id="BedWallR_shape"]
+size = Vector3(0.1, 0.45, 3.2)
+
+[sub_resource type="BoxMesh" id="BedWallR_mesh"]
+size = Vector3(0.1, 0.45, 3.2)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxShape3D" id="Tailgate_shape"]
+size = Vector3(1.9, 0.45, 0.1)
+
+[sub_resource type="BoxMesh" id="Tailgate_mesh"]
+size = Vector3(1.9, 0.45, 0.1)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxMesh" id="Roof_mesh"]
+size = Vector3(1.9, 0.08, 1.45)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxMesh" id="BackWall_mesh"]
+size = Vector3(1.9, 1.4, 0.08)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxMesh" id="DoorL_mesh"]
+size = Vector3(0.06, 0.6, 1.4)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxMesh" id="DoorR_mesh"]
+size = Vector3(0.06, 0.6, 1.4)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxMesh" id="PillarFL_mesh"]
+size = Vector3(0.08, 0.8, 0.08)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="PillarFR_mesh"]
+size = Vector3(0.08, 0.8, 0.08)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="PillarBL_mesh"]
+size = Vector3(0.08, 0.8, 0.08)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="PillarBR_mesh"]
+size = Vector3(0.08, 0.8, 0.08)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="Dashboard_mesh"]
+size = Vector3(1.8, 0.3, 0.35)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="Hood_mesh"]
+size = Vector3(1.9, 0.25, 0.12)
+material = SubResource("Mat_paint")
+
+[sub_resource type="BoxMesh" id="Seat_mesh"]
+size = Vector3(0.6, 0.15, 0.55)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="SeatBack_mesh"]
+size = Vector3(0.6, 0.7, 0.12)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="SeatP_mesh"]
+size = Vector3(0.6, 0.15, 0.55)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="SeatBackP_mesh"]
+size = Vector3(0.6, 0.7, 0.12)
+material = SubResource("Mat_dark")
+
+[sub_resource type="BoxMesh" id="HeadlightL_mesh"]
+size = Vector3(0.3, 0.15, 0.04)
+material = SubResource("Mat_light")
+
+[sub_resource type="BoxMesh" id="HeadlightR_mesh"]
+size = Vector3(0.3, 0.15, 0.04)
+material = SubResource("Mat_light")
+
+[sub_resource type="BoxMesh" id="TaillightL_mesh"]
+size = Vector3(0.2, 0.15, 0.04)
+material = SubResource("Mat_rear")
+
+[sub_resource type="BoxMesh" id="TaillightR_mesh"]
+size = Vector3(0.2, 0.15, 0.04)
+material = SubResource("Mat_rear")
+
+[sub_resource type="BoxShape3D" id="Door_shape"]
+size = Vector3(0.5, 1.4, 1.2)
+
+[node name="Van" type="VehicleBody3D"]
+collision_layer = 16
+collision_mask = 11
+mass = 1400.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, 0.45, 0.2)
+script = ExtResource("1_van")
+
+[node name="ChassisShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("Chassis_shape")
+
+[node name="CabinShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 1.6)
+shape = SubResource("Cabin_shape")
+
+[node name="BedWallLShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 1.225, -0.7)
+shape = SubResource("BedWallL_shape")
+
+[node name="BedWallRShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, 1.225, -0.7)
+shape = SubResource("BedWallR_shape")
+
+[node name="TailgateShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.225, -2.25)
+shape = SubResource("Tailgate_shape")
+
+[node name="Body" type="Node3D" parent="."]
+
+[node name="ChassisMesh" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+mesh = SubResource("Chassis_mesh")
+
+[node name="BedWallLMesh" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 1.225, -0.7)
+mesh = SubResource("BedWallL_mesh")
+
+[node name="BedWallRMesh" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, 1.225, -0.7)
+mesh = SubResource("BedWallR_mesh")
+
+[node name="TailgateMesh" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.225, -2.25)
+mesh = SubResource("Tailgate_mesh")
+
+[node name="Cabin" type="Node3D" parent="."]
+
+[node name="Roof" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 1.6)
+mesh = SubResource("Roof_mesh")
+
+[node name="BackWall" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0.92)
+mesh = SubResource("BackWall_mesh")
+
+[node name="DoorL" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.92, 1.3, 1.6)
+mesh = SubResource("DoorL_mesh")
+
+[node name="DoorR" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.92, 1.3, 1.6)
+mesh = SubResource("DoorR_mesh")
+
+[node name="PillarFL" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.91, 2, 2.28)
+mesh = SubResource("PillarFL_mesh")
+
+[node name="PillarFR" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.91, 2, 2.28)
+mesh = SubResource("PillarFR_mesh")
+
+[node name="PillarBL" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.91, 2, 0.95)
+mesh = SubResource("PillarBL_mesh")
+
+[node name="PillarBR" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.91, 2, 0.95)
+mesh = SubResource("PillarBR_mesh")
+
+[node name="Dashboard" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 2.1)
+mesh = SubResource("Dashboard_mesh")
+
+[node name="Hood" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.12, 2.32)
+mesh = SubResource("Hood_mesh")
+
+[node name="Seat" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 1.08, 1.35)
+mesh = SubResource("Seat_mesh")
+
+[node name="SeatBack" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 1.45, 1.05)
+mesh = SubResource("SeatBack_mesh")
+
+[node name="SeatP" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 1.08, 1.35)
+mesh = SubResource("SeatP_mesh")
+
+[node name="SeatBackP" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 1.45, 1.05)
+mesh = SubResource("SeatBackP_mesh")
+
+[node name="HeadlightL" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, 1, 2.31)
+mesh = SubResource("HeadlightL_mesh")
+
+[node name="HeadlightR" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.65, 1, 2.31)
+mesh = SubResource("HeadlightR_mesh")
+
+[node name="TaillightL" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.85, -2.31)
+mesh = SubResource("TaillightL_mesh")
+
+[node name="TaillightR" type="MeshInstance3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.85, -2.31)
+mesh = SubResource("TaillightR_mesh")
+
+[node name="SteeringWheel" type="Node3D" parent="Cabin"]
+transform = Transform3D(1, 0, 0, 0, 0.900447, 0.434966, 0, -0.434966, 0.900447, 0.45, 1.68, 1.85)
+
+[node name="Rim" type="MeshInstance3D" parent="Cabin/SteeringWheel"]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 0)
+mesh = SubResource("Mesh_steer")
+
+[node name="WheelFL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0.5, 1.5)
+wheel_roll_influence = 0.25
+wheel_radius = 0.38
+wheel_rest_length = 0.15
+wheel_friction_slip = 2.6
+suspension_travel = 0.2
+suspension_stiffness = 40.0
+suspension_max_force = 9000.0
+damping_compression = 0.88
+damping_relaxation = 0.95
+use_as_steering = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelFL"]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Mesh_wheel")
+
+[node name="WheelFR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.5, 1.5)
+wheel_roll_influence = 0.25
+wheel_radius = 0.38
+wheel_rest_length = 0.15
+wheel_friction_slip = 2.6
+suspension_travel = 0.2
+suspension_stiffness = 40.0
+suspension_max_force = 9000.0
+damping_compression = 0.88
+damping_relaxation = 0.95
+use_as_steering = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelFR"]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Mesh_wheel")
+
+[node name="WheelRL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0.5, -1.5)
+wheel_roll_influence = 0.25
+wheel_radius = 0.38
+wheel_rest_length = 0.15
+wheel_friction_slip = 2.6
+suspension_travel = 0.2
+suspension_stiffness = 40.0
+suspension_max_force = 9000.0
+damping_compression = 0.88
+damping_relaxation = 0.95
+use_as_traction = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelRL"]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Mesh_wheel")
+
+[node name="WheelRR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.5, -1.5)
+wheel_roll_influence = 0.25
+wheel_radius = 0.38
+wheel_rest_length = 0.15
+wheel_friction_slip = 2.6
+suspension_travel = 0.2
+suspension_stiffness = 40.0
+suspension_max_force = 9000.0
+damping_compression = 0.88
+damping_relaxation = 0.95
+use_as_traction = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelRR"]
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Mesh_wheel")
+
+[node name="SeatMarker" type="Marker3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.45, 0.55, 1.35)
+
+[node name="ExitMarker" type="Marker3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1.7, 0, 1.4)
+
+[node name="DriverDoor" type="Area3D" parent="." node_paths=PackedStringArray("Van", "SeatMarker", "ExitMarker")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.15, 1.4, 1.6)
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("2_seat")
+Van = NodePath("..")
+SeatMarker = NodePath("../SeatMarker")
+ExitMarker = NodePath("../ExitMarker")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DriverDoor"]
+shape = SubResource("Door_shape")
+
+[node name="Headlights" type="Node3D" parent="."]
+
+[node name="SpotL" type="SpotLight3D" parent="Headlights"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.65, 1, 2.35)
+light_color = Color(1, 0.94, 0.78, 1)
+light_energy = 6.0
+shadow_enabled = true
+spot_range = 30.0
+spot_angle = 28.0
+spot_attenuation = 0.8
+
+[node name="SpotR" type="SpotLight3D" parent="Headlights"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -0.65, 1, 2.35)
+light_color = Color(1, 0.94, 0.78, 1)
+light_energy = 6.0
+shadow_enabled = true
+spot_range = 30.0
+spot_angle = 28.0
+spot_attenuation = 0.8

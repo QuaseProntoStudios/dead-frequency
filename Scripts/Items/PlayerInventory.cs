@@ -1,0 +1,195 @@
+// Scripts/Items/PlayerInventory.cs
+// Autoload (registrado no project.godot como "PlayerInventory").
+// Mochila (itens guardados), equipamentos por slot e a carteira do modo solo.
+// Salvo em user://inventory.json, então os itens continuam entre partidas (solo e online).
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using Godot;
+
+namespace DeadFrequency;
+
+public partial class PlayerInventory : Node
+{
+    public const int BaseCapacity = 4;
+    public const int BackpackCapacity = 10;
+    private const string SavePath = "user://inventory.json";
+
+    public static PlayerInventory Instance { get; private set; }
+
+    /// <summary>Qualquer mudança (itens, equipamento ou dinheiro).</summary>
+    public event Action Changed;
+
+    public IReadOnlyList<string> Items => _items;
+    public IReadOnlyDictionary<ItemSlot, string> Equipped => _equipped;
+    public int Wallet { get; private set; }
+    public int Capacity => IsEquipped(ItemCatalog.Backpack) ? BackpackCapacity : BaseCapacity;
+    public bool IsFull => _items.Count >= Capacity;
+
+    private readonly List<string> _items = new();
+    private readonly Dictionary<ItemSlot, string> _equipped = new();
+
+    public override void _EnterTree()
+    {
+        Instance = this;
+        ProcessMode = ProcessModeEnum.Always;
+    }
+
+    public override void _ExitTree()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    public override void _Ready() => Load();
+
+    public bool IsEquipped(string itemId) => _equipped.Values.Contains(itemId);
+
+    /// <summary>Lista curta para mandar pela rede ("radar,gloves").</summary>
+    public string EquipmentCsv() => string.Join(",", _equipped.Values.OrderBy(v => v));
+
+    public void SetWallet(int value)
+    {
+        Wallet = Math.Max(0, value);
+        NotifyAndSave();
+    }
+
+    /// <summary>Adiciona um item. Equipamento vai direto para o corpo se o slot estiver livre.</summary>
+    public bool TryAdd(string itemId)
+    {
+        ItemDef def = ItemCatalog.Get(itemId);
+        if (def == null)
+            return false;
+        if (def.IsGear && !_equipped.ContainsKey(def.Slot))
+        {
+            _equipped[def.Slot] = itemId;
+            NotifyAndSave();
+            return true;
+        }
+        if (IsFull)
+            return false;
+        _items.Add(itemId);
+        NotifyAndSave();
+        return true;
+    }
+
+    /// <summary>Equipa o item da mochila; o que estava no slot volta para a mochila.</summary>
+    public bool Equip(int index)
+    {
+        if (index < 0 || index >= _items.Count)
+            return false;
+        ItemDef def = ItemCatalog.Get(_items[index]);
+        if (def == null || !def.IsGear)
+            return false;
+        _items.RemoveAt(index);
+        if (_equipped.TryGetValue(def.Slot, out string previous))
+            _items.Insert(index, previous);
+        _equipped[def.Slot] = def.Id;
+        NotifyAndSave();
+        return true;
+    }
+
+    public bool Unequip(ItemSlot slot)
+    {
+        if (!_equipped.TryGetValue(slot, out string id))
+            return false;
+        // Tirar a mochila diminui o espaço: só se o que está guardado couber.
+        int capacityAfter = id == ItemCatalog.Backpack ? BaseCapacity : Capacity;
+        if (_items.Count + 1 > capacityAfter)
+            return false;
+        _equipped.Remove(slot);
+        _items.Add(id);
+        NotifyAndSave();
+        return true;
+    }
+
+    public void RemoveAt(int index)
+    {
+        if (index < 0 || index >= _items.Count)
+            return;
+        _items.RemoveAt(index);
+        NotifyAndSave();
+    }
+
+    /// <summary>Usa um consumível. Retorna a mensagem para o HUD (vazia = não usou).</summary>
+    public string Use(int index, PlayerController player)
+    {
+        if (index < 0 || index >= _items.Count || player == null)
+            return "";
+        string id = _items[index];
+        string result = id switch
+        {
+            ItemCatalog.RepairKit => RepairHeld(player, 0.4f),
+            ItemCatalog.DuctTape => RepairHeld(player, 0.2f),
+            ItemCatalog.EnergyDrink => player.ApplySpeedBoost(60f) ? "Energia! Correndo mais rápido por 60 s." : "",
+            _ => "",
+        };
+        if (!string.IsNullOrEmpty(result))
+            RemoveAt(index);
+        return result;
+    }
+
+    private static string RepairHeld(PlayerController player, float amount)
+    {
+        CargoItem held = player.HeldItem;
+        if (held == null)
+            return "";
+        held.Repair(amount);
+        return $"{held.Data?.CargoName ?? "Caixa"} reparada: {held.Integrity:P0}";
+    }
+
+    // ---------------- Disco ----------------
+
+    private sealed class SaveData
+    {
+        public List<string> Items { get; set; } = new();
+        public Dictionary<string, string> Equipped { get; set; } = new();
+        public int Wallet { get; set; }
+    }
+
+    private void NotifyAndSave()
+    {
+        Changed?.Invoke();
+        Save();
+    }
+
+    public void Save()
+    {
+        var data = new SaveData
+        {
+            Items = new List<string>(_items),
+            Equipped = _equipped.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value),
+            Wallet = Wallet,
+        };
+        using FileAccess file = FileAccess.Open(SavePath, FileAccess.ModeFlags.Write);
+        file?.StoreString(JsonSerializer.Serialize(data));
+    }
+
+    public void Load()
+    {
+        if (!FileAccess.FileExists(SavePath))
+            return;
+        try
+        {
+            using FileAccess file = FileAccess.Open(SavePath, FileAccess.ModeFlags.Read);
+            SaveData data = JsonSerializer.Deserialize<SaveData>(file.GetAsText());
+            if (data == null)
+                return;
+            _items.Clear();
+            _items.AddRange(data.Items.Where(id => ItemCatalog.Get(id) != null));
+            _equipped.Clear();
+            foreach ((string slotName, string id) in data.Equipped)
+            {
+                if (Enum.TryParse(slotName, out ItemSlot slot) && ItemCatalog.Get(id)?.Slot == slot)
+                    _equipped[slot] = id;
+            }
+            Wallet = Math.Max(0, data.Wallet);
+        }
+        catch (Exception e)
+        {
+            GD.PushWarning($"PlayerInventory: save inválido ({e.Message}).");
+        }
+        Changed?.Invoke();
+    }
+}

@@ -1,0 +1,3 @@
+Modelos 3D e sons desta pasta: Kenney (www.kenney.nl) — "Starter Kit Racing".
+Licença: Creative Commons Zero (CC0) — domínio público. Atribuição não é obrigatória, mas fica o crédito.
+Fonte: https://github.com/KenneyNL/Starter-Kit-Racing

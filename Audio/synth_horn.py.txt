@@ -1,0 +1,10 @@
+import sys
+src = open(sys.argv[2], encoding="utf-8").read()
+exec(src.split("# ---------------- Música do menu")[0])
+# Buzina de ônibus: dois tons graves desafinados (acorde de trompa a ar), com ataque rápido.
+t = t_axis(0.55)
+env = np.minimum(1, t / 0.02) * np.minimum(1, (0.55 - t) / 0.06)
+sig = sum(saw(t, f, 14) for f in (196.0, 247.0, 311.0)) / 3
+sig = bp(sig, 150, 2400) * env
+sig = np.tanh(sig * 2.2)
+save("bus_horn", sig)

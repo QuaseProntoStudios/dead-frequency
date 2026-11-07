@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CargoData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Cargo/CargoData.cs" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+CargoId = "valvulas"
+CargoName = "Caixa de Válvulas"
+WeightKg = 6.0
+Fragility = 0.85
+EmInterference = 0.3
+BasePayment = 220

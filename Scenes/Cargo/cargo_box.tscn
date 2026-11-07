@@ -1,0 +1,28 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/Cargo/CargoItem.cs" id="1_cargo"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_box"]
+size = Vector3(0.5, 0.5, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_cardboard"]
+albedo_color = Color(0.58, 0.43, 0.27, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_box"]
+material = SubResource("Mat_cardboard")
+size = Vector3(0.5, 0.5, 0.5)
+
+[node name="CargoBox" type="RigidBody3D"]
+collision_layer = 8
+collision_mask = 27
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_cargo")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_box")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_box")

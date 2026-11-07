@@ -1,0 +1,239 @@
+"""Sintetiza toda a trilha e efeitos do Dead Frequency (originais, gerados por código)."""
+import sys, wave
+import numpy as np
+from scipy import signal
+
+OUT = sys.argv[1]
+SR = 22050  # lo-fi de propósito (estética PS1)
+rng = np.random.default_rng(1996)
+
+
+def t_axis(sec):
+    return np.arange(int(sec * SR)) / SR
+
+
+def save(name, x, sr=SR):
+    x = np.asarray(x, dtype=np.float64)
+    peak = np.max(np.abs(x)) or 1.0
+    x = x / peak * 0.89
+    pcm = (x * 32767).astype("<i2")
+    with wave.open(f"{OUT}/{name}.wav", "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(pcm.tobytes())
+    print(name, f"{len(x)/sr:.1f}s")
+
+
+def lp(x, hz, order=2):
+    b, a = signal.butter(order, hz / (SR / 2), "low")
+    return signal.lfilter(b, a, x)
+
+
+def hp(x, hz, order=2):
+    b, a = signal.butter(order, hz / (SR / 2), "high")
+    return signal.lfilter(b, a, x)
+
+
+def bp(x, lo, hi, order=2):
+    b, a = signal.butter(order, [lo / (SR / 2), hi / (SR / 2)], "band")
+    return signal.lfilter(b, a, x)
+
+
+def note(n):  # n = semitons a partir de A4
+    return 440.0 * 2 ** (n / 12)
+
+
+NOTES = {"C": -9, "C#": -8, "D": -7, "D#": -6, "E": -5, "F": -4, "F#": -3, "G": -2, "G#": -1, "A": 0, "A#": 1, "B": 2}
+
+
+def hz(name, octave):
+    return note(NOTES[name] + (octave - 4) * 12)
+
+
+def saw(t, f, harmonics=10, detune_lfo=0.0):
+    phase = 2 * np.pi * f * t + detune_lfo
+    out = np.zeros_like(t)
+    for k in range(1, harmonics + 1):
+        out += np.sin(k * phase) / k
+    return out
+
+
+def env_segment(n, attack, release):
+    e = np.ones(n)
+    a = int(attack * SR)
+    r = int(release * SR)
+    if a:
+        e[:a] = np.linspace(0, 1, a) ** 2
+    if r:
+        e[-r:] *= np.linspace(1, 0, r) ** 2
+    return e
+
+
+def echo(x, delay, feedback, mix):
+    d = int(delay * SR)
+    y = x.copy()
+    for i in range(1, 6):
+        g = feedback ** i
+        if g < 0.02:
+            break
+        shifted = np.zeros_like(x)
+        shifted[d * i:] = x[: len(x) - d * i]
+        y += shifted * g * mix
+    return y
+
+
+def make_loop(x, xfade):
+    """Recebe áudio com 'xfade' segundos extras no fim e funde no começo para loop sem emenda."""
+    n = int(xfade * SR)
+    body = x[:-n].copy()
+    tail = x[-n:]
+    fade = np.linspace(0, 1, n)
+    body[:n] = body[:n] * fade + tail * (1 - fade)
+    return body
+
+
+def pad_track(chords, chord_len, total_extra, bass=True, bells=True, bell_every=4.0, brightness=8, wobble=0.25):
+    length = len(chords) * chord_len + total_extra
+    t = t_axis(length)
+    out = np.zeros_like(t)
+    wob = 0.004 * np.sin(2 * np.pi * wobble * t)  # oscilação de fita
+    for i, chord in enumerate(chords + chords[:1]):
+        start = i * chord_len
+        seg_len = chord_len + 3.0
+        s0 = int(start * SR)
+        s1 = min(len(t), int((start + seg_len) * SR))
+        if s0 >= len(t):
+            break
+        tt = t[s0:s1]
+        e = env_segment(s1 - s0, 2.5, 3.0)
+        voice = np.zeros_like(tt)
+        for (nm, octv) in chord:
+            f = hz(nm, octv)
+            for det in (-0.12, 0.0, 0.11):
+                voice += saw(tt, f * 2 ** (det / 12), brightness, wob[s0:s1] * 2 * np.pi * f)
+        out[s0:s1] += voice * e * 0.12
+        if bass:
+            root, oct_ = chord[0]
+            fb = hz(root, oct_ - 1)
+            pulse = 0.6 + 0.4 * np.sin(2 * np.pi * 0.5 * tt) ** 2
+            out[s0:s1] += np.sin(2 * np.pi * fb * tt) * e * pulse * 0.35
+    out = lp(out, 2200)
+    if bells:
+        bell = np.zeros_like(t)
+        k = 0
+        while k * bell_every < len(chords) * chord_len:
+            ci = int(k * bell_every // chord_len) % len(chords)
+            nm, octv = chords[ci][(k % 2) + 1 if len(chords[ci]) > 2 else 0]
+            f = hz(nm, octv + 2)
+            s0 = int((k * bell_every + 0.5) * SR)
+            n = int(2.5 * SR)
+            tt = np.arange(n) / SR
+            tone = (np.sin(2 * np.pi * f * tt) + 0.3 * np.sin(2 * np.pi * f * 2.01 * tt)) * np.exp(-tt * 2.2)
+            end = min(len(t), s0 + n)
+            bell[s0:end] += tone[: end - s0] * 0.25
+            k += 1
+        out += echo(bell, 0.375, 0.45, 0.8)
+    noise = bp(rng.standard_normal(len(t)), 900, 3500) * (0.02 + 0.015 * np.sin(2 * np.pi * 0.07 * t))
+    out += noise
+    return out
+
+
+# ---------------- Música do menu (64 s) ----------------
+Am = [("A", 2), ("C", 3), ("E", 3)]
+F = [("F", 2), ("A", 2), ("C", 3)]
+Dm = [("D", 2), ("F", 2), ("A", 2)]
+E = [("E", 2), ("G#", 2), ("B", 2)]
+G = [("G", 2), ("B", 2), ("D", 3)]
+C = [("C", 3), ("E", 3), ("G", 3)]
+menu = pad_track([Am, F, Dm, E, Am, F, G, E], 8.0, 4.0, bass=True, bells=True)
+save("music_menu", make_loop(menu, 4.0))
+
+# ---------------- Música do mundo (96 s, mais esparsa) ----------------
+Em = [("E", 2), ("G", 2), ("B", 2)]
+Cm7 = [("C", 3), ("E", 3), ("B", 3)]
+Asus = [("A", 2), ("D", 3), ("E", 3)]
+B7 = [("B", 2), ("D#", 3), ("A", 3)]
+world = pad_track([Em, Cm7, Asus, B7, Em, Cm7, Am, B7], 12.0, 4.0, bass=False, bells=True, bell_every=6.0, brightness=6, wobble=0.18)
+# "estação de números": bipes em código distante, bem baixos
+t = t_axis(len(world) / SR)
+beeps = np.zeros_like(t)
+pattern = [0.12, 0.12, 0.36, 0.12, 0.36, 0.36, 0.12]
+for start in (20.0, 58.0, 81.0):
+    pos = start
+    for d in pattern:
+        s0, s1 = int(pos * SR), int((pos + d) * SR)
+        beeps[s0:s1] = np.sin(2 * np.pi * 1020 * t[s0:s1])
+        pos += d + 0.1
+beeps = bp(beeps, 700, 1600) * 0.06
+world += echo(beeps, 0.5, 0.4, 0.7)
+save("music_world", make_loop(world, 4.0))
+
+# ---------------- Ambiente da cidade (40 s) ----------------
+t = t_axis(44.0)
+brown = np.cumsum(rng.standard_normal(len(t)))
+brown = hp(brown, 20)
+brown = lp(brown, 400) / np.std(brown)
+wind = brown * (0.5 + 0.35 * np.sin(2 * np.pi * 0.05 * t) + 0.15 * np.sin(2 * np.pi * 0.13 * t))
+hum = sum(np.sin(2 * np.pi * 60 * k * t) / k for k in (1, 2, 3, 5)) * 0.04
+cars = np.zeros_like(t)
+for start in (6.0, 19.0, 31.0):
+    n = int(5 * SR)
+    tt = np.arange(n) / SR
+    swell = np.sin(np.pi * tt / 5) ** 3
+    eng = (lp(rng.standard_normal(n), 300) + 0.5 * bp(rng.standard_normal(n), 300, 700) * swell) * swell
+    s0 = int(start * SR)
+    cars[s0:s0 + n] += eng * 0.8
+static = bp(rng.standard_normal(len(t)), 2000, 6000)
+gate = (rng.random(len(t) // 2205 + 1) > 0.93).repeat(2205)[: len(t)]
+static *= lp(gate.astype(float), 8) * 0.15
+amb = wind * 0.6 + hum + cars + static
+save("ambience_city", make_loop(amb, 4.0))
+
+# ---------------- UI ----------------
+def blip(f, dur, wave_="square", decay=30.0):
+    tt = t_axis(dur)
+    if wave_ == "square":
+        x = np.sign(np.sin(2 * np.pi * f * tt))
+    else:
+        x = np.sin(2 * np.pi * f * tt)
+    return x * np.exp(-tt * decay)
+
+save("ui_hover", lp(blip(1500, 0.04, decay=80), 5000))
+save("ui_click", lp(np.concatenate([blip(880, 0.05), blip(1320, 0.08, decay=25)]), 5000))
+save("ui_back", lp(np.concatenate([blip(1320, 0.05), blip(880, 0.08, decay=25)]), 5000))
+tt = t_axis(0.45)
+sweep = np.sin(2 * np.pi * np.cumsum(np.linspace(400, 1800, len(tt))) / SR)
+save("ui_start", lp(sweep * np.exp(-tt * 3) + bp(rng.standard_normal(len(tt)), 1500, 5000) * np.exp(-tt * 9) * 0.6, 6000))
+tt = t_axis(0.4)
+stat = bp(rng.standard_normal(len(tt)), 1200, 5000) * np.exp(-tt * 7)
+save("ui_pause", stat + 0.4 * blip(660, 0.4, "sine", 6))
+
+# ---------------- Mundo ----------------
+# Motor: loop de 2 s exatamente periódico (40 Hz fundamental, 20 Hz de explosões)
+t = t_axis(2.0)
+f0 = 40.0
+engine = sum(np.sin(2 * np.pi * f0 * k * t + k) / k ** 1.2 for k in range(1, 14))
+engine *= 0.65 + 0.35 * np.sign(np.sin(2 * np.pi * 20 * t))
+engine = lp(engine, 900)
+rumble = lp(rng.standard_normal(len(t) + int(0.3 * SR)), 250)
+rumble = make_loop(rumble, 0.3)
+save("engine_loop", engine + rumble * 0.35)
+
+tt = t_axis(0.3)
+thump = np.sin(2 * np.pi * (90 * tt - 60 * tt ** 2)) * np.exp(-tt * 25)
+box = lp(rng.standard_normal(len(tt)), 1200) * np.exp(-tt * 30)
+save("impact_box", thump + box * 0.8)
+
+tt = t_axis(0.14)
+step = bp(rng.standard_normal(len(tt)), 150, 1800) * np.exp(-tt * 40)
+save("footstep", step + 0.5 * np.sin(2 * np.pi * 70 * tt) * np.exp(-tt * 50))
+
+tt = t_axis(0.5)
+clunk = lp(rng.standard_normal(len(tt)), 2500) * np.exp(-tt * 35)
+metal = sum(np.sin(2 * np.pi * f * tt) * np.exp(-tt * d) for f, d in ((310, 9), (517, 12), (811, 15), (1290, 20))) * 0.35
+save("van_door", clunk + metal)
+
+tt = t_axis(0.9)
+chime = (np.sin(2 * np.pi * 880 * tt) * (tt < 0.3) + np.sin(2 * np.pi * 1320 * tt) * (tt >= 0.25)) * np.exp(-((tt % 0.3) * 6))
+save("delivery_ok", echo(chime * np.exp(-tt * 2), 0.18, 0.4, 0.6))

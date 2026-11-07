@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CargoData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Cargo/CargoData.cs" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+CargoId = "fitas_magneticas"
+CargoName = "Fitas Magnéticas"
+WeightKg = 8.0
+Fragility = 0.6
+EmInterference = 0.4
+BasePayment = 150

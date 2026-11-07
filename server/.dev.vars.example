@@ -1,0 +1,2 @@
+# Copie para .dev.vars (não vai para o deploy). Token do painel /admin no teste local.
+ADMIN_TOKEN=teste-local

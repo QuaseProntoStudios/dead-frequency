@@ -1,0 +1,24 @@
+# Godot 4
+.godot/
+/android/
+*.translation
+
+# .NET
+.mono/
+bin/
+obj/
+*.user
+.vs/
+.vscode/
+
+# Servidor (Cloudflare Worker)
+server/node_modules/
+server/.wrangler/
+# Segredos locais: NUNCA subir (tem o ADMIN_TOKEN)
+server/.dev.vars
+.dev.vars
+.env
+
+# Arquivos temporários de envio / lixo local
+_to_delete/
+*.zip

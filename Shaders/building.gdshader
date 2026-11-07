@@ -1,0 +1,72 @@
+// Fachada procedural: janelas calculadas pela posição no mundo, então qualquer
+// tamanho de prédio funciona com um único material. Cor e sorteio por instância.
+shader_type spatial;
+render_mode diffuse_lambert, specular_schlick_ggx;
+
+instance uniform vec4 wall_color : source_color = vec4(0.45, 0.42, 0.38, 1.0);
+instance uniform float light_seed = 0.0;
+instance uniform float lit_ratio = 0.3;
+
+/** 1 = noite (muitas janelas acesas), 0 = dia (poucas, fracas). */
+uniform float night : hint_range(0.0, 1.0) = 1.0;
+uniform float floor_height = 3.2;
+uniform float window_spacing = 2.6;
+uniform vec3 warm_light : source_color = vec3(1.0, 0.78, 0.45);
+uniform vec3 cold_light : source_color = vec3(0.55, 0.85, 1.0);
+
+varying vec3 world_pos;
+varying vec3 world_normal;
+
+float hash(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+void vertex() {
+	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+}
+
+void fragment() {
+	vec3 col = wall_color.rgb;
+	vec3 emit = vec3(0.0);
+	float rough = 0.92;
+
+	// Grão estilo PS1 (ruído em blocos de 25 cm).
+	float grain = hash(floor(world_pos.xz * 4.0) + floor(world_pos.y * 4.0)) * 0.08 - 0.04;
+	col += grain;
+
+	if (abs(world_normal.y) < 0.5) {
+		float u = abs(world_normal.x) > 0.5 ? world_pos.z : world_pos.x;
+		vec2 cell = vec2(u / window_spacing, world_pos.y / floor_height);
+		vec2 f = fract(cell);
+		vec2 id = floor(cell);
+		// Faixa entre andares.
+		if (f.y < 0.08) {
+			col *= 0.75;
+		}
+		bool window_area = f.x > 0.2 && f.x < 0.8 && f.y > 0.32 && f.y < 0.82 && id.y >= 1.0;
+		if (window_area) {
+			float h = hash(id + vec2(light_seed, light_seed * 1.7) + sign(world_normal.x + world_normal.z) * 13.0);
+			col = vec3(0.05, 0.06, 0.07);
+			rough = 0.25;
+			float ratio = lit_ratio * mix(0.08, 1.0, night);
+			if (h < ratio) {
+				vec3 lamp = h < ratio * 0.18 ? cold_light : warm_light;
+				// Algumas janelas piscam devagar (TV ligada).
+				float flicker = h < ratio * 0.06 ? 0.6 + 0.4 * sin(TIME * 7.0 + h * 40.0) : 1.0;
+				col = lamp * 0.6;
+				emit = lamp * 1.4 * flicker * mix(0.2, 1.0, night);
+			}
+		}
+		// Térreo: faixa escura de lojas fechadas.
+		if (id.y < 1.0 && f.y > 0.15 && f.y < 0.75) {
+			col = vec3(0.07, 0.07, 0.08);
+		}
+	} else {
+		col *= 0.55; // telhado
+	}
+
+	ALBEDO = col;
+	EMISSION = emit;
+	ROUGHNESS = rough;
+}

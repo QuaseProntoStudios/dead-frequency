@@ -1,0 +1,174 @@
+"""Dead Frequency v0.8 — letreiros novos, postos, lava-jato, ônibus e outdoors (originais, gerados por código)."""
+import sys, math, os
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+OUT = sys.argv[1]
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "signs.py"), encoding="utf-8").read().split("YEL = ")[0].replace("OUT = sys.argv[1]", "OUT = sys.argv[1]"))
+import os as _os
+_os.makedirs(OUT + "/../Ads", exist_ok=True)
+_os.makedirs(OUT + "/../Vehicles", exist_ok=True)
+ADS = OUT + "/../Ads"
+VEH = OUT + "/../Vehicles"
+YEL = (255, 214, 30); WHITE = (255, 255, 255)
+
+def ic_crate(c):
+    def f(d):
+        d.rectangle((30, 34, 120, 118), fill=c)
+        for y in (34, 62, 90): d.line((30, y, 120, y), fill=(120, 60, 10), width=4)
+        d.line((30, 34, 120, 118), fill=(120, 60, 10), width=6)
+    return f
+def ic_coin(c):
+    def f(d):
+        d.ellipse((30, 28, 120, 118), fill=c); d.ellipse((44, 42, 106, 104), outline=(255, 255, 255), width=5)
+        d.text((62, 44), "$", font=font(D + "DejaVuSans-Bold.ttf", 54), fill=(255, 255, 255))
+    return f
+def ic_angry(c):
+    def f(d):
+        d.ellipse((30, 28, 120, 118), fill=c)
+        d.line((48, 52, 68, 62), fill=(200, 10, 40), width=6); d.line((102, 52, 82, 62), fill=(200, 10, 40), width=6)
+        d.ellipse((54, 62, 64, 72), fill=(200, 10, 40)); d.ellipse((86, 62, 96, 72), fill=(200, 10, 40))
+        d.arc((52, 88, 98, 116), 200, 340, fill=(200, 10, 40), width=6)
+    return f
+def ic_halo(c):
+    def f(d):
+        d.ellipse((38, 18, 112, 42), outline=c, width=7)
+        d.ellipse((50, 50, 100, 100), fill=c); d.rectangle((58, 96, 92, 128), fill=c)
+    return f
+def ic_clover(c):
+    def f(d):
+        for (x, y) in ((75, 40), (50, 70), (100, 70)): d.ellipse((x - 22, y - 22, x + 22, y + 22), fill=c)
+        d.line((75, 75, 92, 128), fill=c, width=7)
+    return f
+def ic_wheat(c):
+    def f(d):
+        d.line((75, 128, 75, 30), fill=c, width=5)
+        for i in range(5):
+            y = 40 + i * 16
+            d.ellipse((52, y, 72, y + 14), fill=c); d.ellipse((78, y, 98, y + 14), fill=c)
+    return f
+def ic_cart(c):
+    def f(d):
+        d.line((20, 40, 40, 40, 56, 100, 116, 100), fill=c, width=7)
+        d.polygon([(42, 52), (126, 52), (114, 88), (52, 88)], fill=c)
+        d.ellipse((54, 106, 72, 124), fill=c); d.ellipse((100, 106, 118, 124), fill=c)
+    return f
+def ic_drop(c):
+    def f(d):
+        d.polygon([(75, 20), (110, 80), (40, 80)], fill=c); d.ellipse((40, 54, 110, 124), fill=c)
+        d.ellipse((58, 72, 72, 88), fill=(255, 255, 255))
+    return f
+
+sign("caixote_economica", (0, 86, 156), "CAIXOTE ECONÔMICA", D + "DejaVuSansCondensed-Bold.ttf", WHITE, "o banco que guarda tudo... no colchão", (255, 200, 120), ic_crate((240, 140, 30)))
+sign("etau", (236, 112, 0), "ETAÚ", D + "DejaVuSans-Bold.ttf", (14, 40, 110), "feito para você... pagar a tarifa", WHITE, ic_coin((14, 40, 110)))
+sign("bravesco", (190, 10, 40), "BRAVESCO", D + "DejaVuSans-Bold.ttf", WHITE, "completo, irritado e sem fila (mentira)", (255, 210, 215), ic_angry((255, 255, 255)))
+sign("santo_ander", (220, 20, 20), "SANTO ANDER", D + "DejaVuSans-Bold.ttf", WHITE, "o banco abençoado pelos juros", (255, 220, 200), ic_halo((255, 230, 120)))
+sign("sorte_morta", (20, 120, 70), "LOTÉRICA SORTE MORTA", D + "DejaVuSansCondensed-Bold.ttf", YEL, "Mega-Semana acumulada: R$ 3,50", WHITE, ic_clover((170, 200, 90)))
+sign("trevo_torto", (80, 30, 120), "LOTERIAS TREVO TORTO", D + "DejaVuSansCondensed-Bold.ttf", (255, 230, 120), "aposte: é quase impossível", (230, 210, 255), ic_clover((120, 220, 120)))
+sign("pao_dormido", (105, 60, 30), "PADARIA PÃO DORMIDO", F + "FreeSerifBold.ttf", (255, 236, 200), "pão de ontem, preço de hoje", (240, 210, 160), ic_bread((230, 170, 80)))
+sign("trigo_torto", (235, 190, 70), "PANIFICADORA TRIGO TORTO", F + "FreeSerifBold.ttf", (90, 45, 15), "sonho, carolina e fofoca", (120, 60, 20), ic_wheat((150, 90, 20)))
+sign("extravio", (245, 245, 245), "SUPERMERCADO EXTRAVIO", D + "DejaVuSansCondensed-Bold.ttf", (210, 20, 30), "sua compra pode ou não chegar", (20, 60, 150), ic_cart((20, 60, 150)), border=(210, 20, 30))
+sign("carretour", (20, 70, 160), "CARRETOUR", D + "DejaVuSans-Bold.ttf", WHITE, "o carrinho dá a volta no mercado", (200, 220, 255), ic_cart((230, 40, 40)))
+sign("molhadinho", (0, 150, 210), "LAVA-JATO MOLHADINHO", D + "DejaVuSansCondensed-Bold.ttf", WHITE, "lava, seca e devolve (às vezes)", (210, 245, 255), ic_drop((255, 255, 255)))
+sign("conv_petrobraz", (20, 110, 50), "CONVENIÊNCIA BR-MANIA", D + "DejaVuSansCondensed-Bold.ttf", YEL, "café requentado 24h", WHITE, ic_coin((250, 200, 20)))
+sign("conv_ipiranguinha", (20, 50, 140), "PM/AM CONVENIÊNCIA", D + "DejaVuSansCondensed-Bold.ttf", YEL, "aberto quando dá", WHITE, ic_coin((250, 200, 20)))
+sign("conv_shello", (230, 30, 30), "SELECTINHA", D + "DejaVuSans-Bold.ttf", (255, 220, 30), "salgado de ontem em promoção", WHITE, ic_coin((255, 220, 30)))
+
+# ---------------- Faixas do posto (toldo) 16:1 e totem de preços ----------------
+def fascia(name, bg, fg, text, stripe):
+    W2, H2 = 2048, 128
+    img = Image.new("RGB", (W2, H2), bg); d = ImageDraw.Draw(img)
+    d.rectangle((0, H2 - 22, W2, H2), fill=stripe)
+    f, b = fit(d, text, D + "DejaVuSans-BoldOblique.ttf", 900, 86)
+    for cx in (W2 // 4, 3 * W2 // 4):
+        d.text((cx - (b[2] - b[0]) // 2 - b[0], 8 - b[1] + (86 - (b[3] - b[1])) // 2), text, font=f, fill=fg)
+    img.filter(ImageFilter.SMOOTH).save(f"{OUT}/fascia_{name}.png")
+fascia("petrobraz", (20, 110, 50), YEL, "PETROBRAZ", YEL)
+fascia("ipiranguinha", (250, 200, 20), (20, 50, 140), "IPIRANGUINHA", (20, 50, 140))
+fascia("shello", (250, 210, 20), (220, 30, 30), "SHELLO", (220, 30, 30))
+
+def totem(name, bg, fg, brand):
+    W2, H2 = 400, 1000
+    img = Image.new("RGB", (W2, H2), bg); d = ImageDraw.Draw(img)
+    f, b = fit(d, brand, D + "DejaVuSansCondensed-Bold.ttf", 360, 90)
+    d.text(((W2 - (b[2] - b[0])) // 2 - b[0], 40 - b[1]), brand, font=f, fill=fg)
+    d.rectangle((20, 170, W2 - 20, H2 - 30), fill=(15, 15, 15))
+    rows = [("GASOLINA", "0,89"), ("ÁLCOOL", "0,59"), ("DIESEL", "0,47"), ("GNV", "—")]
+    fl = font(D + "DejaVuSansCondensed-Bold.ttf", 40); fp = font(D + "DejaVuSansMono-Bold.ttf", 96)
+    for i, (lab, price) in enumerate(rows):
+        y = 190 + i * 195
+        d.text((40, y), lab, font=fl, fill=WHITE)
+        d.text((60, y + 50), price, font=fp, fill=(255, 70, 40))
+    img.save(f"{OUT}/totem_{name}.png")
+totem("petrobraz", (20, 110, 50), YEL, "PETROBRAZ")
+totem("ipiranguinha", (250, 200, 20), (20, 50, 140), "IPIRANGUINHA")
+totem("shello", (250, 210, 20), (220, 30, 30), "SHELLO")
+
+# ---------------- Ônibus ----------------
+def bus_stripe():
+    W2, H2 = 2048, 128
+    img = Image.new("RGBA", (W2, H2), (25, 70, 150, 255)); d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, W2, 10), fill=(255, 190, 40, 255)); d.rectangle((0, H2 - 10, W2, H2), fill=(255, 190, 40, 255))
+    f = font(D + "DejaVuSans-BoldOblique.ttf", 74)
+    d.text((40, 20), "VIAÇÃO FREQUÊNCIA", font=f, fill=WHITE)
+    f2 = font(D + "DejaVuSansCondensed-Bold.ttf", 54)
+    d.text((1040, 34), "LINHA 966 · CIRCULAR CENTRO", font=f2, fill=(255, 220, 120))
+    img.save(f"{VEH}/bus_stripe.png")
+def bus_led():
+    W2, H2 = 1024, 128
+    img = Image.new("RGB", (W2, H2), (8, 8, 8)); d = ImageDraw.Draw(img)
+    f = font(D + "DejaVuSansMono-Bold.ttf", 84)
+    d.text((24, 14), "966", font=f, fill=(255, 150, 20))
+    f2 = font(D + "DejaVuSansCondensed-Bold.ttf", 62)
+    d.text((230, 28), "CIRCULAR · CENTRO", font=f2, fill=(255, 150, 20))
+    # "pixels" de LED
+    for x in range(0, W2, 6): d.line((x, 0, x, H2), fill=(8, 8, 8), width=1)
+    for y in range(0, H2, 6): d.line((0, y, W2, y), fill=(8, 8, 8), width=1)
+    img.save(f"{VEH}/bus_led.png")
+bus_stripe(); bus_led()
+
+# ---------------- Outdoors 3:1 ----------------
+def ad(name, bg, title, title_color, line, line_color, painter=None, title_font=D + "DejaVuSans-Bold.ttf"):
+    W2, H2 = 1200, 400
+    img = Image.new("RGB", (W2, H2), bg); d = ImageDraw.Draw(img)
+    if painter: painter(d, W2, H2)
+    f, b = fit(d, title, title_font, 860, 150)
+    x = (W2 - (b[2] - b[0])) // 2 - b[0]; y = 60 - b[1] + (150 - (b[3] - b[1])) // 2
+    d.text((x + 6, y + 6), title, font=f, fill=(0, 0, 0))
+    d.text((x, y), title, font=f, fill=title_color)
+    f2, b2 = fit(d, line, D + "DejaVuSansCondensed-Bold.ttf", 840, 64)
+    d.text(((W2 - (b2[2] - b2[0])) // 2 - b2[0], 285 - b2[1]), line, font=f2, fill=line_color)
+    d.rectangle((0, 0, W2 - 1, H2 - 1), outline=(240, 240, 240), width=10)
+    img.filter(ImageFilter.SMOOTH).save(f"{ADS}/ad_{name}.png")
+
+def p_waves(d, W2, H2):
+    for i in range(6):
+        pts = [(x, 330 + 14 * math.sin(x / 40 + i) - i * 4) for x in range(0, W2, 8)]
+        d.line(pts, fill=(40, 160 - i * 15, 70), width=3)
+def p_checker(d, W2, H2):
+    for x in range(0, W2, 80):
+        for y in range(0, H2, 80):
+            if (x // 80 + y // 80) % 2 == 0: d.rectangle((x, y, x + 80, y + 80), fill=(200, 30, 30))
+    d.rectangle((60, 40, W2 - 60, 360), fill=(250, 245, 235))
+def p_bubbles(d, W2, H2):
+    for (x, y, r) in ((90, 90, 40), (180, 300, 60), (1060, 110, 55), (980, 310, 35), (1130, 260, 25)):
+        d.ellipse((x - r, y - r, x + r, y + r), outline=(255, 255, 255), width=6)
+def p_can(d, W2, H2):
+    d.rounded_rectangle((60, 60, 190, 340), radius=20, fill=(180, 190, 200)); d.rectangle((60, 150, 190, 250), fill=(20, 60, 160))
+    d.polygon([(1040, 120), (1150, 80), (1110, 200)], fill=(40, 40, 40)); d.polygon([(1040, 120), (930, 80), (970, 200)], fill=(40, 40, 40))
+def p_ice(d, W2, H2):
+    for i in range(14):
+        x = 60 + i * 80
+        d.polygon([(x, 0), (x + 30, 60 + (i % 3) * 25), (x + 60, 0)], fill=(200, 240, 255))
+def p_stars(d, W2, H2):
+    for (x, y) in ((80, 80), (1120, 90), (100, 320), (1110, 320)):
+        d.polygon([(x, y - 30), (x + 9, y - 9), (x + 30, y), (x + 9, y + 9), (x, y + 30), (x - 9, y + 9), (x - 30, y), (x - 9, y - 9)], fill=(255, 230, 80))
+
+ad("energetico", (15, 25, 60), "ENERGÉTICO FREQUÊNCIA", (230, 240, 255), "te dá asas... de morcego", (120, 200, 255), p_can)
+ad("radio966", (10, 10, 10), "RÁDIO 96.6 FM", (120, 255, 140), "a única que toca no apagão", (200, 255, 210), p_waves)
+ad("pizza", (200, 30, 30), "DISQUE PIZZA 0800-96-96-96", (200, 30, 30), "chega fria, mas chega", (60, 40, 30), p_checker)
+ad("omoo", (20, 90, 200), "OMOO", WHITE, "lava mais branco que fantasma", (255, 240, 120), p_bubbles)
+ad("guarana", (20, 120, 50), "GUARANÁ ANTÁRTIDA", WHITE, "o sabor que congela o cérebro", (255, 230, 120), p_ice)
+ad("fisk", (240, 240, 240), "INGLÊS FISKFISK", (200, 20, 40), "the book is on the... sei lá", (20, 40, 120))
+ad("casas", (16, 50, 150), "CASAS BAIXA", (255, 214, 30), "tudo em 99x sem juros*  (*com juros)", WHITE, p_stars)
+ad("correrios", (250, 205, 25), "CORRERIOS SEDEX-ISH", (12, 62, 150), "chega amanhã... de 1998", (12, 62, 150))
+ad("deadfreq", (5, 20, 10), "DEAD FREQUENCY ENTREGAS", (140, 255, 160), "contratamos: corajosos. turno da noite.", (255, 190, 80), p_waves)
+ad("petrobraz", (20, 110, 50), "PETROBRAZ", (255, 214, 30), "o petróleo é nosso (o troco não)", WHITE)

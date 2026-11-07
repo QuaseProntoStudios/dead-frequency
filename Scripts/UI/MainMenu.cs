@@ -1,0 +1,214 @@
+// Scripts/UI/MainMenu.cs
+// Tela de título. Montada em código (ver UiStyle); a cena main_menu.tscn só tem este nó.
+using Godot;
+
+namespace DeadFrequency;
+
+public partial class MainMenu : Control
+{
+    [Export(PropertyHint.File, "*.tscn")]
+    public string GameScene { get; set; } = "res://Scenes/Levels/test_level.tscn";
+
+    [Export(PropertyHint.File, "*.wav,*.ogg")]
+    public string MenuMusic { get; set; } = "res://Audio/Music/music_menu.wav";
+
+    private Label _title;
+    private VBoxContainer _menu;
+    private OptionsPanel _options;
+    private PanelContainer _optionsPanel;
+    private PanelContainer _multiplayerPanel;
+    private MultiplayerPanel _multiplayer;
+    private Button _startButton;
+    private PanelContainer _infoPanel;
+    private VBoxContainer _levelPanel;
+    private InfoPanel _info;
+    private double _glitchTimer;
+
+    public override void _Ready()
+    {
+        GetTree().Paused = false;
+        Input.MouseMode = Input.MouseModeEnum.Visible;
+        if (NetClient.Instance?.Status != NetClient.ConnectionStatus.Offline)
+            NetClient.Instance?.Leave();
+        // Voltou ao menu: a sala hospedada no PC (se havia) fecha junto.
+        LocalServer.Instance?.Stop();
+        TunnelService.Instance?.Stop();
+        AudioManager.Instance?.SetMuffled(false);
+        AudioManager.Instance?.StopAmbience(1f);
+        AudioManager.Instance?.PlayMusic(MenuMusic, 1.5f);
+
+        Theme = UiStyle.Theme;
+        SetAnchorsPreset(LayoutPreset.FullRect);
+
+        var background = new ColorRect { Color = new Color(0.015f, 0.025f, 0.02f), MouseFilter = MouseFilterEnum.Ignore };
+        background.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(background);
+
+        var center = new CenterContainer { MouseFilter = MouseFilterEnum.Ignore };
+        center.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(center);
+
+        var stack = new VBoxContainer();
+        stack.AddThemeConstantOverride("separation", 14);
+        center.AddChild(stack);
+
+        _title = UiStyle.MakeLabel("DEAD FREQUENCY", 72);
+        stack.AddChild(_title);
+        stack.AddChild(UiStyle.MakeLabel("entregas na zona morta · 1996", 20, color: UiStyle.PhosphorDim));
+        stack.AddChild(UiStyle.MakeLabel("pegue as caixas no depósito e siga o feixe verde", 16, color: UiStyle.PhosphorDim));
+        stack.AddChild(new Control { CustomMinimumSize = new Vector2(0, 30) });
+
+        _menu = new VBoxContainer();
+        _menu.AddThemeConstantOverride("separation", 12);
+        stack.AddChild(_menu);
+
+        _startButton = UiStyle.MakeButton("Iniciar turno", ShowLevels, sound: UiSound.Start);
+        _startButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _menu.AddChild(_startButton);
+
+        Button multiplayer = UiStyle.MakeButton("Multiplayer", ShowMultiplayer);
+        multiplayer.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _menu.AddChild(multiplayer);
+
+        Button options = UiStyle.MakeButton("Opções", ShowOptions);
+        options.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _menu.AddChild(options);
+
+        Button news = UiStyle.MakeButton("Novidades", () => ShowInfo(false));
+        news.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _menu.AddChild(news);
+
+        Button credits = UiStyle.MakeButton("Créditos", ShowCredits);
+        credits.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _menu.AddChild(credits);
+
+        Button quit = UiStyle.MakeButton("Sair", () => GetTree().Quit());
+        quit.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _menu.AddChild(quit);
+
+        _optionsPanel = new PanelContainer { Visible = false };
+        _options = new OptionsPanel();
+        _optionsPanel.AddChild(_options);
+        _options.BackRequested += ShowMenu;
+        stack.AddChild(_optionsPanel);
+
+        _multiplayerPanel = new PanelContainer { Visible = false };
+        _multiplayer = new MultiplayerPanel();
+        _multiplayerPanel.AddChild(_multiplayer);
+        _multiplayer.BackRequested += ShowMenu;
+        _multiplayer.JoinedRoom += () => GetTree().ChangeSceneToFile(GameLevels.Get(NetClient.Instance?.Level ?? "city").Scene);
+        stack.AddChild(_multiplayerPanel);
+
+        // Escolha de fase (solo).
+        _levelPanel = new VBoxContainer { Visible = false };
+        _levelPanel.AddThemeConstantOverride("separation", 12);
+        _levelPanel.AddChild(UiStyle.MakeLabel("ESCOLHA A FASE", 30));
+        foreach (GameLevels.Level level in GameLevels.All)
+        {
+            string scene = level.Scene;
+            Button b = UiStyle.MakeButton(level.Name, () => StartGame(scene), 420, UiSound.Start);
+            b.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            _levelPanel.AddChild(b);
+            _levelPanel.AddChild(UiStyle.MakeLabel(level.Subtitle, 15, color: UiStyle.PhosphorDim));
+        }
+        Button levelBack = UiStyle.MakeButton("Voltar", ShowMenu, sound: UiSound.Back);
+        levelBack.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _levelPanel.AddChild(levelBack);
+        stack.AddChild(_levelPanel);
+
+        _infoPanel = new PanelContainer { Visible = false };
+        _info = new InfoPanel();
+        _infoPanel.AddChild(_info);
+        _info.BackRequested += ShowMenu;
+        stack.AddChild(_infoPanel);
+
+        Label footer = UiStyle.MakeLabel($"v{GameVersion.Current} · protótipo", 14, HorizontalAlignment.Left, UiStyle.PhosphorDim);
+        AddChild(footer);
+        footer.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomLeft, LayoutPresetMode.Minsize, 16);
+
+        AddChild(UiStyle.MakeScanlines());
+
+        _startButton.GrabFocus();
+
+        // Primeira vez nesta versão: mostra o que mudou (uma vez só).
+        GameSettings settings = GameSettings.Instance;
+        if (settings != null && settings.LastSeenVersion != GameVersion.Current)
+        {
+            string previous = settings.LastSeenVersion;
+            settings.LastSeenVersion = GameVersion.Current;
+            settings.Save();
+            Callable.From(() => ShowInfo(true, previous)).CallDeferred();
+        }
+    }
+
+    private void ShowInfo(bool justUpdated, string previousVersion = null)
+    {
+        _menu.Visible = false;
+        _infoPanel.Visible = true;
+        bool firstRun = string.IsNullOrEmpty(previousVersion);
+        string subtitle = !justUpdated ? "histórico de atualizações"
+            : firstRun ? "bem-vindo ao Dead Frequency" : $"o jogo foi atualizado (v{previousVersion} → v{GameVersion.Current})";
+        string text = GameVersion.ChangelogBbcode(justUpdated && !firstRun ? previousVersion : null);
+        if (string.IsNullOrWhiteSpace(text))
+            text = GameVersion.ChangelogBbcode();
+        _info.Display($"NOVIDADES · v{GameVersion.Current}", subtitle, text);
+    }
+
+    private void ShowCredits()
+    {
+        _menu.Visible = false;
+        _infoPanel.Visible = true;
+        _info.Display("CRÉDITOS", "quem sintonizou esta frequência", GameVersion.CreditsBbcode());
+    }
+
+    public override void _Process(double delta)
+    {
+        // Falha de sinal ocasional no título.
+        _glitchTimer -= delta;
+        if (_glitchTimer > 0)
+            return;
+
+        bool glitch = GD.Randf() < 0.12f;
+        _title.Modulate = glitch ? new Color(1f, 1f, 1f, 0.35f + GD.Randf() * 0.4f) : Colors.White;
+        _title.Text = glitch && GD.Randf() < 0.3f ? "DEAD FR3QU_NCY" : "DEAD FREQUENCY";
+        _glitchTimer = glitch ? 0.06 : 0.25 + GD.Randf() * 0.6;
+    }
+
+    private void ShowLevels()
+    {
+        _menu.Visible = false;
+        _levelPanel.Visible = true;
+        (_levelPanel.GetChild(1) as Button)?.GrabFocus();
+    }
+
+    private void StartGame(string scene)
+    {
+        // Pequena pausa para o som de início tocar antes de trocar de cena.
+        _levelPanel.Visible = false;
+        GetTree().CreateTimer(0.35).Timeout += () => GetTree().ChangeSceneToFile(scene);
+    }
+
+    private void ShowOptions()
+    {
+        _menu.Visible = false;
+        _optionsPanel.Visible = true;
+        _options.FocusFirst();
+    }
+
+    private void ShowMultiplayer()
+    {
+        _menu.Visible = false;
+        _multiplayerPanel.Visible = true;
+        _multiplayer.FocusFirst();
+    }
+
+    private void ShowMenu()
+    {
+        _multiplayerPanel.Visible = false;
+        _optionsPanel.Visible = false;
+        _infoPanel.Visible = false;
+        _levelPanel.Visible = false;
+        _menu.Visible = true;
+        _startButton.GrabFocus();
+    }
+}

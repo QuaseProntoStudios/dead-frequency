@@ -1,0 +1,448 @@
+// Scripts/Net/NetSync.cs
+// Ponte entre a fase e o servidor. Só faz algo quando o NetClient está numa sala.
+//  - Envia ~10x/s a posição do jogador e o estado dos objetos que ele controla (van/caixas).
+//  - Cria e move os outros jogadores (RemotePlayer).
+//  - Cuida da posse: quem pega uma caixa ou senta na van vira dono e passa a simular a física;
+//    nos outros clientes o objeto fica congelado seguindo o estado recebido.
+//  - Repassa pedidos/entregas/turnos do servidor para o DeliveryManager.
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using Godot;
+
+namespace DeadFrequency;
+
+public partial class NetSync : Node
+{
+    [Export] public PlayerController Player { get; set; }
+    [Export] public VanController Van { get; set; }
+    [Export] public DeliveryManager Delivery { get; set; }
+    [Export(PropertyHint.Range, "5,30,1")] public float TickRate { get; set; } = 10f;
+    [Export(PropertyHint.File, "*.tscn")] public string MainMenuScene { get; set; } = "res://Scenes/UI/main_menu.tscn";
+
+    public const string VanId = "van";
+
+    public static NetSync Instance { get; private set; }
+
+    private readonly Dictionary<int, Action<bool>> _purchaseCallbacks = new();
+    private int _nextPurchaseId = 1;
+
+    private readonly Dictionary<int, RemotePlayer> _remotes = new();
+    private readonly Dictionary<string, int> _owners = new();
+    private readonly Dictionary<int, bool> _remoteDriving = new();
+    private Node3D _remoteRoot;
+    private double _tickTimer;
+    private bool _active;
+
+    private static NetClient Net => NetClient.Instance;
+    private int MyId => Net?.MyId ?? 0;
+
+    public override void _Ready()
+    {
+        if (Net == null || !Net.IsOnline || Player == null || Van == null || Delivery == null)
+        {
+            SetPhysicsProcess(false);
+            return;
+        }
+        _active = true;
+        Instance = this;
+        // A cena ainda está montando os filhos; criar caixas agora daria erro de add_child.
+        Callable.From(Initialize).CallDeferred();
+    }
+
+    private void Initialize()
+    {
+        _remoteRoot = new Node3D { Name = "RemotePlayers" };
+        AddChild(_remoteRoot);
+
+        // As caixas colocadas na cena são só do modo solo.
+        foreach (Node node in GetTree().GetNodesInGroup(CargoItem.GroupName))
+        {
+            if (node is CargoItem cargo && string.IsNullOrEmpty(cargo.NetId))
+            {
+                cargo.RemoveFromGroup(CargoItem.GroupName);
+                cargo.QueueFree();
+            }
+        }
+
+        Delivery.CanReportDelivery = cargo => IsMine(cargo.NetId);
+        Delivery.DeliveryReached += OnDeliveryReached;
+        Delivery.JobCargoDestroyed += OnJobCargoDestroyed;
+        Player.CargoGrabbed += OnCargoGrabbed;
+        Player.VehicleEntered += OnVehicleEntered;
+        Player.VehicleExited += OnVehicleExited;
+        Net.MessageReceived += OnMessage;
+        Net.Disconnected += OnDisconnected;
+
+        using JsonDocument welcome = JsonDocument.Parse(Net.WelcomeJson);
+        ApplyWelcome(welcome.RootElement);
+    }
+
+    public override void _ExitTree()
+    {
+        if (Instance == this)
+            Instance = null;
+        if (!_active || Net == null)
+            return;
+        Net.MessageReceived -= OnMessage;
+        Net.Disconnected -= OnDisconnected;
+    }
+
+    // ================================================================ recebendo
+
+    private void ApplyWelcome(JsonElement m)
+    {
+        foreach (JsonElement p in m.GetProperty("players").EnumerateArray())
+        {
+            RemotePlayer remote = SpawnRemote(p.GetProperty("id").GetInt32(), p.GetProperty("name").GetString(), NetClient.ParseColor(p.GetProperty("color").GetString()));
+            if (remote != null && p.TryGetProperty("state", out JsonElement state) && state.ValueKind == JsonValueKind.Object)
+                ApplyPlayerState(remote, state);
+        }
+
+        ApplyShift(m);
+
+        foreach (JsonProperty owner in m.GetProperty("owners").EnumerateObject())
+            SetOwner(owner.Name, owner.Value.ValueKind == JsonValueKind.Number ? owner.Value.GetInt32() : 0);
+
+        foreach (JsonElement obj in m.GetProperty("objects").EnumerateArray())
+            ApplyObject(obj);
+    }
+
+    private void OnMessage(JsonElement m)
+    {
+        switch (m.GetProperty("t").GetString())
+        {
+            case "join":
+            {
+                JsonElement p = m.GetProperty("player");
+                SpawnRemote(p.GetProperty("id").GetInt32(), p.GetProperty("name").GetString(), NetClient.ParseColor(p.GetProperty("color").GetString()));
+                break;
+            }
+            case "leave":
+            {
+                int id = m.GetProperty("id").GetInt32();
+                if (_remotes.Remove(id, out RemotePlayer remote))
+                    remote.QueueFree();
+                _remoteDriving.Remove(id);
+                RefreshRemoteDriver();
+                break;
+            }
+            case "tick":
+            {
+                int id = m.GetProperty("id").GetInt32();
+                // Pode ter entrado enquanto a fase carregava: cria a partir da lista do NetClient.
+                if (!_remotes.TryGetValue(id, out RemotePlayer remote) && Net.Players.TryGetValue(id, out NetPlayerInfo info))
+                    remote = SpawnRemote(info.Id, info.Name, info.Color);
+                if (remote != null)
+                    ApplyPlayerState(remote, m);
+                _remoteDriving[id] = m.GetProperty("st").GetInt32() == 1;
+                foreach (JsonElement obj in m.GetProperty("objs").EnumerateArray())
+                    ApplyObject(obj);
+                RefreshRemoteDriver();
+                break;
+            }
+            case "owner":
+            {
+                JsonElement owner = m.GetProperty("owner");
+                SetOwner(m.GetProperty("id").GetString(), owner.ValueKind == JsonValueKind.Number ? owner.GetInt32() : 0);
+                break;
+            }
+            case "claimFail":
+                OnClaimFailed(m.GetProperty("id").GetString(), m.TryGetProperty("owner", out JsonElement o) && o.ValueKind == JsonValueKind.Number ? o.GetInt32() : 0);
+                break;
+            case "shift":
+                ApplyShift(m);
+                break;
+            case "delivered":
+            {
+                string cargoId = m.GetProperty("cargoId").GetString();
+                _owners.Remove(cargoId);
+                Delivery.ApplyNetDelivered(cargoId, m.GetProperty("payment").GetInt32(), m.GetProperty("money").GetInt32(), m.GetProperty("name").GetString());
+                break;
+            }
+            case "lost":
+                Delivery.ApplyNetLost(m.GetProperty("cargoId").GetString());
+                break;
+            case "shiftDone":
+                Delivery.ApplyNetShiftDone(m.GetProperty("shift").GetInt32());
+                break;
+            case "gameOver":
+                Delivery.ApplyNetMoney(m.GetProperty("money").GetInt32());
+                Delivery.ApplyNetGameOver(m.GetProperty("shift").GetInt32());
+                break;
+            case "money":
+            {
+                Delivery.ApplyNetMoney(m.GetProperty("money").GetInt32());
+                // Resposta de uma compra minha?
+                if (m.TryGetProperty("by", out JsonElement by) && by.GetInt32() == MyId
+                    && m.TryGetProperty("req", out JsonElement req) && _purchaseCallbacks.Remove(req.GetInt32(), out Action<bool> done))
+                    done(true);
+                break;
+            }
+            case "buyFail":
+                if (m.TryGetProperty("req", out JsonElement failReq) && _purchaseCallbacks.Remove(failReq.GetInt32(), out Action<bool> failed))
+                    failed(false);
+                break;
+        }
+    }
+
+    private void ApplyShift(JsonElement m)
+    {
+        var jobs = new List<DeliveryManager.NetJob>();
+        foreach (JsonElement j in m.GetProperty("jobs").EnumerateArray())
+        {
+            jobs.Add(new DeliveryManager.NetJob(
+                j.GetProperty("id").GetString(),
+                j.GetProperty("type").GetInt32(),
+                j.GetProperty("pick").GetInt32(),
+                j.GetProperty("slot").GetInt32(),
+                j.GetProperty("status").GetString()));
+        }
+        foreach (DeliveryJob old in Delivery.Jobs)
+            _owners.Remove(old.Id);
+        Delivery.ApplyNetShift(m.GetProperty("shift").GetInt32(), jobs, m.GetProperty("money").GetInt32());
+    }
+
+    private static void ApplyPlayerState(RemotePlayer remote, JsonElement s)
+    {
+        string equipment = s.TryGetProperty("eq", out JsonElement eq) && eq.ValueKind == JsonValueKind.String ? eq.GetString() : "";
+        remote.ApplyState(ReadVector(s.GetProperty("p")), s.GetProperty("ry").GetSingle(), s.GetProperty("hp").GetSingle(), s.GetProperty("st").GetInt32() == 1, equipment);
+    }
+
+    /// <summary>Compra online: o servidor confere o preço e desconta do dinheiro do grupo.</summary>
+    public void RequestPurchase(string itemId, Action<bool> done)
+    {
+        int req = _nextPurchaseId++;
+        _purchaseCallbacks[req] = done;
+        Net.Send(new { t = "buy", item = itemId, req });
+    }
+
+    private void ApplyObject(JsonElement o)
+    {
+        string id = o.GetProperty("id").GetString();
+        if (string.IsNullOrEmpty(id) || IsMine(id))
+            return;
+
+        Vector3 position = ReadVector(o.GetProperty("p"));
+        Quaternion rotation = ReadQuaternion(o.GetProperty("q"));
+        Vector3 velocity = o.TryGetProperty("v", out JsonElement v) ? ReadVector(v) : Vector3.Zero;
+
+        if (id == VanId)
+        {
+            Van.ApplyRemoteState(position, rotation, velocity);
+            return;
+        }
+
+        float integrity = o.TryGetProperty("integ", out JsonElement integ) ? integ.GetSingle() : -1f;
+        Delivery.FindCargo(id)?.ApplyRemoteState(position, rotation, velocity, integrity);
+    }
+
+    private void SetOwner(string id, int owner)
+    {
+        if (string.IsNullOrEmpty(id))
+            return;
+        _owners[id] = owner;
+        bool mine = owner != 0 && owner == MyId;
+        // Sem dono: cada cliente simula sozinho (objeto parado). Só segue o estado remoto se OUTRO jogador for dono.
+        bool remote = owner != 0 && owner != MyId;
+
+        if (id == VanId)
+        {
+            // Se eu estou dirigindo, a van continua comigo até eu sair.
+            if (!mine && Player.CurrentVehicle == Van && Player.State == PlayerState.Driving)
+                return;
+            Van.SetRemote(remote);
+            RefreshRemoteDriver();
+            return;
+        }
+
+        CargoItem cargo = Delivery.FindCargo(id);
+        if (cargo == null)
+            return;
+        if (remote && cargo.IsHeld)
+            Player.DropHeld();
+        cargo.SetRemote(remote);
+    }
+
+    private void OnClaimFailed(string id, int owner)
+    {
+        if (id == VanId)
+        {
+            if (Player.CurrentVehicle == Van)
+                Player.ExitVehicle();
+            SetOwner(id, owner);
+            return;
+        }
+        if (Player.HeldItem != null && Player.HeldItem.NetId == id)
+            Player.DropHeld();
+        SetOwner(id, owner);
+    }
+
+    private void RefreshRemoteDriver()
+    {
+        _owners.TryGetValue(VanId, out int vanOwner);
+        bool remoteDriving = vanOwner != 0 && vanOwner != MyId && _remoteDriving.TryGetValue(vanOwner, out bool d) && d;
+        Van.SetRemoteDriver(remoteDriving);
+    }
+
+    private void OnDisconnected(string message)
+    {
+        _active = false;
+        SetPhysicsProcess(false);
+        GetTree().Paused = false;
+        GetTree().CreateTimer(2.5).Timeout += () =>
+        {
+            if (IsInsideTree())
+                GetTree().ChangeSceneToFile(MainMenuScene);
+        };
+    }
+
+    // ================================================================ ações locais
+
+    public bool IsMine(string id) => !string.IsNullOrEmpty(id) && _owners.TryGetValue(id, out int owner) && owner == MyId;
+
+    private void Claim(string id)
+    {
+        if (IsMine(id))
+            return;
+        _owners[id] = MyId; // otimista: o servidor confirma com "owner" ou desfaz com "claimFail"
+        Net.Send(new { t = "claim", id });
+    }
+
+    private void OnCargoGrabbed(CargoItem cargo)
+    {
+        if (string.IsNullOrEmpty(cargo.NetId))
+            return;
+        cargo.SetRemote(false);
+        Claim(cargo.NetId);
+    }
+
+    private void OnVehicleEntered(VanController van)
+    {
+        Van.SetRemote(false);
+        Claim(VanId);
+    }
+
+    private void OnVehicleExited(VanController van)
+    {
+        if (IsMine(VanId))
+            Net.Send(new { t = "release", id = VanId });
+    }
+
+    private void OnDeliveryReached(DeliveryJob job)
+    {
+        Net.Send(new { t = "deliver", cargoId = job.Id, integ = Round(job.Cargo.Integrity) });
+    }
+
+    private void OnJobCargoDestroyed(DeliveryJob job)
+    {
+        if (IsMine(job.Id))
+            Net.Send(new { t = "lost", cargoId = job.Id });
+    }
+
+    // ================================================================ enviando
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (!_active || _remoteRoot == null || !Net.IsOnline)
+            return;
+
+        _tickTimer -= delta;
+        if (_tickTimer > 0)
+            return;
+        _tickTimer = 1.0 / TickRate;
+
+        ClaimCargoInVanBed();
+        SendTick();
+    }
+
+    private void SendTick()
+    {
+        var objs = new List<Dictionary<string, object>>();
+        if (IsMine(VanId))
+            objs.Add(ObjectState(VanId, Van, null));
+        foreach (DeliveryJob job in Delivery.Jobs)
+        {
+            if (objs.Count >= 16)
+                break;
+            if (job.Cargo != null && IsInstanceValid(job.Cargo) && IsMine(job.Id))
+                objs.Add(ObjectState(job.Id, job.Cargo, job.Cargo.Integrity));
+        }
+
+        Vector3 look = Player.Camera.GlobalRotation;
+        Net.Send(new
+        {
+            t = "tick",
+            p = Vec(Player.GlobalPosition),
+            ry = Round(look.Y),
+            hp = Round(look.X),
+            st = Player.State == PlayerState.Driving ? 1 : 0,
+            held = Player.HeldItem?.NetId,
+            eq = PlayerInventory.Instance?.EquipmentCsv() ?? "",
+            objs,
+        });
+    }
+
+    /// <summary>Quem dirige passa a simular as caixas que estão na caçamba (senão elas caem da van nos outros clientes).</summary>
+    private void ClaimCargoInVanBed()
+    {
+        if (Player.State != PlayerState.Driving || !IsMine(VanId))
+            return;
+        foreach (DeliveryJob job in Delivery.Jobs)
+        {
+            CargoItem cargo = job.Cargo;
+            if (cargo == null || !IsInstanceValid(cargo) || IsMine(job.Id))
+                continue;
+            Vector3 local = Van.ToLocal(cargo.GlobalPosition);
+            bool inBed = Mathf.Abs(local.X) < 1f && local.Y > 0.8f && local.Y < 2.4f && local.Z > -2.4f && local.Z < 1f;
+            if (inBed)
+            {
+                cargo.SetRemote(false);
+                Claim(job.Id);
+            }
+        }
+    }
+
+    private static Dictionary<string, object> ObjectState(string id, RigidBody3D body, float? integrity)
+    {
+        Quaternion q = body.GlobalBasis.GetRotationQuaternion();
+        var state = new Dictionary<string, object>
+        {
+            ["id"] = id,
+            ["p"] = Vec(body.GlobalPosition),
+            ["q"] = new[] { Round(q.X), Round(q.Y), Round(q.Z), Round(q.W) },
+            ["v"] = Vec(body.LinearVelocity),
+        };
+        if (integrity.HasValue)
+            state["integ"] = Round(integrity.Value);
+        return state;
+    }
+
+    // ================================================================ utilitários
+
+    private RemotePlayer SpawnRemote(int id, string name, Color color)
+    {
+        if (id == MyId)
+            return null;
+        if (_remotes.TryGetValue(id, out RemotePlayer existing))
+            return existing;
+        var remote = new RemotePlayer();
+        remote.Setup(id, name ?? "?", color);
+        _remoteRoot.AddChild(remote);
+        _remotes[id] = remote;
+        return remote;
+    }
+
+    private static double Round(float value) => Math.Round(value, 3);
+
+    private static double[] Vec(Vector3 v) => new[] { Round(v.X), Round(v.Y), Round(v.Z) };
+
+    private static Vector3 ReadVector(JsonElement a) =>
+        new(a[0].GetSingle(), a[1].GetSingle(), a[2].GetSingle());
+
+    private static Quaternion ReadQuaternion(JsonElement a)
+    {
+        var q = new Quaternion(a[0].GetSingle(), a[1].GetSingle(), a[2].GetSingle(), a[3].GetSingle());
+        return q.LengthSquared() < 0.0001f ? Quaternion.Identity : q.Normalized();
+    }
+}

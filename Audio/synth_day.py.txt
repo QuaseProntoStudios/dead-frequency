@@ -1,0 +1,87 @@
+"""Dead Frequency v0.5 — trilha do dia (sintetizada por código, original)."""
+import sys
+src = open(sys.argv[2], encoding="utf-8").read()
+exec(src.split("# ---------------- Música do menu")[0].replace("OUT = sys.argv[1]", "OUT = sys.argv[1]"))
+
+BPM = 92
+beat = 60 / BPM
+bars = 16
+length = bars * 4 * beat + 4.0
+t = t_axis(length)
+out = np.zeros_like(t)
+
+C = [("C", 3), ("E", 3), ("G", 3), ("B", 3)]
+Am = [("A", 2), ("C", 3), ("E", 3), ("G", 3)]
+F = [("F", 2), ("A", 2), ("C", 3), ("E", 3)]
+G = [("G", 2), ("B", 2), ("D", 3), ("F#", 3)]
+Em = [("E", 2), ("G", 2), ("B", 2), ("D", 3)]
+Dm = [("D", 3), ("F", 3), ("A", 3), ("C", 4)]
+prog = [C, Am, F, G, C, Em, Dm, G]
+
+def place(buf, x, start):
+    s0 = int(start * SR)
+    e = min(len(buf), s0 + len(x))
+    if s0 < len(buf):
+        buf[s0:e] += x[: e - s0]
+
+pad = pad_track([c[:3] for c in prog], 2 * 4 * beat, 4.0, bass=False, bells=False, brightness=5, wobble=0.2)
+out[: len(pad)] += pad[: len(out)] * 0.55
+
+# Arpejo dedilhado (tipo violão/marimba) em colcheias.
+arp = np.zeros_like(t)
+for bar in range(bars):
+    chord = prog[(bar // 2) % len(prog)]
+    for k in range(8):
+        nm, o = chord[[0, 2, 1, 3, 2, 1, 3, 2][k]]
+        f = hz(nm, o + 1)
+        n = int(0.9 * SR)
+        tt = np.arange(n) / SR
+        tone = (np.sin(2 * np.pi * f * tt) + 0.4 * np.sin(2 * np.pi * 2 * f * tt) + 0.15 * np.sin(2 * np.pi * 3 * f * tt)) * np.exp(-tt * 5.5)
+        place(arp, tone * (0.22 if k % 2 == 0 else 0.15), (bar * 4 + k * 0.5) * beat)
+out += echo(lp(arp, 4000), beat * 0.75, 0.35, 0.5)
+
+# Baixo.
+bass = np.zeros_like(t)
+for bar in range(bars):
+    root, o = prog[(bar // 2) % len(prog)][0]
+    for k, (pos, dur) in enumerate([(0, 1.5), (1.5, 0.5), (2, 1.5), (3.5, 0.5)]):
+        f = hz(root, o - 1) * (2 if k == 3 else 1)
+        n = int(dur * beat * SR)
+        tt = np.arange(n) / SR
+        tone = np.sin(2 * np.pi * f * tt) + 0.3 * np.sin(2 * np.pi * 2 * f * tt)
+        place(bass, tone * env_segment(n, 0.01, 0.08) * 0.38, (bar * 4 + pos) * beat)
+out += lp(bass, 700)
+
+# Bateria leve.
+drums = np.zeros_like(t)
+def kick():
+    n = int(0.35 * SR); tt = np.arange(n) / SR
+    f = 50 + 90 * np.exp(-tt * 30)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * 9)
+def snare():
+    n = int(0.25 * SR); tt = np.arange(n) / SR
+    return (bp(rng.standard_normal(n), 1200, 6000) * 0.8 + np.sin(2 * np.pi * 190 * tt) * 0.5) * np.exp(-tt * 18)
+def hat(open_=False):
+    n = int((0.18 if open_ else 0.05) * SR); tt = np.arange(n) / SR
+    return hp(rng.standard_normal(n), 7000) * np.exp(-tt * (14 if open_ else 70))
+K, S = kick(), snare()
+for bar in range(bars):
+    if bar < 2:
+        continue  # entra depois da introdução
+    b0 = bar * 4
+    for p in (0, 2.5):
+        place(drums, K * 0.7, (b0 + p) * beat)
+    for p in (1, 3):
+        place(drums, S * 0.35, (b0 + p) * beat)
+    for k in range(8):
+        place(drums, hat(k == 7) * (0.12 if k % 2 else 0.07), (b0 + k * 0.5 + (0.03 if k % 2 else 0)) * beat)
+out += lp(drums, 9000)
+
+# Chiado de rádio AM bem baixo.
+out += bp(rng.standard_normal(len(t)), 1000, 4000) * 0.012
+save("music_day", make_loop(out, 4.0))
+
+# Bip de PC ligando (escritório).
+tt = t_axis(0.35)
+pc = np.sin(2 * np.pi * 880 * tt) * (tt < 0.12) + np.sin(2 * np.pi * 1320 * tt) * (tt >= 0.16) * (tt < 0.3)
+save("pc_beep", lp(pc, 3000) * 0.6)
