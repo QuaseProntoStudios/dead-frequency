@@ -1,6 +1,8 @@
 // Scripts/Jobs/TaxiJob.cs
 // Taxista: um passageiro espera na calçada (feixe amarelo). Pare a van perto dele, ele embarca e diz
 // o destino; pare perto do destino para receber a corrida (R$ 30 + pela distância, até R$ 400).
+// v0.9.5: passageiros exigentes. Executivo (roupa social) quer a 96.6 ligada, sem passar de 60 km/h e sem
+// batida; apressado paga bônus se chegar rápido; tranquilo só não gosta de batida.
 using Godot;
 
 namespace DeadFrequency;
@@ -25,10 +27,20 @@ public partial class TaxiJob : JobBase
     private double _wait;
     private float _anim;
 
+    private enum Mood { Executivo, Apressado, Tranquilo }
+    private Mood _mood;
+    private float _rideTime, _radioTime, _maxSpeed;
+    private int _crashes;
+    private bool _warnedSpeed;
+    private VanController _rideVan;
+    private static readonly string[] MoodName = { "Executivo", "Apressado", "Tranquilo" };
+
     public override void _Ready() => NewPassenger();
 
     public override void _ExitTree()
     {
+        if (_rideVan != null && IsInstanceValid(_rideVan))
+            _rideVan.Crashed -= OnCrash;
         JobMarkers.Free(ref _marker);
         if (_passenger != null && IsInstanceValid(_passenger))
             _passenger.QueueFree();
@@ -43,9 +55,11 @@ public partial class TaxiJob : JobBase
         DeliveryPoint p = City.DeliveryPoints[_pickup];
         var rng = new RandomNumberGenerator();
         rng.Randomize();
-        _passenger = CharacterModel.Create(
-            Color.FromHsv(rng.Randf(), 0.5f, 0.7f),
-            Color.FromHsv(rng.Randf(), 0.3f, 0.3f),
+        _mood = (Mood)rng.RandiRange(0, 2);
+        // O executivo vem de roupa social: camisa branca e calça escura.
+        Color shirt = _mood == Mood.Executivo ? new Color(0.92f, 0.92f, 0.9f) : Color.FromHsv(rng.Randf(), 0.5f, 0.7f);
+        Color pants = _mood == Mood.Executivo ? new Color(0.06f, 0.06f, 0.08f) : Color.FromHsv(rng.Randf(), 0.3f, 0.3f);
+        _passenger = CharacterModel.Create(shirt, pants,
             new Color(0.55f + rng.Randf() * 0.3f, 0.4f + rng.Randf() * 0.2f, 0.3f + rng.Randf() * 0.15f));
         AddChild(_passenger);
         _passenger.GlobalPosition = p.Position;
@@ -86,26 +100,102 @@ public partial class TaxiJob : JobBase
         {
             Arrive(van);
         }
+        else if (_riding && van != null)
+        {
+            TrackRide(van, (float)delta);
+        }
+    }
+
+    /// <summary>Durante a corrida: tempo, rádio ligado, velocidade máxima e reclamações.</summary>
+    private void TrackRide(VanController van, float dt)
+    {
+        if (_rideVan != van)
+        {
+            if (_rideVan != null && IsInstanceValid(_rideVan))
+                _rideVan.Crashed -= OnCrash;
+            _rideVan = van;
+            van.Crashed += OnCrash;
+        }
+        _rideTime += dt;
+        if (van.Radio != null && van.Radio.On)
+            _radioTime += dt;
+        _maxSpeed = Mathf.Max(_maxSpeed, van.SpeedKmh);
+        if (_mood == Mood.Executivo && van.SpeedKmh > 60f && !_warnedSpeed)
+        {
+            _warnedSpeed = true;
+            GameHud.Toast(this, "Passageiro: \"Ei, devagar! Tenho reunião, não quero chegar no hospital.\"", Colors.White, 4.0);
+        }
+    }
+
+    private void OnCrash(float change)
+    {
+        if (!_riding || change < 5f)
+            return;
+        _crashes++;
+        string[] lines = _mood == Mood.Executivo
+            ? new[] { "Meu terno! Olha a direção!", "Isso vai ter reclamação, viu?" }
+            : _mood == Mood.Apressado ? new[] { "Rápido sim, batendo não!", "Opa! Tá tudo bem aí?" } : new[] { "Calma, motorista...", "Ai! Devagar com o andor." };
+        GameHud.Toast(this, $"Passageiro: \"{lines[Rng.RandiRange(0, lines.Length - 1)]}\"", Colors.White, 3.5);
+    }
+
+    /// <summary>Quanto o passageiro acha que a corrida vale (multiplicador do preço) e o comentário dele.</summary>
+    private (float mult, string comment) Judge()
+    {
+        float dist = City.DeliveryPoints[_pickup].Position.DistanceTo(City.DeliveryPoints[_dest].Position);
+        float expected = dist / (35f / 3.6f) + 10f; // ~35 km/h de média
+        float radioShare = _rideTime > 0f ? _radioTime / _rideTime : 0f;
+        switch (_mood)
+        {
+            case Mood.Executivo:
+            {
+                int faults = (_maxSpeed > 60f ? 1 : 0) + (_crashes > 0 ? 1 : 0) + (radioShare < 0.6f ? 1 : 0);
+                if (faults == 0)
+                    return (1.4f, "Rádio boa, direção macia. Tá aqui a gorjeta.");
+                return (Mathf.Max(0.5f, 1f - 0.25f * faults), faults == 3 ? "Correria, batida e silêncio. Nunca mais." : radioShare < 0.6f ? "Nem uma musiquinha da 96.6... vou descontar." : "Que direção, hein. Vou descontar.");
+            }
+            case Mood.Apressado:
+                if (_rideTime < expected * 0.8f && _crashes == 0)
+                    return (1.5f, "Voando baixo! Cheguei a tempo, toma o bônus!");
+                if (_rideTime > expected * 1.5f)
+                    return (0.7f, "Perdi o plantão... vou pagar menos.");
+                return (_crashes > 0 ? 0.85f : 1f, "Chegamos. Valeu.");
+            default:
+                return (_crashes > 0 ? 0.8f : 1.1f, _crashes > 0 ? "Chegamos inteiros, pelo menos." : "Corrida tranquila, gostei. Um troquinho a mais.");
+        }
     }
 
     private void Board()
     {
         _riding = true;
+        _rideTime = _radioTime = _maxSpeed = 0f;
+        _crashes = 0;
+        _warnedSpeed = false;
         _passenger.Visible = false;
         _dest = RandomPoint(City.DeliveryPoints[_pickup].Position, 140f, 600f, _pickup);
         DeliveryPoint d = City.DeliveryPoints[_dest];
         JobMarkers.Free(ref _marker);
         _marker = JobMarkers.Create(this, d.Position, Yellow, "DESTINO");
         string line = string.Format(Lines[Rng.RandiRange(0, Lines.Length - 1)], d.Address);
-        GameHud.Toast(this, "Passageiro: \"" + line + "\"", Colors.White, 6.0);
+        string wish = _mood switch
+        {
+            Mood.Executivo => " (Executivo: quer a 96.6 ligada, sem passar de 60 km/h e sem batida.)",
+            Mood.Apressado => " (Apressado: bônus se chegar rápido.)",
+            _ => "",
+        };
+        GameHud.Toast(this, "Passageiro: \"" + line + "\"" + wish, Colors.White, 7.0);
     }
 
     private int Fare() => Mathf.Clamp(30 + Mathf.RoundToInt(City.DeliveryPoints[_pickup].Position.DistanceTo(City.DeliveryPoints[_dest].Position) * 0.5f), 30, 400);
 
     private void Arrive(VanController van)
     {
-        int fare = Fare();
-        M.Earn(1, "Corrida concluída", fare);
+        (float mult, string comment) = Judge();
+        int fare = Mathf.Clamp(Mathf.RoundToInt(Fare() * mult), 30, 400);
+        GameHud.Toast(this, $"Passageiro: \"{comment}\"", Colors.White, 4.0);
+        M.Earn(1, mult > 1.01f ? "Corrida com gorjeta" : mult < 0.99f ? "Corrida (com desconto)" : "Corrida concluída", fare);
+        if (_rideVan != null && IsInstanceValid(_rideVan))
+            _rideVan.Crashed -= OnCrash;
+        _rideVan = null;
         JobMarkers.Free(ref _marker);
         if (_passenger != null && IsInstanceValid(_passenger))
         {
@@ -163,6 +253,12 @@ public partial class TaxiJob : JobBase
             return $"· Passageiro esperando em {p.Address} ({PlayerPos.DistanceTo(p.Position):0} m)\n  Pare a van do lado dele.{van}";
         }
         DeliveryPoint d = City.DeliveryPoints[_dest];
-        return $"► Levando passageiro para {d.Address} ({PlayerPos.DistanceTo(d.Position):0} m)\n  Corrida: $ {Fare()}{van}";
+        string mood = _mood switch
+        {
+            Mood.Executivo => $"\n  Executivo: rádio {(Player?.CurrentVehicle?.Radio?.On == true ? "ligada ✓" : "DESLIGADA (R)")} · máx. {_maxSpeed:0}/60 km/h · batidas {_crashes}",
+            Mood.Apressado => $"\n  Apressado: {_rideTime:0} s de corrida",
+            _ => "\n  Tranquilo",
+        };
+        return $"► Levando passageiro para {d.Address} ({PlayerPos.DistanceTo(d.Position):0} m)\n  Corrida: $ {Fare()}{mood}{van}";
     }
 }

@@ -59,8 +59,12 @@ public partial class ShopScreen : ModalScreen
         base._ExitTree();
     }
 
-    public void OpenFor(string vendorName)
+    /// <summary>Só comida e bebida (Churrasquinho do Duvidoso).</summary>
+    private bool _foodOnly;
+
+    public void OpenFor(string vendorName, bool foodOnly = false)
     {
+        _foodOnly = foodOnly;
         _title.Text = vendorName.ToUpperInvariant();
         _feedback.Text = "";
         Open();
@@ -84,6 +88,8 @@ public partial class ShopScreen : ModalScreen
 
         foreach (ItemDef def in ItemCatalog.All)
         {
+            if (def.Hidden || (_foodOnly && !def.Food))
+                continue;
             var row = new HBoxContainer();
             row.AddThemeConstantOverride("separation", 12);
 

@@ -409,7 +409,7 @@ public partial class LocalServer : Node
     private void OnBuy(Peer me, string item, int req)
     {
         ItemDef def = ItemCatalog.Get(item);
-        if (def == null || _money < def.Price)
+        if (def == null || def.Hidden || _money < def.Price)
         {
             Send(me, new { t = "buyFail", item, req });
             return;

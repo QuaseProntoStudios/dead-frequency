@@ -1,0 +1,72 @@
+"""Sons da v0.9.5, gerados por código (livres de direitos): chinelo (ploc), latido do caramelo,
+pernilongo, vazamento do botijão, chapa do churrasquinho e o motor do Maré-Azar fervendo.
+Uso: python3 Audio/synth_v095.py.txt Audio/SFX"""
+import math, random, struct, sys, wave
+OUT = sys.argv[1] if len(sys.argv) > 1 else "."
+SR = 22050
+random.seed(966)
+
+def save(name, samples):
+    with wave.open(f"{OUT}/{name}.wav", "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
+        w.writeframes(b"".join(struct.pack("<h", int(max(-1, min(1, s)) * 30000)) for s in samples))
+
+def env(i, n, a=0.005, r=0.1):
+    t = i / SR; d = n / SR
+    return min(1.0, t / a) * max(0.0, min(1.0, (d - t) / r))
+
+def lowpass(x, k):
+    y, out = 0.0, []
+    for s in x:
+        y += k * (s - y); out.append(y)
+    return out
+
+# Chinelo: estalo seco ("ploc") = clique + ressonância curta.
+for v, f in ((1, 900), (2, 1150)):
+    n = int(SR * 0.09)
+    s = [(random.uniform(-1, 1) * math.exp(-i / 60) * 0.7 + math.sin(2 * math.pi * f * i / SR) * math.exp(-i / 300) * 0.8) for i in range(n)]
+    save(f"chinelo_{v}", s)
+
+# Latido: duas sílabas "au-au" com formantes e ruído.
+def bark(f0, dur):
+    n = int(SR * dur); out = []; ph = 0.0
+    for i in range(n):
+        t = i / n
+        f = f0 * (1.25 - 0.45 * t)
+        ph += 2 * math.pi * f / SR
+        src = (ph / math.pi % 2 - 1)  # dente de serra
+        out.append((src * 0.6 + random.uniform(-1, 1) * 0.35) * math.sin(math.pi * t) ** 0.6)
+    return lowpass(out, 0.35)
+for v, f0 in ((1, 420), (2, 520)):
+    s = bark(f0, 0.16) + [0.0] * int(SR * 0.08) + bark(f0 * 0.92, 0.14)
+    save(f"latido_{v}", [x * 1.4 for x in s])
+
+# Pernilongo: zumbido agudo com vibrato (loop de 2 s).
+n = SR * 2
+save("pernilongo", [0.25 * math.sin(2 * math.pi * (620 + 25 * math.sin(2 * math.pi * 7 * i / SR)) * i / SR + 0.6 * math.sin(2 * math.pi * 1240 * i / SR))
+                    * (0.7 + 0.3 * math.sin(2 * math.pi * 0.5 * i / SR)) for i in range(n)])
+
+# Vazamento de gás: chiado (ruído agudo) em loop.
+n = SR * 2
+noise = [random.uniform(-1, 1) for _ in range(n)]
+low = lowpass(noise, 0.15)
+save("gas_vazando", [(a - b) * 0.55 for a, b in zip(noise, low)])
+
+# Chapa do churrasquinho: crepitar (estalinhos aleatórios + chiado baixo), loop de 3 s.
+n = SR * 3
+s = [random.uniform(-1, 1) * 0.06 for _ in range(n)]
+for _ in range(260):
+    p = random.randrange(n - 200); a = random.uniform(0.2, 0.6)
+    for k in range(120):
+        s[p + k] += random.uniform(-1, 1) * a * math.exp(-k / 18)
+save("chapa", lowpass(s, 0.6))
+
+# Motor fervendo: tosse do motor morrendo + vapor.
+n = int(SR * 1.8); s = []
+for i in range(n):
+    t = i / SR
+    cough = math.sin(2 * math.pi * 55 * t) * (1 if (t * 6) % 1 < 0.35 else 0) * max(0, 1 - t / 1.0)
+    steam = random.uniform(-1, 1) * 0.35 * min(1, t / 0.6)
+    s.append(cough * 0.8 + steam)
+save("motor_ferveu", lowpass(s, 0.4))
+print("ok")

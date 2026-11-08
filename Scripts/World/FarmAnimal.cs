@@ -27,6 +27,121 @@ public partial class FarmAnimal : Node3D
     private float _timer;
     private readonly RandomNumberGenerator _rng = new();
 
+    // ---------------- Caramelo companheiro (v0.9.5) ----------------
+    private static readonly System.Collections.Generic.List<FarmAnimal> Dogs = new();
+    private Node3D _follow;
+    private float _followLeft, _barkTimer;
+    private string _run;
+    private AudioStreamPlayer3D _bark;
+    public bool IsDog => Model.StartsWith("ShibaInu");
+    public bool IsFollowing => _follow != null && _followLeft > 0f;
+    /// <summary>Caramelo seguindo o jogador agora (pernilongos fogem dele).</summary>
+    public static FarmAnimal Companion { get; private set; }
+
+    /// <summary>Caramelo mais perto que ainda não está seguindo ninguém.</summary>
+    public static FarmAnimal NearestDog(Vector3 from, float radius)
+    {
+        FarmAnimal best = null;
+        float bestD = radius;
+        foreach (FarmAnimal d in Dogs)
+        {
+            if (!IsInstanceValid(d) || d.IsFollowing)
+                continue;
+            float dist = d.GlobalPosition.DistanceTo(from);
+            if (dist < bestD)
+            {
+                bestD = dist;
+                best = d;
+            }
+        }
+        return best;
+    }
+
+    public void FollowPlayer(Node3D target, float seconds)
+    {
+        _follow = target;
+        _followLeft = seconds;
+        _walking = false;
+        Companion = this;
+        Bark();
+    }
+
+    public override void _EnterTree()
+    {
+        if (IsDog)
+            Dogs.Add(this);
+    }
+
+    public override void _ExitTree()
+    {
+        Dogs.Remove(this);
+        if (Companion == this)
+            Companion = null;
+    }
+
+    private void Bark()
+    {
+        if (_bark == null)
+        {
+            _bark = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 5f, Position = new Vector3(0f, 0.6f, 0f) };
+            AddChild(_bark);
+        }
+        string path = $"res://Audio/SFX/latido_{_rng.RandiRange(1, 2)}.wav";
+        if (!ResourceLoader.Exists(path))
+            return;
+        _bark.Stream = GD.Load<AudioStream>(path);
+        _bark.PitchScale = _rng.RandfRange(0.9f, 1.15f);
+        _bark.Play();
+        _barkTimer = _rng.RandfRange(6f, 14f);
+    }
+
+    /// <summary>Segue o jogador a uns 2 m, correndo se ficar para trás. Volta a passear quando o tempo acaba.</summary>
+    private void ProcessFollow(float dt)
+    {
+        _followLeft -= dt;
+        if (_followLeft <= 0f || !IsInstanceValid(_follow))
+        {
+            _follow = null;
+            if (Companion == this)
+                Companion = null;
+            _home = Position;
+            PlayIdle();
+            return;
+        }
+        _barkTimer -= dt;
+        if (_barkTimer <= 0f)
+            Bark();
+        Vector3 target = _follow.GlobalPosition;
+        if (_follow is PlayerController pc && pc.CurrentVehicle != null)
+            target = pc.CurrentVehicle.GlobalPosition;
+        Vector3 to = target - GlobalPosition;
+        to.Y = 0f;
+        float dist = to.Length();
+        if (dist > 60f)
+        {
+            // Ficou muito para trás (o jogador saiu de carro): aparece perto dele.
+            GlobalPosition = new Vector3(target.X - 2f, target.Y, target.Z - 2f);
+            return;
+        }
+        if (dist < 2.2f)
+        {
+            if (_anim != null && _anim.CurrentAnimation != _idle)
+                _anim.Play(_idle, 0.3f);
+            return;
+        }
+        bool run = dist > 6f && _run != null;
+        string clip = run ? _run : _walk;
+        if (clip != null && _anim.CurrentAnimation != clip)
+            _anim.Play(clip, 0.25f);
+        float speed = run ? 6.5f : 2.2f;
+        float yaw = Mathf.Atan2(-to.X, -to.Z);
+        Rotation = new Vector3(0f, Mathf.LerpAngle(Rotation.Y, yaw, 1f - Mathf.Exp(-8f * dt)), 0f);
+        Vector3 step = to.Normalized() * Mathf.Min(speed * dt, dist - 2f);
+        GlobalPosition += step;
+        // Acompanha o chão (calçada/rua) sem física: só a altura do alvo.
+        GlobalPosition = new Vector3(GlobalPosition.X, Mathf.Lerp(GlobalPosition.Y, target.Y, 1f - Mathf.Exp(-6f * dt)), GlobalPosition.Z);
+    }
+
     public static FarmAnimal Create(string model, float length, Vector3 position, float rotY, float wander = 0f) =>
         new() { Model = model, Length = length, Position = position, Rotation = new Vector3(0f, rotY, 0f), WanderRadius = wander, Name = model.Split('.')[0] };
 
@@ -51,6 +166,8 @@ public partial class FarmAnimal : Node3D
                     idles.Add(a);
                 else if (s is "Walk" or "Walking")
                     _walk = a;
+                else if (s is "Gallop" or "Run")
+                    _run = a;
                 else
                     loop = false;
                 if (loop)
@@ -115,6 +232,11 @@ public partial class FarmAnimal : Node3D
         if (_anim == null)
             return;
         float dt = (float)delta;
+        if (IsFollowing)
+        {
+            ProcessFollow(dt);
+            return;
+        }
         _timer -= dt;
         if (_walking)
         {

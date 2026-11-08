@@ -314,6 +314,8 @@ public partial class CityGenerator
     {
         CharacterModel npc = CharacterModel.Create(shirt, new Color(0.15f, 0.15f, 0.2f), new Color(0.7f, 0.5f, 0.38f));
         npc.Position = pos;
+        npc.Chatty = true;
+        npc.Lines = new[] { "Vai querer sacola? É 10 centavos.", "Passa no débito ou no crédito?", "Tem cartão fidelidade do Atacadinho?", "Olha o Guaraná Pinguim na promoção!" };
         npc.Rotation = new Vector3(0f, rotY, 0f);
         parent.AddChild(npc);
     }

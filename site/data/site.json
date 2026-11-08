@@ -1,6 +1,46 @@
 {
- "version": "0.9.4",
+ "version": "0.9.5",
  "changelog": [
+  {
+   "version": "0.9.5",
+   "date": "08/11/2026",
+   "title": "Calçada viva",
+   "changes": [
+    "Fôlego: correr cansa (barra no HUD). Esgotou, só volta a correr com um quarto do fôlego.",
+    "Leseira da madrugada: entre meia-noite e 5h o sono vem, a tela escurece nas bordas e você anda mais devagar.",
+    "Comidas e bebidas: Guaraná Pinguim (fôlego de volta), Café Marreta (corta o sono por 4 min), Marmitex Tia da Quentinha (fôlego cheio, mas 10 s de lerdeza pós-almoço) e Espetinho do Duvidoso.",
+    "Chinelos Legítimas no novo slot de pés: 12% mais rápido com o ploc-ploc nos passos. Correndo na lama do sítio a tira pode arrebentar; o Prego conserta.",
+    "Caramelos de rua pela cidade. Dê um espetinho e ele vira seu companheiro por 3 minutos, latindo e espantando os pernilongos do sítio à noite.",
+    "Diálogos de calçada: pedestres, comerciantes e caixas falam com você quando passa perto (e discutem se o que você carrega é biscoito ou bolacha).",
+    "Taxista: passageiros exigentes. O executivo quer a 96.6 ligada, sem passar de 60 km/h e sem batida; o apressado paga bônus se chegar rápido.",
+    "O botijão de gás vaza se for arremessado ou cair forte: chiado, gás saindo e a entrega valendo menos.",
+    "Churrasquinho do Duvidoso perto do depósito: depois das 18h acende a chapa, solta fumaça e junta gente. Vende espetinho, guaraná, café e marmitex.",
+    "Opção para desligar a busca por atualizações (Opções → Jogo) e licença GPL-3.0 nos créditos.",
+    "Online: atualize o servidor (npm run deploy) para comprar os itens novos no modo online."
+   ],
+   "shots": [
+    {
+     "src": "assets/shots/v0.9.5/churrasquinho_noite.jpg",
+     "caption": "Churrasquinho do Duvidoso à noite: fumaça, freguesia e o caramelo seguindo"
+    },
+    {
+     "src": "assets/shots/v0.9.5/balao.jpg",
+     "caption": "Diálogos de calçada: balões estilo PS1"
+    },
+    {
+     "src": "assets/shots/v0.9.5/loja_churrasco.jpg",
+     "caption": "A barraca só vende comida: guaraná, café, marmitex e espetinho"
+    },
+    {
+     "src": "assets/shots/v0.9.5/inventario.jpg",
+     "caption": "Novo slot de pés: Chinelos Legítimas"
+    },
+    {
+     "src": "assets/shots/v0.9.5/churrasquinho_dia.jpg",
+     "caption": "De dia a chapa fica apagada"
+    }
+   ]
+  },
   {
    "version": "0.9.4",
    "date": "08/11/2026",
@@ -413,6 +453,22 @@
    "caption": "Menu principal com as novidades da versão"
   },
   {
+   "src": "assets/shots/v0.9.5/churrasquinho_noite.jpg",
+   "caption": "Churrasquinho do Duvidoso à noite: fumaça, freguesia e o caramelo seguindo"
+  },
+  {
+   "src": "assets/shots/v0.9.5/balao.jpg",
+   "caption": "Diálogos de calçada: balões estilo PS1"
+  },
+  {
+   "src": "assets/shots/v0.9.5/loja_churrasco.jpg",
+   "caption": "A barraca só vende comida: guaraná, café, marmitex e espetinho"
+  },
+  {
+   "src": "assets/shots/v0.9.5/inventario.jpg",
+   "caption": "Novo slot de pés: Chinelos Legítimas"
+  },
+  {
    "src": "assets/shots/v0.9.4/personagens.jpg",
    "caption": "Personagens animados, cada um com roupa, pele e cabelo próprios"
   },
@@ -459,22 +515,6 @@
   {
    "src": "assets/shots/v0.9.2/tab0.jpg",
    "caption": "Opções: aba Vídeo"
-  },
-  {
-   "src": "assets/shots/v0.9.1/orelhao_0_frente.jpg",
-   "caption": "Orelhão oco com o telefone dentro"
-  },
-  {
-   "src": "assets/shots/v0.9.1/orelhao_1_lado.jpg",
-   "caption": "Orelhão da morto"
-  },
-  {
-   "src": "assets/shots/v0.9.1/mercado_carrinhos.jpg",
-   "caption": "Carrinhos de compra novos"
-  },
-  {
-   "src": "assets/shots/v0.9.1/mercado_vitrine.jpg",
-   "caption": "Cartazes na vitrine do mercado"
   }
  ],
  "pix": "00020126700014br.gov.bcb.pix0124contato@badwolf3d.com.br0220Apoio Dead Frequency5204000053039865802BR5914DEAD FREQUENCY6006BRASIL62120508DEADFREQ6304D998"

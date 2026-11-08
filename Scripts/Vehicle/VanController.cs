@@ -82,6 +82,8 @@ public partial class VanController : VehicleBody3D
     private AudioStream _impactKenney;
     /// <summary>Rádio do painel: R liga/desliga (sintonizado na 96.6).</summary>
     public RadioPlayer Radio { get; private set; }
+    /// <summary>Batida (variação brusca de velocidade em m/s). O taxista usa para o passageiro reclamar.</summary>
+    public event System.Action<float> Crashed;
 
     public override void _Ready()
     {
@@ -348,7 +350,10 @@ public partial class VanController : VehicleBody3D
             _crashCooldown -= dt;
             return;
         }
-        if (change < 3.5f || _crash == null)
+        if (change < 3.5f)
+            return;
+        Crashed?.Invoke(change);
+        if (_crash == null)
             return;
 
         bool heavy = change > 8f;

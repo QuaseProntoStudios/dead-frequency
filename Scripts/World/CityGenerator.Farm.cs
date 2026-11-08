@@ -111,6 +111,7 @@ public partial class CityGenerator
         BuildRadioTower(new Vector3(-FarmExtent + 25f, 0f, -FarmExtent + 25f));
 
         FlushBatches(_staticRoot);
+        AddChild(new Mosquitoes { Name = "Pernilongos" });
     }
 
     private void BuildFarmResources()
