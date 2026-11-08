@@ -1,0 +1,170 @@
+"""Texturas da cidade (v0.9.7): fachadas, calçada e asfalto em estilo PS1 (64 px por tile, sem filtro).
+Tudo em tons de cinza perto de 0.5: o shader multiplica pela cor do prédio/chão, então uma
+textura serve para qualquer cor. Todas repetem sem emenda (ruído com wrap).
+Uso: python3 Assets/Textures/City/city_textures.py.txt   (da raiz do repositório)
+
+wall_atlas.png  (2x2 tiles de 64 px, cada um cobre 2 m x 2 m de parede)
+  0 reboco manchado   1 tijolo à vista   2 pastilha de fachada   3 chapisco/concreto
+sidewalk.png    placas de concreto com rachadura e chiclete (1,5 m)
+sidewalk_pt.png pedra portuguesa em ondas, calçadão (3 m)
+asphalt.png     asfalto com brita e remendo (4 m)
+"""
+import os
+import numpy as np
+from PIL import Image
+
+OUT = os.path.dirname(os.path.abspath(__file__))
+T = 64
+rng = np.random.default_rng(966)
+
+
+def noise(n, cells, octaves=3, seed=0):
+    """Value noise que repete a cada n px (interpolação suave, grade com wrap)."""
+    r = np.random.default_rng(seed)
+    out = np.zeros((n, n))
+    amp, total = 1.0, 0.0
+    for o in range(octaves):
+        c = cells * (2 ** o)
+        g = r.random((c, c))
+        x = np.arange(n) * c / n
+        i0 = np.floor(x).astype(int)
+        f = x - i0
+        f = f * f * (3 - 2 * f)
+        i1 = (i0 + 1) % c
+        a = g[np.ix_(i0, i0)]
+        b = g[np.ix_(i0, i1)]
+        cc = g[np.ix_(i1, i0)]
+        d = g[np.ix_(i1, i1)]
+        fy, fx = np.meshgrid(f, f, indexing="ij")
+        out += amp * ((a * (1 - fx) + b * fx) * (1 - fy) + (cc * (1 - fx) + d * fx) * fy)
+        total += amp
+        amp *= 0.5
+    return out / total
+
+
+def grain(n, seed):
+    return np.random.default_rng(seed).random((n, n))
+
+
+def to_img(v, tint=(1.0, 1.0, 1.0)):
+    v = np.clip(v, 0, 1)
+    rgb = np.stack([v * tint[0], v * tint[1], v * tint[2]], axis=-1)
+    # Quantiza em 32 níveis por canal (cara de 15 bits do PS1).
+    rgb = np.round(np.clip(rgb, 0, 1) * 31) / 31
+    return Image.fromarray((rgb * 255).astype(np.uint8), "RGB")
+
+
+def reboco():
+    v = 0.55 + (noise(T, 4, 3, 1) - 0.5) * 0.18 + (grain(T, 2) - 0.5) * 0.06
+    # Escorrido de chuva: listras verticais mais escuras vindo de cima.
+    streak = noise(T, 8, 1, 3)[0:1, :].repeat(T, 0)
+    fall = np.linspace(1, 0.2, T)[:, None]
+    v -= np.clip(streak - 0.55, 0, 1) * 0.5 * fall
+    # Reboco caído mostrando tijolo (manchas avermelhadas tratadas depois na cor).
+    return v
+
+
+def tijolo():
+    v = np.zeros((T, T))
+    bh, bw = 8, 16  # 8 tijolos de altura, 4 de largura por tile
+    n = noise(T, 8, 2, 4)
+    g = grain(T, 5)
+    for y in range(T):
+        row = y // bh
+        off = (bw // 2) if row % 2 else 0
+        for x in range(T):
+            bx = (x + off) % T
+            mortar = (y % bh == 0) or (bx % bw == 0)
+            if mortar:
+                v[y, x] = 0.75 + g[y, x] * 0.05
+            else:
+                brick_id = row * 7 + ((x + off) % T) // bw
+                v[y, x] = 0.42 + (brick_id * 37 % 11) / 11 * 0.12 + (n[y, x] - 0.5) * 0.1 + (g[y, x] - 0.5) * 0.05
+    return v
+
+
+def pastilha():
+    v = np.zeros((T, T))
+    g = grain(T, 6)
+    n = noise(T, 4, 2, 7)
+    s = 4  # pastilha de 4 px (≈ 12 cm)
+    for y in range(T):
+        for x in range(T):
+            if x % s == 0 or y % s == 0:
+                v[y, x] = 0.4
+            else:
+                tid = (y // s) * 16 + x // s
+                v[y, x] = 0.62 + ((tid * 2654435761) % 97) / 97 * 0.1 + (n[y, x] - 0.5) * 0.08 + (g[y, x] - 0.5) * 0.03
+    return v
+
+
+def chapisco():
+    g = grain(T, 8)
+    v = 0.5 + (noise(T, 16, 2, 9) - 0.5) * 0.25 + (g - 0.5) * 0.22
+    # Junta de forma do concreto a cada meio tile.
+    v[::32, :] *= 0.7
+    return v
+
+
+def wall_atlas():
+    tiles = [
+        (reboco(), (1.0, 1.0, 1.0)),
+        (tijolo(), (1.25, 0.82, 0.68)),  # tijolo puxa a cor pro laranja
+        (pastilha(), (1.0, 1.0, 1.02)),
+        (chapisco(), (1.0, 1.0, 1.0)),
+    ]
+    atlas = Image.new("RGB", (T * 2, T * 2))
+    for i, (v, tint) in enumerate(tiles):
+        atlas.paste(to_img(v, tint), ((i % 2) * T, (i // 2) * T))
+    atlas.save(os.path.join(OUT, "wall_atlas.png"))
+
+
+def sidewalk():
+    n = T
+    v = 0.55 + (noise(n, 4, 3, 10) - 0.5) * 0.12 + (grain(n, 11) - 0.5) * 0.08
+    v[0, :] = v[:, 0] = 0.32  # junta da placa
+    # Rachadura: caminhada aleatória.
+    y, x = 10, 40
+    for _ in range(46):
+        v[y % n, x % n] = 0.28
+        y += 1
+        x += int(rng.integers(-1, 2))
+    # Chicletes.
+    for _ in range(4):
+        cy, cx = rng.integers(3, n - 3, 2)
+        v[cy - 1:cy + 1, cx - 1:cx + 2] = 0.3
+    to_img(v).save(os.path.join(OUT, "sidewalk.png"))
+
+
+def sidewalk_pt():
+    """Pedra portuguesa: ondas pretas e brancas, cada pedrinha um quadradinho irregular."""
+    n = 128
+    yy, xx = np.mgrid[0:n, 0:n]
+    wave = np.sin((xx / n) * 2 * np.pi * 2) * 10
+    band = ((yy + wave) / (n / 4)) % 1.0
+    dark = band < 0.5
+    g = grain(n, 12)
+    v = np.where(dark, 0.18, 0.78) + (g - 0.5) * 0.1
+    # Rejunte entre pedrinhas de 4 px.
+    stone = (xx % 4 == 0) | ((yy + (xx // 4) % 2 * 2) % 4 == 0)
+    v = np.where(stone, 0.45, v)
+    to_img(v).save(os.path.join(OUT, "sidewalk_pt.png"))
+
+
+def asphalt():
+    n = T
+    g = grain(n, 13)
+    v = 0.5 + (noise(n, 4, 3, 14) - 0.5) * 0.15 + (g - 0.5) * 0.25
+    v += (g > 0.97) * 0.25  # brita clara
+    # Remendo mais escuro e liso.
+    m = noise(n, 2, 1, 15) > 0.76
+    v = np.where(m, 0.36 + (g - 0.5) * 0.08, v)
+    to_img(v).save(os.path.join(OUT, "asphalt.png"))
+
+
+if __name__ == "__main__":
+    wall_atlas()
+    sidewalk()
+    sidewalk_pt()
+    asphalt()
+    print("ok:", OUT)

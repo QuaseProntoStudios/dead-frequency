@@ -9,6 +9,8 @@ uniform vec3 asphalt : source_color = vec3(0.09, 0.09, 0.1);
 uniform vec3 concrete : source_color = vec3(0.3, 0.29, 0.27);
 uniform vec3 line_yellow : source_color = vec3(0.75, 0.6, 0.15);
 uniform vec3 line_white : source_color = vec3(0.7, 0.7, 0.68);
+/** Asfalto com brita e remendo (Assets/Textures/City/asphalt.png), 1 tile = 4 m. */
+uniform sampler2D asphalt_tex : source_color, filter_nearest_mipmap, repeat_enable;
 
 varying vec3 world_pos;
 
@@ -32,7 +34,7 @@ void fragment() {
 	float rough = 0.95;
 
 	if (road_x || road_z) {
-		col = asphalt + noise;
+		col = asphalt * texture(asphalt_tex, p / 4.0).rgb * 2.0 + noise * 0.5;
 		rough = 0.85;
 		bool intersection = road_x && road_z;
 		if (!intersection) {

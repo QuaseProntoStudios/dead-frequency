@@ -162,10 +162,15 @@ public partial class CityGenerator : Node3D
         _treeTop = new CylinderMesh { TopRadius = 0f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 6, Rings = 1 };
 
         _buildingMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/building.gdshader") };
+        _buildingMaterial.SetShaderParameter("wall_atlas", GD.Load<Texture2D>("res://Assets/Textures/City/wall_atlas.png"));
         _groundMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/road_ground.gdshader") };
         _groundMaterial.SetShaderParameter("period", Period);
         _groundMaterial.SetShaderParameter("road_half_width", RoadWidth * 0.5f);
+        _groundMaterial.SetShaderParameter("asphalt_tex", GD.Load<Texture2D>("res://Assets/Textures/City/asphalt.png"));
         _sidewalkMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/sidewalk.gdshader") };
+        _sidewalkMaterial.SetShaderParameter("slab_tex", GD.Load<Texture2D>("res://Assets/Textures/City/sidewalk.png"));
+        _sidewalkMaterial.SetShaderParameter("pt_tex", GD.Load<Texture2D>("res://Assets/Textures/City/sidewalk_pt.png"));
+        _sidewalkMaterial.SetShaderParameter("block_period", Period);
 
         _darkMetal = Flat(new Color(0.12f, 0.12f, 0.13f), 0.6f);
         _concrete = Flat(new Color(0.38f, 0.37f, 0.35f));
@@ -405,8 +410,13 @@ public partial class CityGenerator : Node3D
         }
     }
 
-    private static void SetBuildingParams(GeometryInstance3D mesh, Color wall, float seed, float litRatio)
+    private static void SetBuildingParams(GeometryInstance3D mesh, Color wall, float seed, float litRatio, int wallKind = -1)
     {
+        // Acabamento (v0.9.7: reboco, tijolo, pastilha, chapisco) tirado do seed que já existe,
+        // sem gastar sorteio do _rng (a cidade tem que sair igual pra todo mundo no online).
+        if (wallKind < 0)
+            wallKind = Mathf.PosMod((int)(seed * 13.7f), 4);
+        mesh.SetInstanceShaderParameter("wall_kind", (float)wallKind);
         mesh.SetInstanceShaderParameter("wall_color", wall);
         mesh.SetInstanceShaderParameter("light_seed", seed);
         mesh.SetInstanceShaderParameter("lit_ratio", litRatio);

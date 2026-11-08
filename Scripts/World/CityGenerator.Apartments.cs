@@ -72,7 +72,7 @@ public partial class CityGenerator
         // Torre de apartamentos em cima do saguão (com janelas acesas à noite).
         const float towerH = 32f;
         MeshInstance3D tower = AddBox(st, new Vector3(0f, h + towerH * 0.5f, 0f), new Vector3(x1 - x0 + 0.4f, towerH, z1 - z0 + 0.4f), _buildingMaterial);
-        SetBuildingParams(tower, new Color(0.5f, 0.42f, 0.34f), 33f, 0.5f);
+        SetBuildingParams(tower, new Color(0.5f, 0.42f, 0.34f), 33f, 0.5f, 2); // pastilha, prédio de BH anos 80
         AddBox(st, new Vector3(0f, h + towerH + 0.4f, 0f), new Vector3(x1 - x0 + 0.6f, 0.8f, z1 - z0 + 0.6f), _concrete, false);
         AddCylinder(st, new Vector3(4f, h + towerH + 2f, -3f), 1.6f, 3.2f, _darkMetal);
         AddBox(st, new Vector3(0f, h + towerH - 1.2f, z1 + 0.25f), new Vector3(10f, 1.5f, 0.1f), _darkMetal, false);

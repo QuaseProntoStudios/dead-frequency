@@ -6,6 +6,12 @@ render_mode diffuse_lambert, specular_schlick_ggx;
 instance uniform vec4 wall_color : source_color = vec4(0.45, 0.42, 0.38, 1.0);
 instance uniform float light_seed = 0.0;
 instance uniform float lit_ratio = 0.3;
+/** Acabamento da fachada (v0.9.7): 0 reboco, 1 tijolo, 2 pastilha, 3 chapisco. */
+instance uniform float wall_kind = 0.0;
+
+/** Atlas 2x2 de acabamentos (Assets/Textures/City/wall_atlas.png), cada tile = 2 m. */
+uniform sampler2D wall_atlas : source_color, filter_nearest_mipmap, repeat_enable;
+uniform float tile_meters = 2.0;
 
 /** 1 = noite (muitas janelas acesas), 0 = dia (poucas, fracas). */
 uniform float night : hint_range(0.0, 1.0) = 1.0;
@@ -30,6 +36,7 @@ void fragment() {
 	vec3 col = wall_color.rgb;
 	vec3 emit = vec3(0.0);
 	float rough = 0.92;
+	float kind = floor(wall_kind + 0.5);
 
 	// Grão estilo PS1 (ruído em blocos de 25 cm).
 	float grain = hash(floor(world_pos.xz * 4.0) + floor(world_pos.y * 4.0)) * 0.08 - 0.04;
@@ -37,6 +44,13 @@ void fragment() {
 
 	if (abs(world_normal.y) < 0.5) {
 		float u = abs(world_normal.x) > 0.5 ? world_pos.z : world_pos.x;
+		// Textura do acabamento: tile do atlas escolhido por wall_kind, multiplicado pela cor.
+		vec2 full = vec2(u, -world_pos.y) / tile_meters;
+		vec2 tile = vec2(mod(kind, 2.0), floor(kind / 2.0));
+		// textureGrad com a derivada da coordenada sem fract: evita a linha de mipmap na emenda do tile.
+		vec3 tex = textureGrad(wall_atlas, (tile + fract(full)) * 0.5, dFdx(full) * 0.5, dFdy(full) * 0.5).rgb;
+		col = kind == 1.0 ? mix(col * tex * 1.8, tex, 0.75) : col * tex * 1.8;
+		col += grain * 0.5;
 		vec2 cell = vec2(u / window_spacing, world_pos.y / floor_height);
 		vec2 f = fract(cell);
 		vec2 id = floor(cell);
@@ -45,6 +59,10 @@ void fragment() {
 			col *= 0.75;
 		}
 		bool window_area = f.x > 0.2 && f.x < 0.8 && f.y > 0.32 && f.y < 0.82 && id.y >= 1.0;
+		// Peitoril claro embaixo da janela.
+		if (id.y >= 1.0 && f.x > 0.17 && f.x < 0.83 && f.y > 0.28 && f.y < 0.32) {
+			col = vec3(0.62, 0.6, 0.56);
+		}
 		if (window_area) {
 			float h = hash(id + vec2(light_seed, light_seed * 1.7) + sign(world_normal.x + world_normal.z) * 13.0);
 			col = vec3(0.05, 0.06, 0.07);
