@@ -24,6 +24,13 @@ public partial class MultiplayerPanel : VBoxContainer
     private LineEdit _name;
     private OptionButton _prof;
     private CheckBox _autoProf;
+    private CheckBox _public;
+    private Button _gear;
+    private Button _listButton;
+    private PanelContainer _settingsBox;
+    private Control _who, _modeRow, _createRow;
+    private PanelContainer _roomList;
+    private VBoxContainer _roomRows;
     private LineEdit _server;
     private LineEdit _code;
     private Label _status;
@@ -43,45 +50,42 @@ public partial class MultiplayerPanel : VBoxContainer
 
     public override void _Ready()
     {
-        AddThemeConstantOverride("separation", 10);
-        CustomMinimumSize = new Vector2(660, 0);
+        AddThemeConstantOverride("separation", 8);
+        CustomMinimumSize = new Vector2(700, 0);
 
-        AddChild(UiStyle.MakeLabel("MULTIPLAYER", 30));
+        AddChild(UiStyle.MakeLabel("MULTIPLAYER", 28));
 
         GameSettings s = GameSettings.Instance;
         _mode = Mathf.Clamp(s?.ServerMode ?? 0, 0, 2);
 
-        _name = AddField("Seu apelido", s?.PlayerName ?? "Entregador", "Entregador");
-        _name.MaxLength = 16;
-
-        // Profissão (cidade simulada). Se a sala for automática, o servidor escolhe.
-        var profRow = new HBoxContainer();
-        profRow.AddThemeConstantOverride("separation", 12);
-        Label profLabel = UiStyle.MakeLabel("Profissão", 18, HorizontalAlignment.Left);
-        profLabel.CustomMinimumSize = new Vector2(170, 0);
+        // Apelido e profissão na mesma linha.
+        var who = new HBoxContainer();
+        _who = who;
+        who.AddThemeConstantOverride("separation", 10);
+        who.AddChild(UiStyle.MakeLabel("Apelido", 17, HorizontalAlignment.Left));
+        _name = new LineEdit { Text = s?.PlayerName ?? "Entregador", PlaceholderText = "Entregador", MaxLength = 16, CustomMinimumSize = new Vector2(200, 40) };
+        who.AddChild(_name);
+        who.AddChild(UiStyle.MakeLabel("Profissão", 17, HorizontalAlignment.Left));
         _prof = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 40) };
         for (int i = 0; i < Professions.All.Length; i++)
         {
             Professions.Def def = Professions.All[i];
-            _prof.AddItem(def.Levels.Length > 1 ? def.Name : def.Name + " (só na cidade)", i);
+            _prof.AddItem(def.Levels.Length > 1 ? def.Name : def.Name + " (cidade)", i);
             if (def.Id == (s?.Profession ?? Professions.Entregador))
                 _prof.Selected = i;
         }
-        profRow.AddChild(profLabel);
-        profRow.AddChild(_prof);
-        AddChild(profRow);
-        _autoProf = new CheckBox { Text = "Ao criar sala: o servidor escolhe a profissão de cada um", ButtonPressed = s?.AutoProfession ?? false };
-        _autoProf.AddThemeFontSizeOverride("font_size", 15);
-        AddChild(_autoProf);
+        who.AddChild(_prof);
+        AddChild(who);
 
         // Onde jogar.
         var modeRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        _modeRow = modeRow;
         modeRow.AddThemeConstantOverride("separation", 8);
         var modeGroup = new ButtonGroup();
         for (int i = 0; i < 3; i++)
         {
             int mode = i;
-            var b = new Button { Text = ModeNames[i], ToggleMode = true, ButtonGroup = modeGroup, ButtonPressed = i == _mode, CustomMinimumSize = new Vector2(200, 40) };
+            var b = new Button { Text = ModeNames[i], ToggleMode = true, ButtonGroup = modeGroup, ButtonPressed = i == _mode, CustomMinimumSize = new Vector2(210, 38) };
             b.AddThemeFontSizeOverride("font_size", 16);
             b.MouseEntered += () => AudioManager.Instance?.PlayUi(UiSound.Hover);
             b.Pressed += () => SetMode(mode);
@@ -89,52 +93,46 @@ public partial class MultiplayerPanel : VBoxContainer
             modeRow.AddChild(b);
         }
         AddChild(modeRow);
-        _modeHint = UiStyle.MakeLabel("", 14, color: UiStyle.PhosphorDim);
+        _modeHint = UiStyle.MakeLabel("", 13, color: UiStyle.PhosphorDim);
         _modeHint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _modeHint.CustomMinimumSize = new Vector2(640, 0);
+        _modeHint.CustomMinimumSize = new Vector2(680, 0);
         AddChild(_modeHint);
 
         _server = AddField("Endereço", s?.ServerUrl ?? "", "https://meu-servidor.workers.dev");
         _serverRow = _server.GetParent<Control>();
 
-        // Fase da sala nova (quem entra pelo código carrega a fase escolhida pelo criador).
-        var levelRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        levelRow.AddThemeConstantOverride("separation", 10);
-        var levelGroup = new ButtonGroup();
-        foreach (GameLevels.Level level in GameLevels.All)
-        {
-            string id = level.Id;
-            var b = new Button { Text = level.Name, ToggleMode = true, ButtonGroup = levelGroup, ButtonPressed = id == _level, CustomMinimumSize = new Vector2(220, 40) };
-            b.MouseEntered += () => AudioManager.Instance?.PlayUi(UiSound.Hover);
-            b.Pressed += () =>
-            {
-                _level = id;
-                AudioManager.Instance?.PlayUi(UiSound.Click);
-            };
-            levelRow.AddChild(b);
-        }
-        AddChild(levelRow);
+        // Criar sala + engrenagem com as configurações da sala.
+        var createRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        _createRow = createRow;
+        createRow.AddThemeConstantOverride("separation", 10);
+        _createButton = UiStyle.MakeButton("Criar sala", OnCreatePressed, 300, UiSound.Start);
+        createRow.AddChild(_createButton);
+        _hostStart = UiStyle.MakeButton("Hospedar sala", OnHostPressed, 300, UiSound.Start);
+        createRow.AddChild(_hostStart);
+        _gear = new Button { Icon = GearIcon(), Text = " Sala", TooltipText = "Configurar a sala (fase, profissões, pública)", CustomMinimumSize = new Vector2(120, 44), ToggleMode = true };
+        _gear.AddThemeFontSizeOverride("font_size", 16);
+        _gear.MouseEntered += () => AudioManager.Instance?.PlayUi(UiSound.Hover);
+        _gear.Toggled += on => ShowSettings(on);
+        createRow.AddChild(_gear);
+        AddChild(createRow);
 
-        _createButton = UiStyle.MakeButton("Criar sala", OnCreatePressed, sound: UiSound.Start);
-        _createButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        AddChild(_createButton);
-
+        BuildSettingsBox(s);
         BuildHostBox();
 
         // Entrar na sala de alguém.
         var join = new VBoxContainer();
         join.AddThemeConstantOverride("separation", 8);
-        join.AddChild(UiStyle.MakeLabel("— ou entre na sala de um amigo —", 15, color: UiStyle.PhosphorDim));
+        join.AddChild(UiStyle.MakeLabel("— ou entre na sala de um amigo —", 14, color: UiStyle.PhosphorDim));
         var joinRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         joinRow.AddThemeConstantOverride("separation", 10);
         _code = new LineEdit
         {
             PlaceholderText = "CÓDIGO",
             MaxLength = 5,
-            CustomMinimumSize = new Vector2(150, 48),
+            CustomMinimumSize = new Vector2(140, 44),
             Alignment = HorizontalAlignment.Center,
         };
-        _code.AddThemeFontSizeOverride("font_size", 26);
+        _code.AddThemeFontSizeOverride("font_size", 24);
         _code.TextChanged += text =>
         {
             int caret = _code.CaretColumn;
@@ -143,16 +141,20 @@ public partial class MultiplayerPanel : VBoxContainer
         };
         _code.TextSubmitted += _ => OnJoinPressed();
         joinRow.AddChild(_code);
-        joinRow.AddChild(UiStyle.MakeButton("Colar convite", PasteInvite, 170));
-        _joinButton = UiStyle.MakeButton("Entrar", OnJoinPressed, 150, UiSound.Start);
+        _joinButton = UiStyle.MakeButton("Entrar", OnJoinPressed, 130, UiSound.Start);
         joinRow.AddChild(_joinButton);
+        joinRow.AddChild(UiStyle.MakeButton("Colar convite", PasteInvite, 170));
+        _listButton = UiStyle.MakeButton("Salas online", ShowRoomList, 170);
+        joinRow.AddChild(_listButton);
         join.AddChild(joinRow);
         _joinBlock = join;
         AddChild(join);
 
-        _status = UiStyle.MakeLabel("", 16, color: UiStyle.Warning);
+        BuildRoomList();
+
+        _status = UiStyle.MakeLabel("", 15, color: UiStyle.Warning);
         _status.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _status.CustomMinimumSize = new Vector2(640, 0);
+        _status.CustomMinimumSize = new Vector2(680, 0);
         AddChild(_status);
 
         Button back = UiStyle.MakeButton("Voltar", OnBack, sound: UiSound.Back);
@@ -166,6 +168,151 @@ public partial class MultiplayerPanel : VBoxContainer
             NetClient.Instance.Disconnected += OnFailed;
         }
         SetMode(_mode, false);
+    }
+
+    // ---------------- Configurações da sala (engrenagem) ----------------
+
+    private void BuildSettingsBox(GameSettings s)
+    {
+        _settingsBox = new PanelContainer { Visible = false };
+        _settingsBox.AddThemeStyleboxOverride("panel", UiStyle.Box(new Color(0f, 0.06f, 0.03f, 0.9f), UiStyle.PhosphorDim, 2, 12));
+        var v = new VBoxContainer();
+        v.AddThemeConstantOverride("separation", 8);
+        _settingsBox.AddChild(v);
+        v.AddChild(UiStyle.MakeLabel("CONFIGURAÇÃO DA SALA NOVA", 18));
+        var levelRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        levelRow.AddThemeConstantOverride("separation", 10);
+        levelRow.AddChild(UiStyle.MakeLabel("Fase:", 16));
+        var levelGroup = new ButtonGroup();
+        foreach (GameLevels.Level level in GameLevels.All)
+        {
+            string id = level.Id;
+            var b = new Button { Text = level.Name, ToggleMode = true, ButtonGroup = levelGroup, ButtonPressed = id == _level, CustomMinimumSize = new Vector2(220, 38) };
+            b.MouseEntered += () => AudioManager.Instance?.PlayUi(UiSound.Hover);
+            b.Pressed += () =>
+            {
+                _level = id;
+                AudioManager.Instance?.PlayUi(UiSound.Click);
+            };
+            levelRow.AddChild(b);
+        }
+        v.AddChild(levelRow);
+        _autoProf = new CheckBox { Text = "O servidor escolhe a profissão de cada jogador", ButtonPressed = s?.AutoProfession ?? false };
+        _autoProf.AddThemeFontSizeOverride("font_size", 15);
+        v.AddChild(_autoProf);
+        _public = new CheckBox { Text = "Sala pública (aparece em \"Salas online\")", ButtonPressed = s?.PublicRoom ?? true };
+        _public.AddThemeFontSizeOverride("font_size", 15);
+        v.AddChild(_public);
+        Button ok = UiStyle.MakeButton("OK", () => _gear.ButtonPressed = false, 140);
+        ok.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        v.AddChild(ok);
+        AddChild(_settingsBox);
+    }
+
+    private void ShowSettings(bool on)
+    {
+        AudioManager.Instance?.PlayUi(UiSound.Click);
+        _settingsBox.Visible = on;
+        if (on)
+            _roomList.Visible = false;
+        RefreshBlocks();
+    }
+
+    // ---------------- Lista de salas online ----------------
+
+    private void BuildRoomList()
+    {
+        _roomList = new PanelContainer { Visible = false };
+        _roomList.AddThemeStyleboxOverride("panel", UiStyle.Box(new Color(0f, 0.06f, 0.03f, 0.9f), UiStyle.PhosphorDim, 2, 12));
+        var v = new VBoxContainer();
+        v.AddThemeConstantOverride("separation", 6);
+        _roomList.AddChild(v);
+        v.AddChild(UiStyle.MakeLabel("SALAS ABERTAS", 18));
+        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(660, 180), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        _roomRows = new VBoxContainer();
+        _roomRows.AddThemeConstantOverride("separation", 6);
+        _roomRows.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        scroll.AddChild(_roomRows);
+        v.AddChild(scroll);
+        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        row.AddThemeConstantOverride("separation", 10);
+        row.AddChild(UiStyle.MakeButton("Atualizar", RefreshRoomList, 160));
+        row.AddChild(UiStyle.MakeButton("Fechar", () => { _roomList.Visible = false; RefreshBlocks(); }, 160, UiSound.Back));
+        v.AddChild(row);
+        AddChild(_roomList);
+    }
+
+    private void ShowRoomList()
+    {
+        _gear.ButtonPressed = false;
+        _roomList.Visible = true;
+        RefreshBlocks();
+        RefreshRoomList();
+    }
+
+    private void RefreshRoomList()
+    {
+        foreach (Node c in _roomRows.GetChildren())
+            c.QueueFree();
+        _roomRows.AddChild(UiStyle.MakeLabel("Procurando salas...", 15, color: UiStyle.PhosphorDim));
+        NetClient.Instance?.ListRooms(CurrentServer(), (rooms, error) =>
+        {
+            if (!IsInstanceValid(this) || !IsInstanceValid(_roomRows))
+                return;
+            foreach (Node c in _roomRows.GetChildren())
+                c.QueueFree();
+            if (error != null)
+            {
+                _roomRows.AddChild(UiStyle.MakeLabel(error, 15, color: UiStyle.Warning));
+                return;
+            }
+            if (rooms.Count == 0)
+            {
+                _roomRows.AddChild(UiStyle.MakeLabel("Nenhuma sala aberta agora. Crie a sua!", 15, color: UiStyle.PhosphorDim));
+                return;
+            }
+            foreach (NetClient.RoomListing r in rooms)
+            {
+                var line = new HBoxContainer();
+                line.AddThemeConstantOverride("separation", 10);
+                string host = string.IsNullOrEmpty(r.Host) ? "" : $" · {r.Host}";
+                string auto = r.AutoProfession ? " · profissões sorteadas" : "";
+                Label l = UiStyle.MakeLabel($"{r.Code}  {GameLevels.Get(r.Level).Name}  {r.Players}/{r.Max}{host}{auto}", 15, HorizontalAlignment.Left);
+                l.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                l.ClipText = true;
+                line.AddChild(l);
+                string code = r.Code;
+                Button enter = UiStyle.MakeButton(r.Players >= r.Max ? "Cheia" : "Entrar", () =>
+                {
+                    _code.Text = code;
+                    OnJoinPressed();
+                }, 120, UiSound.Start);
+                enter.Disabled = r.Players >= r.Max;
+                line.AddChild(enter);
+                _roomRows.AddChild(line);
+            }
+        });
+    }
+
+    /// <summary>Engrenagem desenhada em código (sem depender de fonte com o símbolo).</summary>
+    private static Texture2D GearIcon()
+    {
+        const int size = 24;
+        var img = Image.CreateEmpty(size, size, false, Image.Format.Rgba8);
+        Color c = UiStyle.Phosphor;
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dx = x - size * 0.5f + 0.5f, dy = y - size * 0.5f + 0.5f;
+                float r = Mathf.Sqrt(dx * dx + dy * dy);
+                float a = Mathf.Atan2(dy, dx);
+                float outer = Mathf.Cos(a * 8f) > 0.2f ? 11f : 8.2f;
+                bool on = r <= outer && r >= 3.6f;
+                img.SetPixel(x, y, on ? c : new Color(0f, 0f, 0f, 0f));
+            }
+        }
+        return ImageTexture.CreateFromImage(img);
     }
 
     public override void _ExitTree()
@@ -196,10 +343,10 @@ public partial class MultiplayerPanel : VBoxContainer
         if (sound)
             AudioManager.Instance?.PlayUi(UiSound.Click);
         _modeButtons[mode].ButtonPressed = true;
-        _serverRow.Visible = mode == 1;
         _createButton.Visible = mode != 2;
-        _hostBox.Visible = mode == 2;
-        _joinBlock.Visible = mode != 2;
+        if (mode == 2)
+            _roomList.Visible = false;
+        RefreshBlocks();
         _modeHint.Text = mode switch
         {
             0 => "Servidor do projeto na nuvem. É só criar a sala ou digitar o código do amigo.",
@@ -208,6 +355,23 @@ public partial class MultiplayerPanel : VBoxContainer
         };
         _status.Text = "";
         RefreshHostBox();
+    }
+
+    /// <summary>Esconde o bloco "entrar" enquanto a engrenagem ou a lista estão abertas (cabe na tela).</summary>
+    private void RefreshBlocks()
+    {
+        if (_joinBlock == null)
+            return;
+        bool overlay = _settingsBox.Visible || _roomList.Visible;
+        // Com a engrenagem ou a lista aberta, o resto some para tudo caber (e o Voltar não cortar).
+        _who.Visible = !overlay;
+        _modeRow.Visible = !overlay;
+        _modeHint.Visible = !overlay;
+        _serverRow.Visible = _mode == 1 && !overlay;
+        _createRow.Visible = !_roomList.Visible;
+        _joinBlock.Visible = _mode != 2 && !overlay;
+        _hostBox.Visible = _mode == 2 && !_settingsBox.Visible;
+        _listButton.Visible = _mode != 2;
     }
 
     private string CurrentServer() => _mode == 1 ? _server.Text.Trim() : NetClient.OfficialServer;
@@ -222,8 +386,6 @@ public partial class MultiplayerPanel : VBoxContainer
         _hostInfo.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _hostInfo.CustomMinimumSize = new Vector2(640, 0);
 
-        _hostStart = UiStyle.MakeButton("Hospedar sala", OnHostPressed, sound: UiSound.Start);
-        _hostStart.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 10);
         _hostCopy = UiStyle.MakeButton("Copiar convite", CopyHostInvite, 220);
@@ -231,7 +393,6 @@ public partial class MultiplayerPanel : VBoxContainer
         row.AddChild(_hostCopy);
         row.AddChild(_hostEnter);
 
-        _hostBox.AddChild(_hostStart);
         _hostBox.AddChild(_hostInfo);
         _hostBox.AddChild(row);
         AddChild(_hostBox);
@@ -244,6 +405,7 @@ public partial class MultiplayerPanel : VBoxContainer
             return;
         LocalServer server = LocalServer.Ensure();
         Error err = server.Start(_level, LocalServer.DefaultPort, _autoProf.ButtonPressed);
+        _gear.ButtonPressed = false;
         if (err != Error.Ok)
         {
             _status.Text = $"Não consegui abrir a porta {LocalServer.DefaultPort} ({err}). Feche outro jogo/servidor que esteja usando ela.";
@@ -260,7 +422,7 @@ public partial class MultiplayerPanel : VBoxContainer
         LocalServer server = LocalServer.Instance;
         TunnelService tunnel = TunnelService.Instance;
         bool running = server != null && server.Running;
-        _hostStart.Visible = !running;
+        _hostStart.Visible = !running && _mode == 2;
         _hostCopy.Visible = running;
         _hostEnter.Visible = running;
 
@@ -365,6 +527,7 @@ public partial class MultiplayerPanel : VBoxContainer
             GameSettings.Instance.PlayerName = PlayerName();
             GameSettings.Instance.Profession = Professions.All[Mathf.Max(0, _prof.Selected)].Id;
             GameSettings.Instance.AutoProfession = _autoProf.ButtonPressed;
+            GameSettings.Instance.PublicRoom = _public.ButtonPressed;
             GameSettings.Instance.Save();
         }
         Professions.Current = Professions.All[Mathf.Max(0, _prof.Selected)].Id;
@@ -376,7 +539,7 @@ public partial class MultiplayerPanel : VBoxContainer
         if (NetClient.Instance == null || !SaveFields())
             return;
         SetBusy(true);
-        NetClient.Instance.CreateRoom(CurrentServer(), PlayerName(), _level, _autoProf.ButtonPressed);
+        NetClient.Instance.CreateRoom(CurrentServer(), PlayerName(), _level, _autoProf.ButtonPressed, _public.ButtonPressed);
     }
 
     private void OnJoinPressed()

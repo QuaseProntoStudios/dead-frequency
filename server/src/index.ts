@@ -9,7 +9,8 @@
  *
  * HTTP:
  *   GET  /                      → status
- *   POST /api/rooms             → cria sala  { code }
+ *   GET  /api/rooms             → salas públicas abertas { rooms: [...] }
+ *   POST /api/rooms             → cria sala  { code }  (corpo: level, autoProfession, isPublic)
  *   GET  /api/rooms/:code       → info da sala { code, players, max }
  *   GET  /api/rooms/:code/ws    → WebSocket (?name=Apelido)
  *
@@ -132,20 +133,27 @@ export default {
       return handleAdmin(request, url, env);
     }
 
+    if (url.pathname === "/api/rooms" && request.method === "GET") {
+      const registry = env.REGISTRY.get(env.REGISTRY.idFromName("global"));
+      return json({ rooms: await registry.publicRooms() });
+    }
+
     if (url.pathname === "/api/rooms" && request.method === "POST") {
       let level = "city";
       let autoProfession = false;
+      let isPublic = true;
       try {
-        const body = (await request.json()) as { level?: unknown; autoProfession?: unknown };
+        const body = (await request.json()) as { level?: unknown; autoProfession?: unknown; isPublic?: unknown };
         if (typeof body.level === "string" && LEVELS.includes(body.level)) level = body.level;
         autoProfession = body.autoProfession === true;
+        isPublic = body.isPublic !== false;
       } catch {
         // corpo vazio ou inválido: cidade
       }
       for (let attempt = 0; attempt < 6; attempt++) {
         const code = randomCode();
         const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-        const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code, level, autoProfession }) });
+        const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code, level, autoProfession, isPublic }) });
         if (res.status === 200) return json({ code });
         if (res.status !== 409) return json({ error: "Falha ao criar sala" }, 500);
       }
@@ -235,6 +243,10 @@ export interface RoomSummary {
   pendingJobs: number;
   createdAt: number;
   updatedAt: number;
+  level?: string;
+  /** Aparece na lista de salas abertas (padrão: sim). */
+  isPublic?: boolean;
+  autoProfession?: boolean;
 }
 
 interface GlobalStats {
@@ -273,6 +285,25 @@ export class Registry extends DurableObject<Env> {
     const online = await this.onlinePlayers();
     if (online > stats.peakPlayers) { stats.peakPlayers = online; stats.peakPlayersAt = Date.now(); }
     await this.ctx.storage.put("stats", stats);
+  }
+
+  /** Salas abertas e públicas, para a lista do menu Multiplayer (sem nomes além do anfitrião). */
+  async publicRooms(): Promise<unknown[]> {
+    const rooms = await this.ctx.storage.list<RoomSummary>({ prefix: "room:" });
+    const stale = Date.now() - 6 * 60 * 60 * 1000;
+    return Array.from(rooms.values())
+      .filter((r) => r.players > 0 && r.isPublic !== false && r.updatedAt > stale)
+      .sort((a, b) => b.players - a.players || b.updatedAt - a.updatedAt)
+      .slice(0, 30)
+      .map((r) => ({
+        code: r.code,
+        players: r.players,
+        max: MAX_PLAYERS,
+        level: r.level ?? "city",
+        host: r.hostName,
+        shift: r.shift,
+        autoProfession: r.autoProfession === true,
+      }));
   }
 
   async remove(code: string): Promise<void> {
@@ -333,6 +364,8 @@ interface RoomState {
   pendingShift: boolean;
   /** O servidor escolhe a profissão de cada jogador (equilibrando as vagas). */
   autoProfession?: boolean;
+  /** Aparece na lista de salas abertas. Salas antigas não têm (= pública). */
+  isPublic?: boolean;
   /** Todas as caixas do turno quebraram: a sala recomeça do turno 1. */
   gameOver?: boolean;
   emptySince: number | null;
@@ -398,6 +431,9 @@ export class GameRoom extends DurableObject<Env> {
       pendingJobs: room.jobs.filter((j) => j.status === "pending").length,
       createdAt: room.createdAt,
       updatedAt: Date.now(),
+      level: room.level ?? "city",
+      isPublic: room.isPublic !== false,
+      autoProfession: room.autoProfession === true,
     };
   }
 
@@ -466,11 +502,12 @@ export class GameRoom extends DurableObject<Env> {
 
     if (url.pathname === "/init") {
       if (this.room) return json({ error: "exists" }, 409);
-      const { code, level, autoProfession } = (await request.json()) as { code: string; level?: string; autoProfession?: boolean };
+      const { code, level, autoProfession, isPublic } = (await request.json()) as { code: string; level?: string; autoProfession?: boolean; isPublic?: boolean };
       this.room = {
         code,
         level: level && LEVELS.includes(level) ? level : "city",
         autoProfession: autoProfession === true,
+        isPublic: isPublic !== false,
         seed: crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000,
         createdAt: Date.now(),
         shift: 0,

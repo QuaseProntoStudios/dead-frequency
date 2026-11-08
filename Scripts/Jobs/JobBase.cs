@@ -21,6 +21,22 @@ public abstract partial class JobBase : Node3D
     /// <summary>Linhas do painel do canto superior direito.</summary>
     public abstract string PanelText();
 
+    /// <summary>Para onde a seta do topo da tela aponta agora (label curto em maiúsculas).</summary>
+    public virtual bool TryGetTarget(out Vector3 position, out string label)
+    {
+        position = Vector3.Zero;
+        label = "";
+        return false;
+    }
+
+    /// <summary>Onde o jogador começa nesta profissão (posição, direção em rad). false = no depósito.</summary>
+    public virtual bool TryGetSpawn(out Vector3 position, out float yaw)
+    {
+        position = Vector3.Zero;
+        yaw = 0f;
+        return false;
+    }
+
     protected Vector3 PlayerPos => Player != null && IsInstanceValid(Player) ? Player.GlobalPosition : Vector3.Zero;
 
     /// <summary>Ponto de entrega aleatório (calçada) entre minDist e maxDist do ponto dado; se não houver, qualquer um.</summary>

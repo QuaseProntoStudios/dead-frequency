@@ -41,6 +41,7 @@ public partial class CityGenerator
     /// <summary>Prateleiras do supermercado: posição da prateleira e rotação (repositor).</summary>
     public List<(Vector3 Position, float RotY)> MarketShelfSlots { get; } = new();
     public Vector3 MarketStockPoint { get; private set; }
+    public Vector3 MarketEntrance { get; private set; }
     /// <summary>Mesa de som da rádio (locutor). Zero = fase sem rádio.</summary>
     public Vector3 RadioConsolePoint { get; private set; }
 

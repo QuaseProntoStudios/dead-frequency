@@ -110,6 +110,21 @@ public partial class LocutorJob : JobBase
         M.Earn(1, "Comercial lido no ar");
     }
 
+    public override bool TryGetTarget(out Vector3 position, out string label)
+    {
+        position = City.RadioConsolePoint;
+        label = PlayerPos.DistanceTo(position) > 12f ? "RÁDIO 96.6" : "MESA DE SOM";
+        return position != Vector3.Zero;
+    }
+
+    public override bool TryGetSpawn(out Vector3 position, out float yaw)
+    {
+        // Dentro do estúdio, atrás da mesa de som.
+        position = City.RadioConsolePoint + new Vector3(0f, 0.1f, 2.6f);
+        yaw = 0f;
+        return City.RadioConsolePoint != Vector3.Zero;
+    }
+
     public override string PanelText()
     {
         if (_console == null)

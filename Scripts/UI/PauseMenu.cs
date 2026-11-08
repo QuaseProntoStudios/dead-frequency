@@ -31,6 +31,9 @@ public partial class PauseMenu : CanvasLayer
     private Label _roomCode;
     private Label _roomPlayers;
     private Label _feedback;
+    private RichTextLabel _playerList;
+    private Label _waitLabel;
+    private double _refresh;
     private Button _profButton;
     private VBoxContainer _profList;
 
@@ -63,8 +66,8 @@ public partial class PauseMenu : CanvasLayer
 
         _mainList.AddChild(UiStyle.MakeLabel("— PAUSADO —", 34));
         BuildRoomBox();
-        _mainList.AddChild(UiStyle.MakeLabel("sinal em espera", 16, color: UiStyle.PhosphorDim));
-        _mainList.AddChild(new Control { CustomMinimumSize = new Vector2(0, 10) });
+        _waitLabel = UiStyle.MakeLabel("sinal em espera", 16, color: UiStyle.PhosphorDim);
+        _mainList.AddChild(_waitLabel);
 
         _resumeButton = UiStyle.MakeButton("Continuar", Resume, sound: UiSound.Back);
         _mainList.AddChild(_resumeButton);
@@ -101,10 +104,14 @@ public partial class PauseMenu : CanvasLayer
         _mainList.AddChild(_roomBox);
 
         _roomBox.AddChild(UiStyle.MakeLabel("código da sala", 15, color: UiStyle.PhosphorDim));
-        _roomCode = UiStyle.MakeLabel("-----", 48);
+        _roomCode = UiStyle.MakeLabel("-----", 36);
         _roomBox.AddChild(_roomCode);
         _roomPlayers = UiStyle.MakeLabel("", 15, color: UiStyle.PhosphorDim);
         _roomBox.AddChild(_roomPlayers);
+        // Quem está na sala: cor, nome e profissão.
+        _playerList = new RichTextLabel { BbcodeEnabled = true, FitContent = true, ScrollActive = false, CustomMinimumSize = new Vector2(560, 0), MouseFilter = Control.MouseFilterEnum.Ignore };
+        _playerList.AddThemeFontSizeOverride("normal_font_size", 16);
+        _roomBox.AddChild(_playerList);
 
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 8);
@@ -135,17 +142,31 @@ public partial class PauseMenu : CanvasLayer
         _feedback.Text = "Abrindo o WhatsApp...";
     }
 
+    private static string PlayerLine(Color color, string name, string prof, bool host)
+    {
+        Professions.Def def = Professions.Get(prof);
+        string safe = name.Replace("[", "(").Replace("]", ")");
+        return $"[color=#{color.ToHtml(false)}]●[/color] {safe}  [color=#{def.Color.ToHtml(false)}]{def.Name}[/color]" + (host ? "  [color=#ffb840]★ anfitrião[/color]" : "");
+    }
+
     private void RefreshRoomBox()
     {
         bool online = Online;
         _roomBox.Visible = online;
+        _waitLabel.Visible = !online;
         _restartButton.Visible = !online;
         _menuButton.Text = online ? "Sair da sala" : "Menu principal";
         if (!online)
             return;
         NetClient net = NetClient.Instance;
         _roomCode.Text = net.RoomCode;
-        _roomPlayers.Text = $"{net.PlayerCount} entregador(es) · ping {net.PingMs:0} ms" + (net.IsHost ? " · você é o anfitrião" : "");
+        _roomPlayers.Text = $"{net.PlayerCount} jogador(es) online · ping {net.PingMs:0} ms" + (net.IsHost ? " · você é o anfitrião" : "");
+        var sb = new System.Text.StringBuilder("[center]");
+        sb.Append(PlayerLine(net.MyColor, net.PlayerName + " (você)", Professions.Current, net.IsHost));
+        foreach (NetPlayerInfo p in net.Players.Values)
+            sb.Append('\n').Append(PlayerLine(p.Color, p.Name, p.Profession, p.Id == net.HostId));
+        sb.Append("[/center]");
+        _playerList.Text = sb.ToString();
         _feedback.Text = "";
     }
 
@@ -168,6 +189,19 @@ public partial class PauseMenu : CanvasLayer
     {
         if (what == NotificationApplicationFocusOut && PauseOnFocusLoss && !IsOpen && IsInsideTree())
             Open();
+    }
+
+    public override void _Process(double delta)
+    {
+        if (!IsOpen || !Online || !_mainList.Visible)
+            return;
+        _refresh -= delta;
+        if (_refresh > 0)
+            return;
+        _refresh = 1.0;
+        string fb = _feedback.Text;
+        RefreshRoomBox();
+        _feedback.Text = fb;
     }
 
     public void Open()

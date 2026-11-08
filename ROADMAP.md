@@ -22,7 +22,7 @@ rádio 96.6 e ajuda a cidade a funcionar. Ordem sugerida: de cima para baixo; ca
 | Tarefa | Por quê | Esforço |
 |---|---|---|
 | Partida online com 3+ PCs, uma pessoa em cada profissão | Validar pagamentos, sorteio de profissões e apartamentos | 1 sessão |
-| Mostrar a profissão de cada jogador no nome em cima da cabeça e no minimapa | Saber quem faz o quê | pequeno |
+| Mostrar a profissão de cada jogador no nome em cima da cabeça e no minimapa (a pausa já lista) | Saber quem faz o quê | pequeno |
 | Sacos de lixo e passageiros visíveis para todos no online | Hoje cada um vê as próprias tarefas | médio |
 | Carro do frentista chegando pela rua (com o trânsito) em vez de "aparecer" na avenida | Mais natural | médio |
 | Visitar o apartamento de um amigo (campainha no saguão) | Social | pequeno |

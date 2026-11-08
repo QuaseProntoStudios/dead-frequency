@@ -50,7 +50,21 @@ public partial class ProfessionManager : Node3D
             if (save != null && !string.IsNullOrEmpty(save.Profession) && GameSettings.Instance?.Profession == save.Profession)
                 wanted = save.Profession;
         }
+        _placeOnSpawn = true;
         SetProfession(wanted, announce: true, fromServer: IsOnline);
+    }
+
+    /// <summary>Na primeira profissão da partida o jogador nasce no local de trabalho dela.</summary>
+    private bool _placeOnSpawn;
+
+    /// <summary>Alvo da seta do topo da tela: muda com a profissão (rádio, mercado, posto, passageiro...).</summary>
+    public bool TryGetTarget(out Vector3 position, out string label)
+    {
+        if (Job != null && IsInstanceValid(Job) && Job.TryGetTarget(out position, out label))
+            return true;
+        position = Vector3.Zero;
+        label = "DEPÓSITO";
+        return true;
     }
 
     /// <summary>Troca a profissão. Online, avisa o servidor (que pode recusar se a sala sorteia as profissões).</summary>
@@ -90,6 +104,12 @@ public partial class ProfessionManager : Node3D
             AddChild(Job);
         }
         Delivery?.SetProfessionMode(id == Professions.Entregador);
+        if (_placeOnSpawn)
+        {
+            _placeOnSpawn = false;
+            if (Job != null && Job.TryGetSpawn(out Vector3 pos, out float yaw) && Player != null && IsInstanceValid(Player))
+                Callable.From(() => Player.Teleport(pos, yaw)).CallDeferred();
+        }
         ProfessionChanged?.Invoke(id);
         if (announce)
         {

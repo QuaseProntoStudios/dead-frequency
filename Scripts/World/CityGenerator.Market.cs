@@ -81,7 +81,7 @@ public partial class CityGenerator
         for (float x = -12f; x <= 12f; x += 3f)
             AddBox(st, new Vector3(x, 0.025f, 13.5f), new Vector3(0.12f, 0.01f, 4.5f), paintLine, false);
         for (int i = 0; i < 4; i++)
-            BuildCart(st, new Vector3(9f + i * 0.35f, 0f, 9f), 0f, steel);
+            BuildCart(st, new Vector3(9f, 0f, 8.6f + i * 0.32f), 0f, steel); // enfileirados, um dentro do outro
         BuildCart(st, new Vector3(-7.5f, 0f, 12.5f), 0.7f, steel);
 
         // ---------------- prédio. Frente em z = 7, porta automática no meio.
@@ -107,15 +107,16 @@ public partial class CityGenerator
         AddBox(st, new Vector3(doorB + 0.9f, 1.6f, z1 + 0.15f), new Vector3(1.8f, 3.2f, 0.05f), _glass, false);
         AddBox(st, new Vector3(0f, 3.3f, z1 + 0.2f), new Vector3(doorB - doorA + 0.4f, 0.2f, 0.25f), steel, false);
         // Letreiro e marquise.
-        AddBox(st, new Vector3(0f, 4.6f, z1 + 0.3f), new Vector3(17.4f, 2.6f, 0.3f), _darkMetal, false);
-        TexQuad(st, "res://Assets/Textures/Stores/sign_atacadinho.png", new Vector3(0f, 4.6f, z1 + 0.46f), new Vector2(17f, 2.43f), 0f, 1.0f);
+        AddBox(st, new Vector3(0f, 4.95f, z1 + 0.3f), new Vector3(17.4f, 2.6f, 0.3f), _darkMetal, false);
+        TexQuad(st, "res://Assets/Textures/Stores/sign_atacadinho.png", new Vector3(0f, 4.95f, z1 + 0.46f), new Vector2(17f, 2.43f), 0f, 1.0f);
         AddBox(st, new Vector3(0f, 3.35f, z1 + 1.4f), new Vector3(8f, 0.15f, 2.6f), red, false);
 
         // Banners de oferta: na vitrine e em bandeiras ao lado da porta.
         string[] promos = { "cafe", "arroz", "refri", "sabao", "leite", "pao" };
-        float[] windowX = { -12f, -9.2f, -6.4f, 6.4f, 9.2f, 12f };
+        // Entre os montantes da vitrine (x = -12, -9,5, -7, -4,5 | 4,2, 6,7, 9,2, 11,7), sem ficar cortado.
+        float[] windowX = { -10.75f, -8.25f, -5.75f, 5.45f, 7.95f, 10.45f };
         for (int i = 0; i < promos.Length; i++)
-            TexQuad(st, MarketTex + "promo_" + promos[i] + ".png", new Vector3(windowX[i], 2.0f, z1 + 0.06f), new Vector2(1.5f, 2.25f), 0f, 0.5f);
+            TexQuad(st, MarketTex + "promo_" + promos[i] + ".png", new Vector3(windowX[i], 2.0f, z1 + 0.1f), new Vector2(1.4f, 2.1f), 0f, 0.5f);
         foreach ((float x, string promo) in new[] { (-4f, "refri"), (4f, "cafe") })
         {
             AddCylinder(st, new Vector3(x, 1.5f, z1 + 2.2f), 0.04f, 3f, steel);
@@ -213,6 +214,7 @@ public partial class CityGenerator
         AddBox(st, new Vector3(7f, 1.3f, z0 + 0.2f), new Vector3(2.4f, 2.6f, 0.06f), _doorDark, false);
         st.AddChild(new Label3D { Text = "ESTOQUE\nsó funcionários", FontSize = 40, PixelSize = 0.006f, Modulate = new Color(1f, 0.85f, 0.2f), OutlineSize = 6, Position = new Vector3(7f, 2.9f, z0 + 0.26f) });
         MarketStockPoint = st.Position + new Vector3(7f, 0f, z0 + 1.4f);
+        MarketEntrance = st.Position + new Vector3(0f, 0f, z1 + 0.5f);
         AddBox(st, new Vector3(7f, 0.08f, z0 + 1.4f), new Vector3(2.1f, 0.16f, 1.1f), wood, false);
 
         // ---------------- caixas (frente, à esquerda da porta)
@@ -244,21 +246,67 @@ public partial class CityGenerator
         }
     }
 
+    /// <summary>Carrinho de supermercado: cesto aramado mais largo em cima, alça vermelha, cadeirinha,
+    /// bandeja de baixo e quatro rodízios. Frente do carrinho = -Z (a alça fica em +Z).</summary>
     private void BuildCart(Node3D parent, Vector3 pos, float rotY, Material steel)
     {
         var cart = new Node3D { Position = pos, Rotation = new Vector3(0f, rotY, 0f) };
         parent.AddChild(cart);
-        AddBox(cart, new Vector3(0f, 0.75f, 0f), new Vector3(0.55f, 0.04f, 0.85f), steel, false);
-        AddBox(cart, new Vector3(0f, 0.95f, 0.42f), new Vector3(0.55f, 0.4f, 0.02f), steel, false);
-        AddBox(cart, new Vector3(0f, 0.95f, -0.42f), new Vector3(0.55f, 0.4f, 0.02f), steel, false);
-        AddBox(cart, new Vector3(0.27f, 0.95f, 0f), new Vector3(0.02f, 0.4f, 0.85f), steel, false);
-        AddBox(cart, new Vector3(-0.27f, 0.95f, 0f), new Vector3(0.02f, 0.4f, 0.85f), steel, false);
-        AddBox(cart, new Vector3(0f, 1.2f, 0.55f), new Vector3(0.55f, 0.04f, 0.04f), Flat(new Color(0.8f, 0.1f, 0.1f)), false);
-        foreach (float x in new[] { -0.22f, 0.22f })
-            foreach (float z in new[] { -0.35f, 0.35f })
+        var red = Flat(new Color(0.8f, 0.08f, 0.08f), 0.5f);
+        var wheel = Flat(new Color(0.08f, 0.08f, 0.08f), 0.9f);
+        const float t = 0.015f;
+        // Cesto: fundo 0,46 x 0,62 a 0,52 m; boca 0,56 x 0,86 a 1,0 m (afunila para a frente).
+        Vector3 b0 = new(-0.23f, 0.52f, -0.36f), b1 = new(0.23f, 0.52f, 0.26f);
+        Vector3 t0 = new(-0.28f, 1.0f, -0.5f), t1 = new(0.28f, 1.0f, 0.36f);
+        Vector3 Lerp3(Vector3 a, Vector3 b, float k) => a + (b - a) * k;
+        // Arames horizontais em 5 alturas (anéis).
+        for (int i = 0; i <= 4; i++)
+        {
+            float k = i / 4f;
+            Vector3 lo = Lerp3(b0, t0, k), hi = Lerp3(b1, t1, k);
+            float y = lo.Y;
+            AddBeam(cart, new Vector3(lo.X, y, lo.Z), new Vector3(hi.X, y, lo.Z), t, steel);
+            AddBeam(cart, new Vector3(lo.X, y, hi.Z), new Vector3(hi.X, y, hi.Z), t, steel);
+            AddBeam(cart, new Vector3(lo.X, y, lo.Z), new Vector3(lo.X, y, hi.Z), t, steel);
+            AddBeam(cart, new Vector3(hi.X, y, lo.Z), new Vector3(hi.X, y, hi.Z), t, steel);
+        }
+        // Arames verticais nas laterais e na frente.
+        for (int i = 0; i <= 6; i++)
+        {
+            float k = i / 6f;
+            foreach (int side in new[] { 0, 1 })
             {
-                AddBox(cart, new Vector3(x, 0.4f, z), new Vector3(0.02f, 0.7f, 0.02f), steel, false);
-                AddBox(cart, new Vector3(x, 0.05f, z), new Vector3(0.04f, 0.1f, 0.1f), _darkMetal, false);
+                float xb = side == 0 ? b0.X : b1.X, xt = side == 0 ? t0.X : t1.X;
+                AddBeam(cart, new Vector3(xb, b0.Y, Mathf.Lerp(b0.Z, b1.Z, k)), new Vector3(xt, t0.Y, Mathf.Lerp(t0.Z, t1.Z, k)), t * 0.8f, steel);
+            }
+        }
+        for (int i = 0; i <= 4; i++)
+        {
+            float k = i / 4f;
+            AddBeam(cart, new Vector3(Mathf.Lerp(b0.X, b1.X, k), b0.Y, b0.Z), new Vector3(Mathf.Lerp(t0.X, t1.X, k), t0.Y, t0.Z), t * 0.8f, steel);
+            AddBeam(cart, new Vector3(Mathf.Lerp(b0.X, b1.X, k), b0.Y, b1.Z), new Vector3(Mathf.Lerp(t0.X, t1.X, k), t0.Y, t1.Z), t * 0.8f, steel);
+        }
+        // Fundo do cesto (grade) e cadeirinha dobrável perto da alça.
+        AddBox(cart, new Vector3(0f, 0.52f, -0.05f), new Vector3(0.46f, 0.01f, 0.62f), steel, false);
+        AddBox(cart, new Vector3(0f, 0.88f, 0.26f), new Vector3(0.48f, 0.015f, 0.18f), red, false);
+        // Alça vermelha atrás.
+        AddBeam(cart, new Vector3(-0.28f, 1.0f, 0.36f), new Vector3(-0.28f, 1.08f, 0.5f), 0.016f, steel);
+        AddBeam(cart, new Vector3(0.28f, 1.0f, 0.36f), new Vector3(0.28f, 1.08f, 0.5f), 0.016f, steel);
+        AddBeam(cart, new Vector3(-0.3f, 1.08f, 0.5f), new Vector3(0.3f, 1.08f, 0.5f), 0.025f, red);
+        // Chassi: dois tubos inclinados de cada lado até os rodízios, e a bandeja de baixo.
+        foreach (float x in new[] { -0.22f, 0.22f })
+        {
+            AddBeam(cart, new Vector3(x, 0.52f, 0.26f), new Vector3(x * 0.95f, 0.1f, 0.3f), 0.016f, steel);
+            AddBeam(cart, new Vector3(x, 0.52f, -0.36f), new Vector3(x * 0.85f, 0.1f, -0.42f), 0.016f, steel);
+            AddBeam(cart, new Vector3(x * 0.95f, 0.1f, 0.3f), new Vector3(x * 0.85f, 0.1f, -0.42f), 0.016f, steel);
+        }
+        AddBox(cart, new Vector3(0f, 0.18f, -0.05f), new Vector3(0.4f, 0.01f, 0.6f), steel, false);
+        foreach (float x in new[] { -0.2f, 0.2f })
+            foreach (float z in new[] { -0.42f, 0.3f })
+            {
+                AddBox(cart, new Vector3(x, 0.08f, z), new Vector3(0.03f, 0.05f, 0.03f), steel, false);
+                MeshInstance3D w = AddCylinder(cart, new Vector3(x, 0.045f, z), 0.045f, 0.03f, wheel);
+                w.Rotation = new Vector3(0f, 0f, Mathf.Pi * 0.5f);
             }
     }
 

@@ -112,6 +112,33 @@ public partial class GariJob : JobBase
         }
     }
 
+    public override bool TryGetTarget(out Vector3 position, out string label)
+    {
+        position = Vector3.Zero;
+        label = _carrying > 0 ? "CAÇAMBA" : "LIXO";
+        float best = float.MaxValue;
+        foreach (Node3D n in _carrying > 0 ? _dumpsters : _bags)
+        {
+            if (!IsInstanceValid(n))
+                continue;
+            float d = PlayerPos.DistanceSquaredTo(n.GlobalPosition);
+            if (d < best)
+            {
+                best = d;
+                position = n.GlobalPosition;
+            }
+        }
+        return best < float.MaxValue;
+    }
+
+    public override bool TryGetSpawn(out Vector3 position, out float yaw)
+    {
+        // Ao lado da caçamba da empresa, na esquina do depósito.
+        position = new Vector3(City.BlockSize * 0.5f - 4f, (City.IsFarm ? 0f : City.CurbHeight) + 0.1f, City.BlockSize * 0.5f - 2f);
+        yaw = Mathf.Pi * 0.5f;
+        return true;
+    }
+
     public override string PanelText()
     {
         float nearestBag = float.MaxValue, nearestDump = float.MaxValue;

@@ -124,6 +124,33 @@ public partial class TaxiJob : JobBase
         _wait = 3.0;
     }
 
+    public override bool TryGetTarget(out Vector3 position, out string label)
+    {
+        position = Vector3.Zero;
+        label = "";
+        if (City == null)
+            return false;
+        if (Player?.CurrentVehicle == null && M.Van != null && IsInstanceValid(M.Van))
+        {
+            position = M.Van.GlobalPosition;
+            label = "VAN";
+            return true;
+        }
+        if (_riding && _dest >= 0)
+        {
+            position = City.DeliveryPoints[_dest].Position;
+            label = "DESTINO";
+            return true;
+        }
+        if (_pickup >= 0)
+        {
+            position = City.DeliveryPoints[_pickup].Position;
+            label = "PASSAGEIRO";
+            return true;
+        }
+        return false;
+    }
+
     public override string PanelText()
     {
         if (_pickup < 0 || City == null)

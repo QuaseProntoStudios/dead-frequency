@@ -39,6 +39,8 @@ public partial class GameSettings : Node
     public string Profession { get; set; } = "entregador";
     /// <summary>Ao criar sala: o servidor escolhe a profissão de cada um (equilibra as vagas).</summary>
     public bool AutoProfession { get; set; }
+    /// <summary>Ao criar sala: aparece na lista de salas online.</summary>
+    public bool PublicRoom { get; set; } = true;
 
     public override void _EnterTree()
     {
@@ -108,6 +110,7 @@ public partial class GameSettings : Node
         cfg.SetValue("network", "player_name", PlayerName);
         cfg.SetValue("game", "profession", Profession);
         cfg.SetValue("network", "auto_profession", AutoProfession);
+        cfg.SetValue("network", "public_room", PublicRoom);
 
         Error err = cfg.Save(FilePath);
         if (err != Error.Ok)
@@ -136,6 +139,7 @@ public partial class GameSettings : Node
         ServerUrl = cfg.GetValue("network", "server_url", ServerUrl).AsString();
         Profession = cfg.GetValue("game", "profession", Profession).AsString();
         AutoProfession = cfg.GetValue("network", "auto_profession", AutoProfession).AsBool();
+        PublicRoom = cfg.GetValue("network", "public_room", PublicRoom).AsBool();
         // Versões antigas guardavam o endereço oficial no campo: vira o modo "oficial".
         if (NetClient.NormalizeServer(ServerUrl) == NetClient.NormalizeServer(NetClient.OfficialServer))
             ServerUrl = "";

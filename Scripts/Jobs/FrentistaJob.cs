@@ -138,6 +138,43 @@ public partial class FrentistaJob : JobBase
         _next = Rng.RandfRange(5f, 10f);
     }
 
+    private int NearestStation()
+    {
+        int best = 0;
+        for (int i = 1; i < City.GasSpots.Count; i++)
+            if (PlayerPos.DistanceTo(City.GasSpots[i].Position) < PlayerPos.DistanceTo(City.GasSpots[best].Position))
+                best = i;
+        return best;
+    }
+
+    public override bool TryGetTarget(out Vector3 position, out string label)
+    {
+        position = Vector3.Zero;
+        label = "POSTO";
+        if (City.GasSpots.Count == 0)
+            return false;
+        if (_car != null && IsInstanceValid(_car))
+        {
+            position = _car.GlobalPosition;
+            label = "CARRO";
+            return true;
+        }
+        position = City.GasSpots[NearestStation()].Position;
+        return true;
+    }
+
+    public override bool TryGetSpawn(out Vector3 position, out float yaw)
+    {
+        position = Vector3.Zero;
+        yaw = 0f;
+        if (City.GasSpots.Count == 0)
+            return false;
+        // Na ilha das bombas do primeiro posto (Petrobraz), virado para a avenida.
+        position = City.GasSpots[0].Position + new Vector3(2.2f, 0.1f, 1.5f);
+        yaw = Mathf.Pi;
+        return true;
+    }
+
     public override string PanelText()
     {
         if (City.GasSpots.Count == 0)

@@ -204,6 +204,7 @@ public partial class GameHud : CanvasLayer
 
         UpdateJobPanel();
         UpdateItems();
+        UpdateCompass();
 
         if (_debug.Visible)
         {
@@ -212,6 +213,19 @@ public partial class GameHud : CanvasLayer
                           $"Mirando: {Player.DebugLookingAt}\n" +
                           $"Prompt: {(string.IsNullOrEmpty(Player.CurrentPrompt) ? "-" : Player.CurrentPrompt)}";
         }
+    }
+
+    /// <summary>A seta aponta para o lugar de trabalho da profissão (ou para o depósito).</summary>
+    private void UpdateCompass()
+    {
+        ProfessionManager pm = ProfessionManager.Instance;
+        if (pm == null || !pm.TryGetTarget(out Vector3 target, out string label))
+            return;
+        _compass.Target = target;
+        _compass.Label = label;
+        bool depot = label == "DEPÓSITO";
+        _compass.HideDistance = depot ? 30f : 4f;
+        _compass.Color = depot ? new Color(1f, 0.6f, 0.15f) : Professions.Get(pm.Current).Color;
     }
 
     private void UpdateItems()

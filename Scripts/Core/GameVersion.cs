@@ -7,12 +7,24 @@ namespace DeadFrequency;
 
 public static class GameVersion
 {
-    public const string Current = "0.9.0";
+    public const string Current = "0.9.1";
 
     public readonly record struct Release(string Version, string Date, string Title, string[] Changes);
 
     public static readonly Release[] Changelog =
     {
+        new("0.9.1", "07/11/2026", "Orelhões de verdade", new[]
+        {
+            "Orelhões refeitos: concha oca de verdade (casca aberta na frente e embaixo, cinza por dentro, com borda), telefone com teclado lá dentro e o poste atrás.",
+            "O logo aparece uma vez só, pintado na lateral da concha. O da morto agora é vertical; o da tchau tem a bolha amarela em volta do nome.",
+            "Cada profissão começa no seu lugar de trabalho: locutor no estúdio da rádio, repositor na porta do Atacadinho, frentista no posto, gari na caçamba do depósito.",
+            "A seta do topo da tela segue a profissão: rádio, mercado/estoque/prateleira, posto/carro, lixo/caçamba, passageiro/destino/van (entregador continua no depósito).",
+            "Menu de pausa online mostra quem está na sala, com a cor, a profissão e quem é o anfitrião.",
+            "Multiplayer: botão \"Salas online\" lista as salas abertas no servidor (com fase e jogadores) e entra com um clique.",
+            "Tela de criar sala mais limpa: apelido e profissão na mesma linha e a engrenagem \"Sala\" com fase, profissões sorteadas e sala pública/privada. O botão Voltar não fica mais cortado.",
+            "Mercado: os banners de oferta ficam entre as colunas da vitrine (não são mais cortados), letreiro acima da marquise e carrinhos de supermercado de verdade (cesto aramado, alça, cadeirinha e rodízios).",
+            "Online: atualize o servidor com npm run deploy para a lista de salas (o protocolo continua 4).",
+        }),
         new("0.9.0", "07/11/2026", "Cidade simulada", new[]
         {
             "Profissões! Escolha ao começar (ou deixe a sala online sortear): Entregador, Taxista, Gari, Repositor, Frentista e Locutor da 96.6, cada uma com as suas tarefas e pagamento.",

@@ -91,7 +91,7 @@ public partial class NetClient : Node
 
     // ---------------- API pública ----------------
 
-    public void CreateRoom(string serverUrl, string playerName, string level = "city", bool autoProfession = false)
+    public void CreateRoom(string serverUrl, string playerName, string level = "city", bool autoProfession = false, bool isPublic = true)
     {
         if (Status != ConnectionStatus.Offline)
             Leave();
@@ -101,7 +101,7 @@ public partial class NetClient : Node
         Status = ConnectionStatus.Connecting;
         StatusMessage?.Invoke("Criando sala...");
 
-        Error err = _http.Request($"{HttpBase(ServerUrl)}/api/rooms", new[] { "Content-Type: application/json" }, HttpClient.Method.Post, JsonSerializer.Serialize(new { level, autoProfession }));
+        Error err = _http.Request($"{HttpBase(ServerUrl)}/api/rooms", new[] { "Content-Type: application/json" }, HttpClient.Method.Post, JsonSerializer.Serialize(new { level, autoProfession, isPublic }));
         if (err != Error.Ok)
             Fail($"Não foi possível contatar o servidor ({err}).");
     }
@@ -144,6 +144,52 @@ public partial class NetClient : Node
         if (_socket == null || _socket.GetReadyState() != WebSocketPeer.State.Open)
             return;
         _socket.SendText(JsonSerializer.Serialize(payload));
+    }
+
+    public readonly record struct RoomListing(string Code, int Players, int Max, string Level, string Host, int Shift, bool AutoProfession);
+
+    /// <summary>Lista as salas públicas abertas no servidor (GET /api/rooms). callback(salas, erro).</summary>
+    public void ListRooms(string serverUrl, Action<List<RoomListing>, string> callback)
+    {
+        var http = new HttpRequest { Timeout = 10 };
+        AddChild(http);
+        http.RequestCompleted += (result, code, headers, body) =>
+        {
+            http.QueueFree();
+            if (result != (long)HttpRequest.Result.Success || code != 200)
+            {
+                callback(null, result != (long)HttpRequest.Result.Success ? "Servidor fora do ar." : $"O servidor não tem lista de salas ({code}). Atualize-o com npm run deploy.");
+                return;
+            }
+            var list = new List<RoomListing>();
+            try
+            {
+                using JsonDocument doc = JsonDocument.Parse(body);
+                foreach (JsonElement r in doc.RootElement.GetProperty("rooms").EnumerateArray())
+                {
+                    list.Add(new RoomListing(
+                        r.GetProperty("code").GetString() ?? "",
+                        r.GetProperty("players").GetInt32(),
+                        r.TryGetProperty("max", out JsonElement mx) ? mx.GetInt32() : 8,
+                        r.TryGetProperty("level", out JsonElement lv) ? lv.GetString() ?? "city" : "city",
+                        r.TryGetProperty("host", out JsonElement h) && h.ValueKind == JsonValueKind.String ? h.GetString() : "",
+                        r.TryGetProperty("shift", out JsonElement sh) ? sh.GetInt32() : 1,
+                        r.TryGetProperty("autoProfession", out JsonElement ap) && ap.ValueKind == JsonValueKind.True));
+                }
+            }
+            catch (Exception)
+            {
+                callback(null, "Resposta inválida do servidor.");
+                return;
+            }
+            callback(list, null);
+        };
+        Error err = http.Request($"{HttpBase(NormalizeServer(serverUrl))}/api/rooms");
+        if (err != Error.Ok)
+        {
+            http.QueueFree();
+            callback(null, $"Não foi possível contatar o servidor ({err}).");
+        }
     }
 
     /// <summary>Texto pronto para mandar a um amigo.</summary>

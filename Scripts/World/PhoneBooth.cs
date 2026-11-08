@@ -58,53 +58,43 @@ public partial class PhoneBooth : Area3D, IInteractable
         CollisionLayer = 4; // Interactables
         CollisionMask = 0;
         Monitoring = false;
-        AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.0f, 1.2f, 1.0f) }, Position = new Vector3(0f, 1.6f, 0.15f) });
+        AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.0f, 1.2f, 1.0f) }, Position = new Vector3(0f, 1.7f, -0.05f) });
 
         AddToGroup(MinimapView.MarkerGroup);
         SetMeta("map_kind", "phone");
         SetMeta("map_color", new Color(1f, 0.55f, 0.1f));
 
         var body = new StaticBody3D { CollisionLayer = 1, CollisionMask = 0 };
-        body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(0.15f, 2.4f, 0.15f) }, Position = new Vector3(0f, 1.2f, -0.35f) });
+        body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(0.15f, 2.4f, 0.15f) }, Position = new Vector3(0f, 1.2f, -0.65f) });
         AddChild(body);
 
-        ShellMaterial ??= new StandardMaterial3D { AlbedoColor = BrandColor(Brand), CullMode = BaseMaterial3D.CullModeEnum.Disabled };
         PhoneMaterial ??= new StandardMaterial3D { AlbedoColor = new Color(0.2f, 0.21f, 0.23f) };
         PoleMaterial ??= new StandardMaterial3D { AlbedoColor = new Color(0.1f, 0.1f, 0.12f) };
 
-        // Poste.
+        // Poste atrás da concha, com o braço que a segura.
         AddChild(new MeshInstance3D
         {
-            Mesh = new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.05f, Height = 2.7f, RadialSegments = 8 },
-            Position = new Vector3(0f, 1.35f, -0.38f),
+            Mesh = new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.05f, Height = 2.45f, RadialSegments = 8 },
+            Position = new Vector3(0f, 1.22f, ShellCenter.Z - ShellAxes.Z - 0.08f),
             MaterialOverride = PoleMaterial,
         });
-        // Concha: meia esfera deitada com a abertura para a rua.
-        AddChild(new MeshInstance3D
-        {
-            Mesh = new SphereMesh { Radius = 0.55f, Height = 0.55f, IsHemisphere = true, RadialSegments = 16, Rings = 6 },
-            Position = new Vector3(0f, 1.75f, -0.32f),
-            Rotation = new Vector3(-Mathf.Pi * 0.5f, 0f, 0f),
-            Scale = new Vector3(1f, 1.15f, 1.35f),
-            MaterialOverride = ShellMaterial,
-        });
-        // Logo da operadora pintado na própria concha: decais projetam a textura na superfície curva
-        // (atrás e nos dois lados), sem placa por cima.
-        string logoPath = $"res://Assets/Textures/phone_logo_{BrandName(Brand)}.png";
-        if (ResourceLoader.Exists(logoPath))
-        {
-            var logo = GD.Load<Texture2D>(logoPath);
-            // As caixas dos três decais não se cruzam (antes o logo do lado vazava por cima do de trás).
-            AddLogoDecal(logo, new Vector3(0f, 0f, -1f), new Vector3(0f, 1.84f, -0.9f), new Vector3(0.72f, 0.34f, 0.36f));
-            AddLogoDecal(logo, new Vector3(-1f, 0f, 0f), new Vector3(-0.45f, 1.84f, -0.42f), new Vector3(0.42f, 0.4f, 0.21f));
-            AddLogoDecal(logo, new Vector3(1f, 0f, 0f), new Vector3(0.45f, 1.84f, -0.42f), new Vector3(0.42f, 0.4f, 0.21f));
-        }
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.14f, 0.32f, 0.12f) }, Position = new Vector3(0f, 1.85f, ShellCenter.Z - ShellAxes.Z - 0.03f), MaterialOverride = PoleMaterial });
 
-        // Telefone, gancho e visor.
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.24f, 0.36f, 0.12f) }, Position = new Vector3(0f, 1.55f, -0.24f), MaterialOverride = PhoneMaterial });
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.06f, 0.24f, 0.07f) }, Position = new Vector3(-0.15f, 1.58f, -0.16f), MaterialOverride = PoleMaterial });
+        // Concha oca de verdade (casca de ovo aberta na frente e embaixo), com o logo uma vez só, nas costas,
+        // pintado na textura. Por dentro é cinza claro, como os orelhões de rua.
+        AddChild(new MeshInstance3D { Mesh = ShellMesh(true), Position = ShellCenter, MaterialOverride = OuterMaterial(Brand) });
+        AddChild(new MeshInstance3D { Mesh = ShellMesh(false), Position = ShellCenter, MaterialOverride = InnerMaterial() });
+
+        // Telefone na parede de dentro, gancho, visor e o fio.
+        float back = ShellCenter.Z - ShellAxes.Z * 0.86f;
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.26f, 0.38f, 0.12f) }, Position = new Vector3(0f, 1.62f, back + 0.06f), MaterialOverride = PhoneMaterial });
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.07f, 0.26f, 0.08f) }, Position = new Vector3(-0.17f, 1.64f, back + 0.12f), MaterialOverride = PoleMaterial });
         var display = new StandardMaterial3D { AlbedoColor = new Color(0.3f, 0.9f, 0.4f), EmissionEnabled = true, Emission = new Color(0.3f, 0.9f, 0.4f), EmissionEnergyMultiplier = 0.8f };
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.14f, 0.05f, 0.01f) }, Position = new Vector3(0f, 1.67f, -0.175f), MaterialOverride = display });
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.14f, 0.05f, 0.01f) }, Position = new Vector3(0.02f, 1.74f, back + 0.125f), MaterialOverride = display });
+        var keys = new StandardMaterial3D { AlbedoColor = new Color(0.75f, 0.75f, 0.72f) };
+        for (int i = 0; i < 9; i++)
+            AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.025f, 0.02f, 0.01f) }, Position = new Vector3(-0.01f + i % 3 * 0.04f, 1.66f - i / 3 * 0.035f, back + 0.125f), MaterialOverride = keys });
+        AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.006f, Height = 0.3f }, Position = new Vector3(-0.17f, 1.38f, back + 0.12f), MaterialOverride = PoleMaterial });
 
         _sound = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 4f, Position = new Vector3(0f, 1.6f, 0f) };
         if (ResourceLoader.Exists("res://Audio/SFX/phone_call.wav"))
@@ -112,25 +102,93 @@ public partial class PhoneBooth : Area3D, IInteractable
         AddChild(_sound);
     }
 
+    private static readonly Vector3 ShellCenter = new(0f, 1.82f, -0.05f);
+    /// <summary>Semi-eixos da casca (largura, altura, profundidade).</summary>
+    private static readonly Vector3 ShellAxes = new(0.5f, 0.56f, 0.52f);
+    private static ArrayMesh _outerMesh, _innerMesh;
+    private static readonly System.Collections.Generic.Dictionary<PhoneBrand, StandardMaterial3D> Outer = new();
+    private static StandardMaterial3D _inner;
+
     /// <summary>
-    /// Decal projeta no seu -Y local. outward = lado da concha onde fica quem olha; a textura sai
-    /// em pé e sem espelhar para essa pessoa. size = (largura, profundidade, altura).
+    /// Casca de elipsoide aberta na frente e embaixo. A malha é feita em volta do eixo das "costas"
+    /// (oposto à abertura), então a borda sai lisa. kind: 0 = fora, 1 = dentro, 2 = borda (espessura).
+    /// UV: u = volta em torno do poste (0,5 nas costas, -Z), v = 0 no topo.
     /// </summary>
-    private void AddLogoDecal(Texture2D logo, Vector3 outward, Vector3 position, Vector3 size)
+    private static ArrayMesh ShellMesh(bool outer) => outer ? (_outerMesh ??= BuildShell(true)) : (_innerMesh ??= BuildShell(false));
+
+    private const float Inset = 0.94f;
+    private static readonly Vector3 OpenDir = new Vector3(0f, -0.55f, 1f).Normalized();
+    private const float RimAngle = 1.75f; // ~100° a partir das costas
+
+    private static Vector3 ShellDir(float alpha, float beta)
     {
-        Vector3 right = (-outward).Cross(Vector3.Up);
-        var decal = new Decal
-        {
-            TextureAlbedo = logo,
-            Size = size,
-            Transform = new Transform3D(new Basis(right, outward, Vector3.Down), position),
-            NormalFade = 0.12f, // não pinta o lado de dentro da concha
-            UpperFade = 0.05f,
-            LowerFade = 0.05f,
-            CullMask = 1,
-        };
-        AddChild(decal);
+        Vector3 a = -OpenDir;
+        Vector3 u = a.Cross(Vector3.Right).Normalized();
+        Vector3 v = a.Cross(u).Normalized();
+        return a * Mathf.Cos(alpha) + (u * Mathf.Cos(beta) + v * Mathf.Sin(beta)) * Mathf.Sin(alpha);
     }
+
+    private static Vector2 ShellUV(Vector3 d) =>
+        new(0.5f - Mathf.Atan2(d.X, -d.Z) / Mathf.Tau, Mathf.Acos(Mathf.Clamp(d.Y, -1f, 1f)) / Mathf.Pi);
+
+    private static ArrayMesh BuildShell(bool outer)
+    {
+        const int rings = 18, seg = 56;
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        float scale = outer ? 1f : Inset;
+        void V(int r, int k)
+        {
+            Vector3 d = ShellDir(RimAngle * r / rings, Mathf.Tau * k / seg);
+            Vector3 p = d * ShellAxes * scale;
+            Vector3 n = new Vector3(d.X / ShellAxes.X, d.Y / ShellAxes.Y, d.Z / ShellAxes.Z).Normalized();
+            st.SetNormal(outer ? n : -n);
+            st.SetUV(ShellUV(d));
+            st.AddVertex(p);
+        }
+        for (int r = 0; r < rings; r++)
+        {
+            for (int k = 0; k < seg; k++)
+            {
+                V(r, k); V(r + 1, k); V(r, k + 1);
+                V(r, k + 1); V(r + 1, k); V(r + 1, k + 1);
+            }
+        }
+        if (outer)
+        {
+            // Borda: liga a casca de fora com a de dentro (dá espessura à concha).
+            for (int k = 0; k < seg; k++)
+            {
+                Vector3 d0 = ShellDir(RimAngle, Mathf.Tau * k / seg), d1 = ShellDir(RimAngle, Mathf.Tau * (k + 1) / seg);
+                Vector3 o0 = d0 * ShellAxes, o1 = d1 * ShellAxes, i0 = o0 * Inset, i1 = o1 * Inset;
+                Vector2 uv0 = ShellUV(d0), uv1 = ShellUV(d1);
+                foreach ((Vector3 p, Vector2 uv) in new[] { (o0, uv0), (i0, uv0), (o1, uv1), (o1, uv1), (i0, uv0), (i1, uv1) })
+                {
+                    st.SetNormal(OpenDir);
+                    st.SetUV(uv);
+                    st.AddVertex(p);
+                }
+            }
+        }
+        return st.Commit();
+    }
+
+    private static StandardMaterial3D OuterMaterial(PhoneBrand brand)
+    {
+        if (Outer.TryGetValue(brand, out StandardMaterial3D m))
+            return m;
+        string path = $"res://Assets/Textures/phone_shell_{BrandName(brand)}.png";
+        m = new StandardMaterial3D { AlbedoColor = Colors.White, Roughness = 0.35f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
+        if (ResourceLoader.Exists(path))
+            m.AlbedoTexture = GD.Load<Texture2D>(path);
+        else
+            m.AlbedoColor = BrandColor(brand);
+        Outer[brand] = m;
+        return m;
+    }
+
+    private static StandardMaterial3D InnerMaterial() =>
+        _inner ??= new StandardMaterial3D { AlbedoColor = new Color(0.72f, 0.72f, 0.7f), Roughness = 0.8f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
 
     public override void _Process(double delta)
     {

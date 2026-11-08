@@ -85,7 +85,7 @@ public partial class RepositorJob : JobBase
             }
             _empty.Add(i);
             (Vector3 pos, float rot) = slots[i];
-            Node3D marker = JobMarkers.Create(this, pos, Blue, "VAZIO", 0f, 0.35f);
+            Node3D marker = JobMarkers.Create(this, pos, Blue, "", 0f, 0.35f);
             marker.Rotation = new Vector3(0f, rot, 0f);
             marker.AddChild(new MeshInstance3D
             {
@@ -142,6 +142,42 @@ public partial class RepositorJob : JobBase
             if (_refill <= 0)
                 EmptySomeShelves();
         }
+    }
+
+    public override bool TryGetTarget(out Vector3 position, out string label)
+    {
+        position = City.MarketEntrance;
+        label = "ATACADINHO";
+        if (City.MarketShelfSlots.Count == 0)
+            return false;
+        if (PlayerPos.DistanceTo(City.MarketStockPoint) > 28f)
+            return true;
+        if (!_carrying)
+        {
+            position = City.MarketStockPoint;
+            label = "ESTOQUE";
+            return true;
+        }
+        float best = float.MaxValue;
+        foreach (int i in _empty)
+        {
+            float d = PlayerPos.DistanceSquaredTo(City.MarketShelfSlots[i].Position);
+            if (d < best)
+            {
+                best = d;
+                position = City.MarketShelfSlots[i].Position;
+                label = "PRATELEIRA";
+            }
+        }
+        return true;
+    }
+
+    public override bool TryGetSpawn(out Vector3 position, out float yaw)
+    {
+        // Na calçada, de frente para a porta do mercado.
+        position = City.MarketEntrance + new Vector3(0f, 0.1f, 9f);
+        yaw = 0f;
+        return City.MarketShelfSlots.Count > 0;
     }
 
     public override string PanelText()

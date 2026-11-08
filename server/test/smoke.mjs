@@ -147,6 +147,14 @@ assert(restart.shift === 1 && restart.money === 0, "sala recomeça no turno 1 de
   p2.send({ t: "earn", job: "taxista", amount: 100 });
   await sleep(150);
   assert(p2.all("earnFail").length === 1, "intervalo mínimo entre pagamentos");
+  const list = await (await fetch(base + "/api/rooms")).json();
+  const listed = list.rooms.find((r) => r.code === pc);
+  assert(listed && listed.players === 2 && listed.autoProfession === true, "lista de salas públicas mostra a sala aberta");
+  const { code: hidden } = await (await fetch(base + "/api/rooms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isPublic: false }) })).json();
+  const h = await connect(hidden, "Escondido");
+  await sleep(300);
+  assert(!(await (await fetch(base + "/api/rooms")).json()).rooms.some((r) => r.code === hidden), "sala privada não aparece na lista");
+  h.ws.close();
   p1.ws.close(); p2.ws.close();
 
   const { code: fc } = await (await fetch(base + "/api/rooms", { method: "POST" })).json();

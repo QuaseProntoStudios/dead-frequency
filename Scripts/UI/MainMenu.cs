@@ -22,6 +22,7 @@ public partial class MainMenu : Control
     private PanelContainer _infoPanel;
     private VBoxContainer _levelPanel;
     private VBoxContainer _profPanel;
+    private VBoxContainer _header;
     private HBoxContainer _updateBox;
     private InfoPanel _info;
     private double _glitchTimer;
@@ -56,9 +57,12 @@ public partial class MainMenu : Control
 
         _title = UiStyle.MakeLabel("DEAD FREQUENCY", 72);
         stack.AddChild(_title);
-        stack.AddChild(UiStyle.MakeLabel("cidade simulada na zona morta · 1996", 20, color: UiStyle.PhosphorDim));
-        stack.AddChild(UiStyle.MakeLabel("escolha sua profissão, sintonize a 96.6 e boa sorte", 16, color: UiStyle.PhosphorDim));
-        stack.AddChild(new Control { CustomMinimumSize = new Vector2(0, 30) });
+        _header = new VBoxContainer();
+        _header.AddThemeConstantOverride("separation", 14);
+        stack.AddChild(_header);
+        _header.AddChild(UiStyle.MakeLabel("cidade simulada na zona morta · 1996", 20, color: UiStyle.PhosphorDim));
+        _header.AddChild(UiStyle.MakeLabel("escolha sua profissão, sintonize a 96.6 e boa sorte", 16, color: UiStyle.PhosphorDim));
+        _header.AddChild(new Control { CustomMinimumSize = new Vector2(0, 30) });
 
         _menu = new VBoxContainer();
         _menu.AddThemeConstantOverride("separation", 12);
@@ -267,6 +271,9 @@ public partial class MainMenu : Control
     private void ShowMultiplayer()
     {
         _menu.Visible = false;
+        // A tela do multiplayer é alta: some com o subtítulo e o título fica menor.
+        _header.Visible = false;
+        _title.AddThemeFontSizeOverride("font_size", 40);
         _multiplayerPanel.Visible = true;
         _multiplayer.FocusFirst();
     }
@@ -278,6 +285,8 @@ public partial class MainMenu : Control
         _infoPanel.Visible = false;
         _levelPanel.Visible = false;
         _profPanel.Visible = false;
+        _header.Visible = true;
+        _title.AddThemeFontSizeOverride("font_size", 72);
         _menu.Visible = true;
         _startButton.GrabFocus();
     }

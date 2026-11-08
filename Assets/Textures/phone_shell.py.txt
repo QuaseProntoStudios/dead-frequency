@@ -1,0 +1,53 @@
+"""Texturas das conchas dos orelhões (v0.9.1). Mapa equirretangular: u = volta em torno do poste
+(0,5 = costas da concha), v = de cima (0) para baixo (1). Um logo só, na lateral (u ~ 0,33), longe do poste.
+Uso: python3 phone_shell.py.txt <pasta Assets/Textures>"""
+import sys
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+OUT = sys.argv[1]
+D = "/usr/share/fonts/truetype/dejavu/"
+W, H = 1024, 512
+
+def shell(name, base, painter):
+    img = Image.new("RGB", (W, H), base)
+    d = ImageDraw.Draw(img)
+    # leve variação de tom (plástico velho)
+    for y in range(H):
+        k = 1.0 - 0.10 * (y / H)
+        d.line((0, y, W, y), fill=tuple(int(c * k) for c in base))
+    painter(img)
+    img.filter(ImageFilter.SMOOTH).save(f"{OUT}/phone_shell_{name}.png")
+
+def tchau(img):
+    # "Bolha" amarela irregular em volta do nome (como o logo de uma certa operadora), texto branco.
+    k = 0.8
+    blob = Image.new("L", (W, H), 0)
+    b = ImageDraw.Draw(blob)
+    cx, cy = 340, 215
+    E = lambda x0, y0, x1, y1: b.ellipse((cx + x0 * k, cy + y0 * k, cx + x1 * k, cy + y1 * k), fill=255)
+    E(-120, -70, 95, 75); E(30, -95, 140, 10); E(-140, 10, -40, 95)
+    blob = blob.filter(ImageFilter.GaussianBlur(10)).point(lambda v: 255 if v > 120 else 0)
+    img.paste((255, 196, 40), (0, 0), blob)
+    d = ImageDraw.Draw(img)
+    f = ImageFont.truetype(D + "DejaVuSans-Bold.ttf", int(78 * k))
+    t = "tchau"
+    bb = d.textbbox((0, 0), t, font=f)
+    d.text((cx - (bb[2] - bb[0]) // 2 - bb[0], cy - (bb[3] - bb[1]) // 2 - bb[1]), t, font=f, fill=(255, 255, 255), stroke_width=3, stroke_fill=(214, 110, 10))
+    d.ellipse((cx + 92 * k, cy - 78 * k, cx + 118 * k, cy - 52 * k), fill=(255, 255, 255))
+
+def morto(img):
+    # Nome na vertical (lendo de baixo para cima), branco, com a cruz no lugar do pingo.
+    f = ImageFont.truetype(D + "DejaVuSans-Bold.ttf", 54)
+    t = "morto"
+    tmp = Image.new("RGBA", (320, 100), (0, 0, 0, 0))
+    td = ImageDraw.Draw(tmp)
+    bb = td.textbbox((0, 0), t, font=f)
+    td.text((10 - bb[0], 10 - bb[1]), t, font=f, fill=(255, 255, 255, 255))
+    w = bb[2] - bb[0] + 20
+    td.rectangle((w + 10, 26, w + 18, 82), fill=(255, 255, 255, 255))   # cruz
+    td.rectangle((w - 1, 40, w + 29, 48), fill=(255, 255, 255, 255))
+    rot = tmp.rotate(90, expand=True)
+    img.paste(rot, (340 - rot.width // 2, 215 - rot.height // 2), rot)
+
+shell("tchau", (240, 128, 20), tchau)
+shell("morto", (106, 30, 148), morto)
+print("ok")
