@@ -150,6 +150,17 @@ public partial class NetClient : Node
         _socket.SendText(JsonSerializer.Serialize(payload));
     }
 
+    /// <summary>Solicita ao servidor acesso temporário às ferramentas de desenvolvedor.</summary>
+    public void RequestDebugAuth(string password)
+    {
+        if (!IsOnline)
+        {
+            DebugAuthResult?.Invoke(false, "Entre em uma sala online para autenticar.");
+            return;
+        }
+        Send(new { t = "debug_auth", password = password ?? "" });
+    }
+
     public readonly record struct RoomListing(string Code, int Players, int Max, string Level, string Host, int Shift, bool AutoProfession);
 
     /// <summary>Lista as salas públicas abertas no servidor (GET /api/rooms). callback(salas, erro).</summary>
@@ -388,6 +399,7 @@ public partial class NetClient : Node
 
     private void ResetSession()
     {
+        IsDebugAuthorized = false;
         _socket = null;
         _lastState = WebSocketPeer.State.Closed;
         Status = ConnectionStatus.Offline;
