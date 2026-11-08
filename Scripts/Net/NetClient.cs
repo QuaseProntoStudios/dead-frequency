@@ -41,6 +41,10 @@ public partial class NetClient : Node
     /// <summary>Toda mensagem recebida do servidor (válida só durante a chamada).</summary>
     public event Action<JsonElement> MessageReceived;
 
+    public event Action<bool, string> DebugAuthResult;
+
+    public bool IsDebugAuthorized { get; private set; }
+
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Offline;
     public bool IsOnline => Status == ConnectionStatus.Online;
     public string ServerUrl { get; private set; } = "";
@@ -275,6 +279,21 @@ public partial class NetClient : Node
                 case "host":
                     HostId = msg.GetProperty("id").GetInt32();
                     break;
+                case "debug_auth_result":
+                    {
+                        bool success =
+                            msg.TryGetProperty("ok", out JsonElement okElement) &&
+                            okElement.ValueKind == JsonValueKind.True;
+
+                        string message =
+                            msg.TryGetProperty("msg", out JsonElement messageElement)
+                                ? messageElement.GetString() ?? ""
+                                : "";
+
+                        IsDebugAuthorized = success;
+                        DebugAuthResult?.Invoke(success, message);
+                        break;
+                    }
                 case "pong":
                     PingMs = (float)(Time.GetTicksMsec() - msg.GetProperty("ts").GetUInt64());
                     break;
@@ -287,6 +306,7 @@ public partial class NetClient : Node
                     _socket?.Close(1000, "kicked");
                     Fail(msg.TryGetProperty("msg", out JsonElement reasonEl) ? reasonEl.GetString() : "Você foi desconectado.");
                     return;
+                
             }
 
             MessageReceived?.Invoke(msg);

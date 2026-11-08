@@ -29,6 +29,8 @@ export interface Env {
   REGISTRY: DurableObjectNamespace<Registry>;
   /** Defina com: npx wrangler secret put ADMIN_TOKEN  (local: arquivo .dev.vars) */
   ADMIN_TOKEN?: string;
+  /** DEBUG_PASSWORD (opcional) para debug local: npx wrangler secret put DEBUG_PASSWORD  (local: arquivo .dev.vars) */
+  DEBUG_PASSWORD?: string;
 }
 
 /** Momento em que esta instância do Worker atendeu a primeira requisição (Date.now() no escopo global vale 0). */
@@ -426,6 +428,8 @@ interface Attachment {
   color: string;
   joined: boolean;
   prof?: string;
+  debugAuthorizedUntil?: number;
+  debugAuthAttempts?: number;
 }
 
 interface PlayerSnapshot {
@@ -625,6 +629,72 @@ export class GameRoom extends DurableObject<Env> {
     const me = ws.deserializeAttachment() as Attachment;
 
     switch (msg.t) {
+      case "debug_auth": {
+        if (!me.joined) {
+          ws.send(JSON.stringify({
+            t: "debug_auth_result",
+            ok: false,
+            msg: "Entre na sala antes de autenticar."
+          }));
+          return;
+        }
+
+        const configuredPassword = this.env.DEBUG_PASSWORD;
+
+        if (!configuredPassword) {
+          ws.send(JSON.stringify({
+            t: "debug_auth_result",
+            ok: false,
+            msg: "Autenticação de debug não configurada no servidor."
+          }));
+          return;
+        }
+
+        const attempts = me.debugAuthAttempts ?? 0;
+
+        if (attempts >= 5) {
+          ws.send(JSON.stringify({
+            t: "debug_auth_result",
+            ok: false,
+            msg: "Limite de tentativas atingido."
+          }));
+          ws.close(4003, "Too many debug auth attempts");
+          return;
+        }
+
+        const password =
+          typeof msg.password === "string" ? msg.password : "";
+
+        me.debugAuthAttempts = attempts + 1;
+
+        if (password === configuredPassword) {
+          me.debugAuthorizedUntil = Date.now() + 30 * 60 * 1000;
+          me.debugAuthAttempts = 0;
+
+          ws.serializeAttachment(me);
+
+          ws.send(JSON.stringify({
+            t: "debug_auth_result",
+            ok: true,
+            msg: "Modo desenvolvedor autorizado.",
+            expiresIn: 1800
+          }));
+        } else {
+          ws.serializeAttachment(me);
+
+          ws.send(JSON.stringify({
+            t: "debug_auth_result",
+            ok: false,
+            msg: "Senha incorreta."
+          }));
+
+          if (me.debugAuthAttempts >= 5) {
+            ws.close(4003, "Too many debug auth attempts");
+          }
+        }
+
+        return;
+      }
       case "hello":
         return this.onHello(ws, me, msg);
       case "tick":

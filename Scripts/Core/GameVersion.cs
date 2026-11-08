@@ -224,6 +224,14 @@ public static class GameVersion
         {
             "Os nomes de lojas são paródias e não têm relação com marcas reais.",
         }),
+        new("Agradecimentos — Testadores Alpha", new[]
+        {
+            "Agradecemos a todos que ajudam a testar e melhorar Dead Frequency!",
+            "",
+            "CassolendaBR — Testador Alpha",
+            "Twitch: twitch.tv/cassolendabr",
+            "",
+        }),
         new("Apoie o projeto", new[]
         {
             "twitch.tv/teuzin0dev · github.com/dieguesmosken · recadin.com.br",
