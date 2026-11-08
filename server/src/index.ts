@@ -34,7 +34,9 @@ export interface Env {
 /** Momento em que esta instância do Worker atendeu a primeira requisição (Date.now() no escopo global vale 0). */
 let SERVER_STARTED = 0;
 
-const PROTOCOL_VERSION = 4;
+const PROTOCOL_VERSION = 5;
+/** Veículos da fase (VanController.NetId no Godot): a van e, desde a v0.9.3, a moto e os caminhões do pátio. */
+const VEHICLES = ["van", "moto", "truck_yellow", "truck_red"];
 const MAX_PLAYERS = 8;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
 const CODE_LENGTH = 5;
@@ -707,9 +709,9 @@ export class GameRoom extends DurableObject<Env> {
 
   private async onRelease(me: Attachment, id: string): Promise<void> {
     const room = this.room!;
-    // Caixas continuam com o último dono (ele segue simulando a física); só a van é liberada.
-    if (id !== "van" || room.owners.van !== me.id) return;
-    room.owners.van = null;
+    // Caixas continuam com o último dono (ele segue simulando a física); só os veículos são liberados.
+    if (!VEHICLES.includes(id) || room.owners[id] !== me.id) return;
+    room.owners[id] = null;
     await this.save();
     this.broadcast({ t: "owner", id, owner: null });
   }
@@ -951,14 +953,14 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private isKnownObject(id: string): boolean {
-    return id === "van" || this.room!.jobs.some((j) => j.id === id && j.status === "pending");
+    return VEHICLES.includes(id) || this.room!.jobs.some((j) => j.id === id && j.status === "pending");
   }
 
   /** O dono atual está segurando a caixa ou dirigindo a van neste momento? */
   private isUsing(playerId: number, objectId: string): boolean {
     const snap = this.players.get(playerId);
     if (!snap) return false;
-    if (objectId === "van") return snap.st === 1;
+    if (VEHICLES.includes(objectId)) return snap.st === 1;
     return snap.held === objectId;
   }
 }

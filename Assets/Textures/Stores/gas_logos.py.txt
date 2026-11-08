@@ -1,0 +1,69 @@
+"""Logos paródia dos postos (v0.9.3) e faixas da cobertura com logo + nome.
+Uso: python3 gas_logos.py.txt <pasta Assets/Textures/Stores>"""
+import sys, math
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+OUT = sys.argv[1]
+D = "/usr/share/fonts/truetype/dejavu/"
+S = 256
+YEL = (255, 214, 30)
+
+def logo_petrobraz():
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.rounded_rectangle((8, 8, 248, 248), radius=36, fill=(20, 110, 50, 255))
+    # "PZ" estilizado com faixas amarelas
+    d.polygon([(48, 70), (150, 70), (130, 104), (48, 104)], fill=YEL)
+    d.polygon([(48, 116), (122, 116), (102, 150), (48, 150)], fill=YEL)
+    d.polygon([(48, 162), (94, 162), (74, 196), (48, 196)], fill=YEL)
+    d.polygon([(160, 70), (210, 70), (162, 196), (112, 196)], fill=(255, 255, 255, 255))
+    return img
+
+def logo_ipiranguinha():
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.ellipse((8, 8, 248, 248), fill=(20, 50, 140, 255))
+    d.arc((30, 40, 226, 236), 200, 340, fill=(250, 150, 20, 255), width=18)   # arco laranja
+    d.ellipse((108, 60, 148, 100), fill=YEL)                                   # pingo do i
+    d.rounded_rectangle((110, 112, 146, 206), radius=10, fill=YEL)
+    return img
+
+def logo_shello():
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    cx, cy, R = 128, 176, 112
+    # concha em leque: semicírculo com gomos
+    d.pieslice((cx - R, cy - R, cx + R, cy + R), 180, 360, fill=(220, 30, 30, 255))
+    d.pieslice((cx - R + 12, cy - R + 12, cx + R - 12, cy + R - 12), 180, 360, fill=YEL)
+    for i in range(1, 7):
+        a = math.radians(180 + i * 180 / 7)
+        d.line((cx, cy, cx + (R - 12) * math.cos(a), cy + (R - 12) * math.sin(a)), fill=(220, 30, 30, 255), width=7)
+    d.rectangle((cx - 40, cy, cx + 40, cy + 40), fill=(220, 30, 30, 255))
+    d.rectangle((cx - 28, cy, cx + 28, cy + 28), fill=YEL)
+    return img
+
+LOGOS = {"petrobraz": logo_petrobraz(), "ipiranguinha": logo_ipiranguinha(), "shello": logo_shello()}
+for k, im in LOGOS.items():
+    im.filter(ImageFilter.SMOOTH).save(f"{OUT}/logo_{k}.png")
+
+def fit(d, text, path, max_w, max_h):
+    s = max_h
+    while s > 10:
+        f = ImageFont.truetype(path, s); b = d.textbbox((0, 0), text, font=f)
+        if b[2] - b[0] <= max_w and b[3] - b[1] <= max_h: return f, b
+        s -= 2
+    f = ImageFont.truetype(path, 10); return f, d.textbbox((0, 0), text, font=f)
+
+def fascia(name, bg, fg, text, stripe):
+    W2, H2 = 2048, 128
+    img = Image.new("RGB", (W2, H2), bg); d = ImageDraw.Draw(img)
+    d.rectangle((0, H2 - 22, W2, H2), fill=stripe)
+    lg = LOGOS[name].resize((96, 96))
+    f, b = fit(d, text, D + "DejaVuSans-BoldOblique.ttf", 760, 86)
+    tw = b[2] - b[0]
+    for cx in (W2 // 4, 3 * W2 // 4):
+        x0 = cx - (tw + 110) // 2
+        img.paste(lg, (x0, 6), lg)
+        d.text((x0 + 110 - b[0], 8 - b[1] + (86 - (b[3] - b[1])) // 2), text, font=f, fill=fg)
+    img.filter(ImageFilter.SMOOTH).save(f"{OUT}/fascia_{name}.png")
+
+fascia("petrobraz", (20, 110, 50), YEL, "PETROBRAZ", YEL)
+fascia("ipiranguinha", (250, 200, 20), (20, 50, 140), "IPIRANGUINHA", (20, 50, 140))
+fascia("shello", (250, 210, 20), (220, 30, 30), "SHELLO", (220, 30, 30))
+print("ok")

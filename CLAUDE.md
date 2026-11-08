@@ -45,7 +45,9 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
    ✅ v0.9 Cidade simulada: profissões (Scripts/Jobs: ProfessionManager + JobBase; regras = PROFESSIONS no servidor
       e LocalServer.ProfessionRules), Rádio 96.6 (Scripts/Audio/RadioStation/RadioPlayer, Audio/Radio/*.ogg),
       mercado com interior, Edifício Sintonia (apartamentos 60 m abaixo, teleporte), SaveManager (user://save.tzn),
-      caminhonete estilo Bongo (VanDetails), launcher (launcher/, publicado pelo CI). Protocolo 4.
+      caminhonete estilo Bongo (VanDetails), launcher em Godot (launcher/app, publicado pelo CI).
+   ✅ v0.9.3: moto (baú) e caminhões drivable (VehicleFactory; NetIds = VEHICLES no servidor), HomeGuide (casa),
+      semáforo de pedestre, CarModels com estufa fechada. Protocolo 5.
 3. Painel diegético: DashboardButton, ElectricalSystem, EngineSystem, fusíveis
 4. CargoBayManager + SaveManager (.tzn)
 5. Shaders PS1 + monitor CRT

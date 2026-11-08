@@ -83,6 +83,7 @@ public partial class CityGenerator : Node3D
 
     public override void _Ready()
     {
+        HomeGuide.Clear(); // a casa só existe na cidade (o prédio registra de novo)
         // No multiplayer todos usam a seed da sala, então a cidade (e os endereços) são iguais para todos.
         if (NetClient.Instance?.IsOnline == true)
             Seed = NetClient.Instance.Seed;
@@ -438,13 +439,56 @@ public partial class CityGenerator : Node3D
     private void BuildParkingLot(Node3D block, Vector3 center, float inner)
     {
         AddBox(block, center + new Vector3(0f, CurbHeight + 0.02f, 0f), new Vector3(inner, 0.04f, inner), _darkMetal, false);
+        PaintParkingStripes(block, center, inner);
         int cars = _rng.RandiRange(3, 7);
         for (int i = 0; i < cars; i++)
         {
             float x = -inner * 0.4f + i * (inner * 0.8f / Mathf.Max(1, cars - 1));
+            // Encaixa no meio de uma vaga pintada (a primeira é a PCD, fica livre).
+            int stalls = Mathf.FloorToInt(inner * 0.86f / 3f);
+            float sx0 = -stalls * 3f * 0.5f;
+            int slot = Mathf.Clamp(Mathf.RoundToInt((x - sx0 - 1.5f) / 3f), 1, stalls - 1);
+            x = sx0 + slot * 3f + 1.5f;
             float z = (_rng.Randf() < 0.5f ? -1f : 1f) * inner * 0.25f;
             BuildCar(block, center + new Vector3(x, CurbHeight, z), 0f);
         }
+    }
+
+    private StandardMaterial3D _stripeYellow, _stripeWhite, _stripeBlue;
+
+    /// <summary>Faixas coloridas das vagas (amarelas), corredor branco no meio e uma vaga azul PCD em cada fileira.
+    /// Não usa sorteio (a cidade continua igual para todos).</summary>
+    private void PaintParkingStripes(Node3D block, Vector3 center, float inner)
+    {
+        _stripeYellow ??= Flat(new Color(0.95f, 0.78f, 0.12f), 0.7f);
+        _stripeWhite ??= Flat(new Color(0.9f, 0.9f, 0.88f), 0.7f);
+        _stripeBlue ??= Flat(new Color(0.12f, 0.35f, 0.75f), 0.7f);
+        float y = CurbHeight + 0.045f;
+        const float stall = 3.0f, depth = 5.2f;
+        int count = Mathf.FloorToInt(inner * 0.86f / stall);
+        float x0 = -count * stall * 0.5f;
+        foreach (float row in new[] { -1f, 1f })
+        {
+            float zc = row * inner * 0.25f;
+            for (int i = 0; i <= count; i++)
+                AddBox(block, center + new Vector3(x0 + i * stall, y, zc), new Vector3(0.14f, 0.012f, depth), _stripeYellow, false);
+            // Linha do fundo da vaga e vaga PCD azul na ponta.
+            AddBox(block, center + new Vector3(0f, y, zc + row * depth * 0.5f), new Vector3(count * stall, 0.012f, 0.14f), _stripeYellow, false);
+            AddBox(block, center + new Vector3(x0 + stall * 0.5f, y - 0.002f, zc), new Vector3(stall - 0.2f, 0.01f, depth - 0.2f), _stripeBlue, false);
+            block.AddChild(new Label3D
+            {
+                Text = "PCD",
+                FontSize = 64,
+                PixelSize = 0.012f,
+                Modulate = Colors.White,
+                OutlineSize = 0,
+                Position = center + new Vector3(x0 + stall * 0.5f, y + 0.01f, zc),
+                Rotation = new Vector3(-Mathf.Pi * 0.5f, 0f, 0f),
+            });
+        }
+        // Corredor: faixa branca tracejada no meio.
+        for (float x = x0; x < -x0; x += 2.4f)
+            AddBox(block, center + new Vector3(x + 0.6f, y, 0f), new Vector3(1.2f, 0.012f, 0.14f), _stripeWhite, false);
     }
 
     private void RegisterDeliveryPoint(int bx, int bz)
@@ -619,7 +663,8 @@ public partial class CityGenerator : Node3D
     {
         Color color = CarPalette[_rng.RandiRange(0, CarPalette.Length - 1)];
         float roll = _rng.Randf();
-        CarType type = roll < 0.4f ? CarType.Sedan : roll < 0.7f ? CarType.Hatch : roll < 0.88f ? CarType.Pickup : CarType.Kombi;
+        // Mesma quantidade de sorteios de antes (a cidade não muda no online); o Fuska pega uma fatia.
+        CarType type = roll < 0.3f ? CarType.Sedan : roll < 0.52f ? CarType.Hatch : roll < 0.7f ? CarType.Fusca : roll < 0.88f ? CarType.Pickup : CarType.Kombi;
         var car = new StaticBody3D { Position = groundPos, Rotation = new Vector3(0f, rotationY + (_rng.Randf() < 0.5f ? 0f : Mathf.Pi), 0f), CollisionLayer = 1, CollisionMask = 0 };
         Vector3 size = CarModels.Build(car, type, color);
         car.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(size.X, size.Y - 0.2f, size.Z) }, Position = new Vector3(0f, size.Y * 0.5f + 0.1f, 0f) });
@@ -628,7 +673,7 @@ public partial class CityGenerator : Node3D
 
     // ------------------------------------------------------------------ placas
 
-    /// <summary>Placa de PARE em uma esquina de cada cruzamento e placa de faixa de pedestre na esquina oposta.</summary>
+    /// <summary>Placa de PARE em uma esquina de cada cruzamento e semáforo de pedestre na esquina oposta.</summary>
     private void BuildStreetSigns()
     {
         float corner = BlockSize * 0.5f - 0.6f;
@@ -676,25 +721,11 @@ public partial class CityGenerator : Node3D
         _staticRoot.AddChild(sign);
     }
 
+    /// <summary>Semáforo de pedestre (fica vermelho quando vem veículo). Era uma placa "faixa de pedestre".</summary>
     private void BuildCrosswalkSign(Vector3 basePos, float rotationY)
     {
         RegisterObstacle(basePos);
-        var sign = new StaticBody3D { Position = basePos, Rotation = new Vector3(0f, rotationY, 0f), CollisionLayer = 1, CollisionMask = 0 };
-        sign.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(0.12f, 2.6f, 0.12f) }, Position = new Vector3(0f, 1.3f, 0f) });
-        AddCylinder(sign, new Vector3(0f, 1.25f, 0f), 0.04f, 2.5f, _darkMetal);
-        AddBox(sign, new Vector3(0f, 2.55f, -0.05f), new Vector3(0.65f, 0.65f, 0.03f), _signBlue, false);
-        AddBox(sign, new Vector3(0f, 2.55f, -0.07f), new Vector3(0.5f, 0.5f, 0.01f), _signWhite, false);
-        sign.AddChild(new Label3D
-        {
-            Text = "FAIXA DE\nPEDESTRE",
-            FontSize = 40,
-            PixelSize = 0.004f,
-            Modulate = new Color(0.1f, 0.2f, 0.5f),
-            OutlineSize = 0,
-            Position = new Vector3(0f, 2.55f, -0.085f),
-            RotationDegrees = new Vector3(0f, 180f, 0f),
-        });
-        _staticRoot.AddChild(sign);
+        _staticRoot.AddChild(new PedestrianSignal { Name = "SemaforoPedestre", Position = basePos });
     }
 
     // ------------------------------------------------------------------ marcos e limites

@@ -360,7 +360,7 @@ public partial class LocalServer : Node
             return;
         int? owner = _owners.TryGetValue(id, out int? o) ? o : null;
         Peer ownerPeer = owner == null ? null : _peers.FirstOrDefault(p => p.Joined && p.Id == owner);
-        bool busy = ownerPeer != null && owner != me.Id && (id == "van" ? ownerPeer.Seat == 1 : ownerPeer.Held == id);
+        bool busy = ownerPeer != null && owner != me.Id && (Vehicles.Contains(id) ? ownerPeer.Seat == 1 : ownerPeer.Held == id);
         if (busy)
         {
             Send(me, new { t = "claimFail", id, owner });
@@ -375,9 +375,9 @@ public partial class LocalServer : Node
 
     private void OnRelease(Peer me, string id)
     {
-        if (id != "van" || _owners["van"] != me.Id)
+        if (!Vehicles.Contains(id) || !_owners.TryGetValue(id, out int? o) || o != me.Id)
             return;
-        _owners["van"] = null;
+        _owners[id] = null;
         Broadcast(new Dictionary<string, object> { ["t"] = "owner", ["id"] = id, ["owner"] = null });
     }
 
@@ -555,7 +555,10 @@ public partial class LocalServer : Node
     private List<Dictionary<string, object>> JobsPayload() =>
         _jobs.Select(j => new Dictionary<string, object> { ["id"] = j.Id, ["type"] = j.Type, ["pick"] = j.Pick, ["slot"] = j.Slot, ["status"] = j.Status }).ToList();
 
-    private bool IsKnownObject(string id) => id == "van" || _jobs.Any(j => j.Id == id && j.Status == "pending");
+    /// <summary>Mesmos de VEHICLES no servidor.</summary>
+    private static readonly string[] Vehicles = { "van", "moto", "truck_yellow", "truck_red" };
+
+    private bool IsKnownObject(string id) => Vehicles.Contains(id) || _jobs.Any(j => j.Id == id && j.Status == "pending");
 
     private static void Send(Peer to, object payload)
     {

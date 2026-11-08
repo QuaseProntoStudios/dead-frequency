@@ -20,6 +20,26 @@ public partial class InventoryScreen : ModalScreen
 
     private static PlayerInventory Inv => PlayerInventory.Instance;
 
+    private Label _homeLabel;
+    private Button _homeButton;
+
+    private void ToggleHome()
+    {
+        HomeGuide.Active = !HomeGuide.Active && HomeGuide.Available;
+        RefreshHome();
+        if (HomeGuide.Active)
+            GameHud.Toast(this, "Casa marcada: siga a seta no topo da tela.", new Color(1f, 0.85f, 0.5f), 3.0);
+    }
+
+    private void RefreshHome()
+    {
+        if (_homeLabel == null)
+            return;
+        _homeLabel.Text = HomeGuide.Available ? $"SEU ENDEREÇO: {HomeGuide.Address}" : "Sem casa nesta fase (os apartamentos ficam na cidade).";
+        _homeButton.Disabled = !HomeGuide.Available;
+        _homeButton.Text = HomeGuide.Active ? "Desmarcar casa" : "Marcar casa";
+    }
+
     protected override void BuildUi()
     {
         PanelContainer panel = CenteredPanel(new Vector2(940, 540));
@@ -86,6 +106,17 @@ public partial class InventoryScreen : ModalScreen
         right.AddChild(new Control { SizeFlagsVertical = Control.SizeFlags.ExpandFill });
         _money = UiStyle.MakeLabel("", 22, HorizontalAlignment.Left);
         right.AddChild(_money);
+        // Endereço de casa (apartamento no Edifício Sintonia, ganho ao entrar) e o botão fixo "Marcar casa".
+        var home = new HBoxContainer();
+        home.AddThemeConstantOverride("separation", 10);
+        _homeLabel = UiStyle.MakeLabel("", 15, HorizontalAlignment.Left, new Color(1f, 0.85f, 0.5f));
+        _homeLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _homeLabel.CustomMinimumSize = new Vector2(330, 0);
+        _homeLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        home.AddChild(_homeLabel);
+        _homeButton = UiStyle.MakeButton("Marcar casa", ToggleHome, 190);
+        home.AddChild(_homeButton);
+        right.AddChild(home);
         right.AddChild(UiStyle.MakeLabel("I / Tab / Esc fecha · clique no slot da esquerda para tirar o item", 14, HorizontalAlignment.Left, UiStyle.PhosphorDim));
         Button close = UiStyle.MakeButton("Fechar", Close, 180, UiSound.Back);
         right.AddChild(close);
@@ -121,6 +152,7 @@ public partial class InventoryScreen : ModalScreen
 
     protected override void OnOpened()
     {
+        RefreshHome();
         _selected = -1;
         _feedback.Text = "";
         Refresh();

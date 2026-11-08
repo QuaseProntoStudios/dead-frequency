@@ -58,7 +58,7 @@ public partial class PhoneBooth : Area3D, IInteractable
         CollisionLayer = 4; // Interactables
         CollisionMask = 0;
         Monitoring = false;
-        AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.0f, 1.2f, 1.0f) }, Position = new Vector3(0f, 1.7f, -0.05f) });
+        AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.0f, 1.2f, 1.0f) }, Position = new Vector3(0f, 1.5f, -0.05f) });
 
         AddToGroup(MinimapView.MarkerGroup);
         SetMeta("map_kind", "phone");
@@ -74,27 +74,28 @@ public partial class PhoneBooth : Area3D, IInteractable
         // Poste atrás da concha, com o braço que a segura.
         AddChild(new MeshInstance3D
         {
-            Mesh = new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.05f, Height = 2.45f, RadialSegments = 8 },
-            Position = new Vector3(0f, 1.22f, ShellCenter.Z - ShellAxes.Z - 0.08f),
+            Mesh = new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.05f, Height = ShellCenter.Y + 0.25f, RadialSegments = 8 },
+            Position = new Vector3(0f, (ShellCenter.Y + 0.25f) * 0.5f, ShellCenter.Z - ShellAxes.Z - 0.08f),
             MaterialOverride = PoleMaterial,
         });
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.14f, 0.32f, 0.12f) }, Position = new Vector3(0f, 1.85f, ShellCenter.Z - ShellAxes.Z - 0.03f), MaterialOverride = PoleMaterial });
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.14f, 0.32f, 0.12f) }, Position = new Vector3(0f, ShellCenter.Y, ShellCenter.Z - ShellAxes.Z - 0.03f), MaterialOverride = PoleMaterial });
 
         // Concha oca de verdade (casca de ovo aberta na frente e embaixo), com o logo uma vez só, nas costas,
         // pintado na textura. Por dentro é cinza claro, como os orelhões de rua.
         AddChild(new MeshInstance3D { Mesh = ShellMesh(true), Position = ShellCenter, MaterialOverride = OuterMaterial(Brand) });
         AddChild(new MeshInstance3D { Mesh = ShellMesh(false), Position = ShellCenter, MaterialOverride = InnerMaterial() });
 
-        // Telefone na parede de dentro, gancho, visor e o fio.
-        float back = ShellCenter.Z - ShellAxes.Z * 0.86f;
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.26f, 0.38f, 0.12f) }, Position = new Vector3(0f, 1.62f, back + 0.06f), MaterialOverride = PhoneMaterial });
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.07f, 0.26f, 0.08f) }, Position = new Vector3(-0.17f, 1.64f, back + 0.12f), MaterialOverride = PoleMaterial });
-        var display = new StandardMaterial3D { AlbedoColor = new Color(0.3f, 0.9f, 0.4f), EmissionEnabled = true, Emission = new Color(0.3f, 0.9f, 0.4f), EmissionEnergyMultiplier = 0.8f };
-        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.14f, 0.05f, 0.01f) }, Position = new Vector3(0.02f, 1.74f, back + 0.125f), MaterialOverride = display });
-        var keys = new StandardMaterial3D { AlbedoColor = new Color(0.75f, 0.75f, 0.72f) };
-        for (int i = 0; i < 9; i++)
-            AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.025f, 0.02f, 0.01f) }, Position = new Vector3(-0.01f + i % 3 * 0.04f, 1.66f - i / 3 * 0.035f, back + 0.125f), MaterialOverride = keys });
-        AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.006f, Height = 0.3f }, Position = new Vector3(-0.17f, 1.38f, back + 0.12f), MaterialOverride = PoleMaterial });
+        // Telefone na parede de dentro, no meio da concha: gancho, fio e o teclado com números e visor.
+        float back = ShellCenter.Z - ShellAxes.Z * 0.8f;
+        float py = ShellCenter.Y - 0.04f;
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.26f, 0.38f, 0.12f) }, Position = new Vector3(0f, py, back + 0.06f), MaterialOverride = PhoneMaterial });
+        AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.07f, 0.26f, 0.08f) }, Position = new Vector3(-0.17f, py + 0.02f, back + 0.12f), MaterialOverride = PoleMaterial });
+        if (ResourceLoader.Exists("res://Assets/Textures/phone_keypad.png"))
+        {
+            _keypad ??= new StandardMaterial3D { AlbedoTexture = GD.Load<Texture2D>("res://Assets/Textures/phone_keypad.png"), EmissionEnabled = true, EmissionTexture = GD.Load<Texture2D>("res://Assets/Textures/phone_keypad.png"), EmissionEnergyMultiplier = 0.25f };
+            AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(0.16f, 0.24f) }, Position = new Vector3(0.03f, py + 0.02f, back + 0.122f), MaterialOverride = _keypad });
+        }
+        AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.006f, Height = 0.3f }, Position = new Vector3(-0.17f, py - 0.24f, back + 0.12f), MaterialOverride = PoleMaterial });
 
         _sound = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 4f, Position = new Vector3(0f, 1.6f, 0f) };
         if (ResourceLoader.Exists("res://Audio/SFX/phone_call.wav"))
@@ -102,12 +103,13 @@ public partial class PhoneBooth : Area3D, IInteractable
         AddChild(_sound);
     }
 
-    private static readonly Vector3 ShellCenter = new(0f, 1.82f, -0.05f);
+    private static readonly Vector3 ShellCenter = new(0f, 1.58f, -0.05f);
     /// <summary>Semi-eixos da casca (largura, altura, profundidade).</summary>
     private static readonly Vector3 ShellAxes = new(0.5f, 0.56f, 0.52f);
     private static ArrayMesh _outerMesh, _innerMesh;
     private static readonly System.Collections.Generic.Dictionary<PhoneBrand, StandardMaterial3D> Outer = new();
     private static StandardMaterial3D _inner;
+    private static StandardMaterial3D _keypad;
 
     /// <summary>
     /// Casca de elipsoide aberta na frente e embaixo. A malha é feita em volta do eixo das "costas"

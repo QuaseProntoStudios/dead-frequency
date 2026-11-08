@@ -19,7 +19,7 @@ public class NetPlayerInfo
 
 public partial class NetClient : Node
 {
-    public const int ProtocolVersion = 4;
+    public const int ProtocolVersion = 5;
     /// <summary>Servidor oficial do projeto (Cloudflare). Não aparece na tela; é o padrão.</summary>
     public const string OfficialServer = "https://dead-frequency.teuzin0dev.workers.dev";
 

@@ -115,6 +115,9 @@ public partial class CityGenerator
                 p => !p.IsHolding);
         }
         LobbyPoint = st.Position + new Vector3(0f, 0.1f, z0 + 1.6f);
+        // Endereço que vai para o inventário (a frente do prédio dá para a avenida em +Z).
+        int num = 300 + Mathf.Abs(ApartmentBlock.X * 37 + ApartmentBlock.Y * 11) % 600;
+        HomeGuide.Set(st.Position + new Vector3(0f, 0f, z1 + 2f), $"{StreetZ(ApartmentBlock.Y)}, nº {num} · Edifício Sintonia, {ApartmentLabel(mine)}");
 
         // ---------------- apartamentos
         for (int k = 1; k <= ApartmentCount; k++)

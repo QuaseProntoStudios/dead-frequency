@@ -2,6 +2,19 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.9.3 — Frota do pátio  (08/11/2026)
+
+- A moto de entrega do pátio agora anda: guarde uma caixa de até 20 kg no baú (E) e entregue de moto.
+- Os caminhões do pátio podem ser emprestados para ir para casa ou passear.
+- Endereço de casa no inventário (o apartamento que você ganha ao entrar) e o botão "Marcar casa": a seta do topo leva até lá.
+- Frentista: o carro vem lá do fim da avenida, entra no posto pela rampa, para na bomba e, depois de abastecer, faz a volta por trás das bombas e vai embora pela outra saída.
+- Postos com calçada rebaixada (rampas de ENTRADA e SAÍDA, meio-fio pintado) e logos paródia da Petrobraz, Ipiranguinha e Shello na cobertura.
+- Carros refeitos, inspirados nos brasileiros dos anos 80/90 e com logo paródia: Opalinha (Chevrolé), Gou e Fuska (Folksvagem), F-Mil (Fórdi) e Kombe saia-e-blusa. Os vidros agora são fechados, com colunas.
+- Semáforo de pedestre nas esquinas no lugar da placa: fica vermelho quando o ônibus, a van, um caminhão ou um carro vem passando.
+- Estacionamentos com faixas amarelas entre as vagas, vaga PCD azul e corredor tracejado; os carros param dentro das vagas.
+- Orelhões mais baixos, com o telefone no meio da concha (não atravessa mais) e o teclado com números e visor.
+- Online: protocolo 5 (atualize o servidor com npm run deploy).
+
 ## v0.9.2 — Launcher e opções  (08/11/2026)
 
 - Launcher novo com janela: barra de progresso (MB e velocidade), botão JOGAR e engrenagem de configurações.

@@ -20,7 +20,16 @@ public partial class DriverSeatInteractable : Area3D, IInteractable
     {
         if (player.State != PlayerState.Walking)
             return "";
-        return Van != null && Van.HasRemoteDriver ? "Outro entregador está dirigindo" : "[E] Dirigir a van";
+        if (Van != null && Van.HasRemoteDriver)
+            return $"Outro jogador está usando {(Van.Kind == "moto" ? "a moto" : Van.Kind == "truck" ? "o caminhão" : "a van")}";
+        if (player.IsHolding)
+            return Van?.Kind == "moto" ? "Guarde a caixa no baú da moto antes de subir" : "Solte a caixa antes de dirigir";
+        return Van?.Kind switch
+        {
+            "moto" => "[E] Pilotar a moto de entrega",
+            "truck" => "[E] Pegar o caminhão emprestado",
+            _ => "[E] Dirigir a van",
+        };
     }
 
     public bool CanInteract(PlayerController player) =>

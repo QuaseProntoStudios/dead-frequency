@@ -52,6 +52,12 @@ public partial class ProfessionManager : Node3D
         }
         _placeOnSpawn = true;
         SetProfession(wanted, announce: true, fromServer: IsOnline);
+        if (HomeGuide.Available)
+            GetTree().CreateTimer(7.0).Timeout += () =>
+            {
+                if (IsInstanceValid(this))
+                    GameHud.Toast(this, $"Você ganhou um apartamento: {HomeGuide.Address}. No inventário (I) dá para marcar a casa.", new Color(1f, 0.85f, 0.5f), 6.0);
+            };
     }
 
     /// <summary>Na primeira profissão da partida o jogador nasce no local de trabalho dela.</summary>
@@ -60,6 +66,17 @@ public partial class ProfessionManager : Node3D
     /// <summary>Alvo da seta do topo da tela: muda com a profissão (rádio, mercado, posto, passageiro...).</summary>
     public bool TryGetTarget(out Vector3 position, out string label)
     {
+        if (HomeGuide.Active && HomeGuide.Available)
+        {
+            position = HomeGuide.Position;
+            label = "CASA";
+            if (Player != null && IsInstanceValid(Player) && Player.GlobalPosition.DistanceTo(position) < 5f)
+            {
+                HomeGuide.Active = false;
+                GameHud.Toast(this, "Você chegou em casa! O elevador fica no fundo do saguão.", new Color(1f, 0.85f, 0.5f), 4.0);
+            }
+            return true;
+        }
         if (Job != null && IsInstanceValid(Job) && Job.TryGetTarget(out position, out label))
             return true;
         position = Vector3.Zero;

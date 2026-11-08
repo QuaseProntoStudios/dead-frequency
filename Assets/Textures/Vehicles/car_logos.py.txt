@@ -1,0 +1,41 @@
+"""Logos paródia das montadoras (v0.9.3): Folksvagem, Chevrolé, Fiato e Fórdi. 128x128 com fundo transparente.
+Uso: python3 car_logos.py.txt <pasta Assets/Textures/Vehicles>"""
+import sys
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+OUT = sys.argv[1]
+D = "/usr/share/fonts/truetype/dejavu/"
+S = 128
+def save(img, name): img.filter(ImageFilter.SMOOTH).save(f"{OUT}/car_logo_{name}.png")
+
+# Folksvagem: círculo cromado com F sobre V
+img = Image.new("RGBA", (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+d.ellipse((6, 6, 122, 122), fill=(210, 212, 216, 255)); d.ellipse((16, 16, 112, 112), fill=(20, 50, 130, 255))
+w = (210, 212, 216, 255)
+d.line((34, 40, 64, 104, 94, 40), fill=w, width=10)       # V
+d.line((50, 24, 50, 64), fill=w, width=9); d.line((50, 26, 82, 26), fill=w, width=9); d.line((50, 44, 74, 44), fill=w, width=8)  # F
+save(img, "folksvagem")
+
+# Chevrolé: gravata dourada
+img = Image.new("RGBA", (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+pts = [(4, 46), (44, 46), (50, 30), (78, 30), (72, 46), (124, 46), (114, 82), (84, 82), (78, 98), (50, 98), (56, 82), (4, 82)]
+d.polygon(pts, fill=(160, 160, 165, 255)); 
+inner = [(14, 52), (48, 52), (54, 36), (72, 36), (66, 52), (116, 52), (110, 76), (80, 76), (74, 92), (56, 92), (62, 76), (12, 76)]
+d.polygon(inner, fill=(232, 182, 40, 255))
+save(img, "chevrole")
+
+# Fiato: losango com 5 barras inclinadas (estilo anos 90)
+img = Image.new("RGBA", (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+d.polygon([(64, 4), (124, 64), (64, 124), (4, 64)], fill=(30, 40, 60, 255))
+for i in range(5):
+    x = 28 + i * 16
+    d.polygon([(x, 92), (x + 10, 92), (x + 26, 36), (x + 16, 36)], fill=(200, 210, 220, 255))
+save(img, "fiato")
+
+# Fórdi: oval azul com o nome
+img = Image.new("RGBA", (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+d.ellipse((2, 30, 126, 98), fill=(220, 222, 226, 255)); d.ellipse((8, 36, 120, 92), fill=(20, 60, 150, 255))
+f = ImageFont.truetype(D + "DejaVuSerif-BoldItalic.ttf", 30)
+b = d.textbbox((0, 0), "Fórdi", font=f)
+d.text(((S - (b[2] - b[0])) // 2 - b[0], 64 - (b[3] - b[1]) // 2 - b[1]), "Fórdi", font=f, fill=(255, 255, 255, 255))
+save(img, "fordi")
+print("ok")

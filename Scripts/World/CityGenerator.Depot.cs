@@ -461,29 +461,24 @@ public partial class CityGenerator
 
     // ------------------------------------------------------------------ frota (Kenney, CC0)
 
-    /// <summary>Caminhões e moto de entrega estacionados no pátio. Some sem erro se os modelos não existirem.</summary>
+    /// <summary>
+    /// Caminhões e moto do pátio (v0.9.3: dá para usar). A moto faz entregas com o baú; os caminhões
+    /// são emprestados para ir para casa. Montados pelo VehicleFactory; frente = +Z.
+    /// </summary>
     private void BuildDepotFleet(Node3D depot)
     {
-        (string File, Vector3 Pos, float RotDeg, float Scale)[] fleet =
+        (VehicleKind Kind, Vector3 Pos, float RotDeg)[] fleet =
         {
-            ("vehicle-truck-yellow.glb", new Vector3(-13.6f, 0f, 3.5f), 90f, 1.7f),
-            ("vehicle-truck-red.glb", new Vector3(-13.6f, 0f, 9.5f), 90f, 1.7f),
-            ("vehicle-motorcycle.glb", new Vector3(11.2f, 0f, -3.2f), 200f, 0.95f),
+            (VehicleKind.TruckYellow, new Vector3(-13.6f, 0.3f, 3.5f), 90f),
+            (VehicleKind.TruckRed, new Vector3(-13.6f, 0.3f, 9.5f), 90f),
+            (VehicleKind.Moto, new Vector3(11.2f, 0.3f, -2.6f), 20f),
         };
-        foreach ((string file, Vector3 pos, float rot, float scale) in fleet)
+        foreach ((VehicleKind kind, Vector3 pos, float rot) in fleet)
         {
-            string path = "res://Assets/Kenney/Racing/" + file;
-            if (!ResourceLoader.Exists(path))
-                continue;
-            if (GD.Load<PackedScene>(path)?.Instantiate() is not Node3D model)
-                continue;
-            var root = new StaticBody3D { Position = pos, RotationDegrees = new Vector3(0f, rot, 0f), CollisionLayer = 1, CollisionMask = 0 };
-            model.Scale = Vector3.One * scale;
-            root.AddChild(model);
-            // Caixa de colisão a partir do tamanho do modelo original (1,5 x 1,55 x 2,8 no caminhão).
-            Vector3 size = file.Contains("motorcycle") ? new Vector3(1.1f, 1.1f, 2.4f) : new Vector3(1.5f, 1.55f, 2.8f);
-            root.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size * scale }, Position = new Vector3(0f, size.Y * scale * 0.5f, 0f) });
-            depot.AddChild(root);
+            VanController v = VehicleFactory.Build(kind);
+            v.Position = depot.Position + pos;
+            v.RotationDegrees = new Vector3(0f, rot, 0f);
+            AddChild(v); // fora do Static: é um corpo que se mexe
         }
     }
 }

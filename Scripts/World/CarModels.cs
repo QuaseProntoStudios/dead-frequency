@@ -1,6 +1,9 @@
 // Scripts/World/CarModels.cs
 // Modelos de carro low-poly montados com caixas e cilindros (estilo PS1).
-// Quatro tipos: sedã, hatch, picape e perua/kombi. Frente do carro = -Z, origem no chão.
+// Inspirados nos carros brasileiros dos anos 80/90 (com nomes e logos paródia):
+// Opalinha (sedã, Chevrolé), Gou quadrado (hatch, Folksvagem), F-Mil (picape, Fórdi), Kombe (Folksvagem)
+// e Fuska (Folksvagem). Frente do carro = -Z, origem no chão.
+// v0.9.3: a "estufa" (vidros) é um prisma fechado com colunas pintadas, sem frestas entre os vidros.
 using System.Collections.Generic;
 using Godot;
 
@@ -12,6 +15,7 @@ public enum CarType
     Hatch,
     Pickup,
     Kombi,
+    Fusca,
 }
 
 public static class CarModels
@@ -118,74 +122,228 @@ public static class CarModels
             Box(car, new Vector3(side * (width * 0.5f + 0.01f), lightY + 0.12f, -0.1f), new Vector3(0.03f, 0.04f, 0.16f), _chrome);
     }
 
+    private static readonly Dictionary<string, StandardMaterial3D> Logos = new();
+
+    private static StandardMaterial3D LogoMaterial(string brand)
+    {
+        if (Logos.TryGetValue(brand, out StandardMaterial3D m))
+            return m;
+        string path = $"res://Assets/Textures/Vehicles/car_logo_{brand}.png";
+        m = ResourceLoader.Exists(path)
+            ? new StandardMaterial3D { AlbedoTexture = GD.Load<Texture2D>(path), Transparency = BaseMaterial3D.TransparencyEnum.AlphaScissor, AlphaScissorThreshold = 0.5f, Roughness = 0.3f, Metallic = 0.5f }
+            : null;
+        Logos[brand] = m;
+        return m;
+    }
+
+    /// <summary>Logo da marca na frente (grade) e atrás, mais o nome do modelo na tampa traseira.</summary>
+    private static void Badges(Node3D car, string brand, string model, float length, float frontY, float rearY, float size = 0.16f)
+    {
+        float hz = length * 0.5f;
+        StandardMaterial3D logo = LogoMaterial(brand);
+        if (logo != null)
+        {
+            car.AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(size, size) }, MaterialOverride = logo, Position = new Vector3(0f, frontY, -hz - 0.055f), Rotation = new Vector3(0f, Mathf.Pi, 0f) });
+            car.AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(size * 0.8f, size * 0.8f) }, MaterialOverride = logo, Position = new Vector3(0f, rearY, hz + 0.045f) });
+        }
+        car.AddChild(new Label3D
+        {
+            Text = model,
+            FontSize = 28,
+            PixelSize = 0.0025f,
+            Modulate = new Color(0.85f, 0.85f, 0.88f),
+            OutlineSize = 3,
+            OutlineModulate = new Color(0.1f, 0.1f, 0.1f),
+            Position = new Vector3(0.42f, rearY - 0.06f, hz + 0.046f),
+        });
+    }
+
+    /// <summary>Caixa orientada entre dois pontos (colunas inclinadas).</summary>
+    private static void Strut(Node3D parent, Vector3 a, Vector3 b, float tx, float tz, Material mat)
+    {
+        Vector3 up = b - a;
+        float len = up.Length();
+        Vector3 y = up / len;
+        Vector3 x = Vector3.Right;
+        Vector3 z = x.Cross(y).Normalized();
+        parent.AddChild(new MeshInstance3D
+        {
+            Mesh = _box,
+            MaterialOverride = mat,
+            Transform = new Transform3D(new Basis(x * tx, y * len, z * tz), (a + b) * 0.5f),
+        });
+    }
+
+    /// <summary>
+    /// Estufa fechada: prisma de vidro com perfil trapézio (vista de lado) entre a linha de cintura e o teto,
+    /// teto pintado e colunas A, B e C pintadas — sem buracos entre para-brisa, laterais e vidro traseiro.
+    /// zFB/zFT = base e topo do para-brisa; zBT/zBB = topo e base do vidro traseiro (frente = -Z).
+    /// </summary>
+    private static void Greenhouse(Node3D car, float width, float yBelt, float yRoof, float zFB, float zFT, float zBT, float zBB, Material paint, bool bPillar = true)
+    {
+        float hw = width * 0.5f;
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        Vector3 fbl = new(-hw, yBelt, zFB), fbr = new(hw, yBelt, zFB), ftl = new(-hw + 0.06f, yRoof, zFT), ftr = new(hw - 0.06f, yRoof, zFT);
+        Vector3 btl = new(-hw + 0.06f, yRoof, zBT), btr = new(hw - 0.06f, yRoof, zBT), bbl = new(-hw, yBelt, zBB), bbr = new(hw, yBelt, zBB);
+        void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        {
+            Vector3 n = (b - a).Cross(c - a).Normalized();
+            foreach (Vector3 v in new[] { a, b, c, a, c, d })
+            {
+                st.SetNormal(n);
+                st.AddVertex(v);
+            }
+        }
+        Quad(fbl, ftl, ftr, fbr); // para-brisa
+        Quad(bbr, btr, btl, bbl); // vidro traseiro
+        Quad(fbl, bbl, btl, ftl); // lateral esquerda
+        Quad(fbr, ftr, btr, bbr); // lateral direita
+        car.AddChild(new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = _glassDouble });
+        // Teto e colunas.
+        float roofLen = zBT - zFT;
+        Box(car, new Vector3(0f, yRoof + 0.035f, (zFT + zBT) * 0.5f), new Vector3(width - 0.08f, 0.07f, roofLen + 0.08f), paint);
+        foreach (float side in new[] { -1f, 1f })
+        {
+            float xb = side * (hw + 0.005f), xt = side * (hw - 0.055f);
+            Strut(car, new Vector3(xb, yBelt, zFB), new Vector3(xt, yRoof, zFT), 0.07f, 0.08f, paint);  // coluna A
+            Strut(car, new Vector3(xb, yBelt, zBB), new Vector3(xt, yRoof, zBT), 0.07f, 0.14f, paint);  // coluna C
+            if (bPillar)
+            {
+                float zb = Mathf.Lerp(zFB, zBB, 0.48f);
+                Strut(car, new Vector3(xb, yBelt, zb), new Vector3(xt, yRoof, Mathf.Lerp(zFT, zBT, 0.5f)), 0.06f, 0.1f, paint); // coluna B
+            }
+            // Friso da janela (linha de cintura).
+            Box(car, new Vector3(side * (hw + 0.006f), yBelt + 0.02f, (zFB + zBB) * 0.5f), new Vector3(0.02f, 0.04f, zBB - zFB), _chrome);
+        }
+        // Moldura de borracha embaixo do para-brisa e do vidro traseiro.
+        Box(car, new Vector3(0f, yBelt + 0.015f, zFB), new Vector3(width, 0.04f, 0.05f), _rubber);
+        Box(car, new Vector3(0f, yBelt + 0.015f, zBB), new Vector3(width, 0.04f, 0.05f), _rubber);
+    }
+
+    private static StandardMaterial3D _glassDouble;
+
     /// <summary>Monta o carro como filho de parent. Retorna o tamanho (largura, altura, comprimento) para colisão.</summary>
     public static Vector3 Build(Node3D parent, CarType type, Color color)
     {
         EnsureResources();
+        _glassDouble ??= new StandardMaterial3D { AlbedoColor = new Color(0.08f, 0.11f, 0.13f), Roughness = 0.1f, Metallic = 0.25f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
         StandardMaterial3D paint = PaintFor(color);
         switch (type)
         {
-            case CarType.Hatch:
+            case CarType.Hatch: // "Gou" quadrado (Folksvagem)
             {
-                const float w = 1.7f, l = 3.8f;
-                Box(parent, new Vector3(0f, 0.55f, 0f), new Vector3(w, 0.55f, l), paint);
-                Box(parent, new Vector3(0f, 0.86f, -1.35f), new Vector3(w - 0.04f, 0.1f, 1.0f), paint);
-                Box(parent, new Vector3(0f, 1.1f, 0.35f), new Vector3(w - 0.14f, 0.46f, 2.1f), _glass);
-                Box(parent, new Vector3(0f, 1.36f, 0.4f), new Vector3(w - 0.1f, 0.07f, 1.95f), paint);
-                Box(parent, new Vector3(0f, 1.115f, -0.79f), new Vector3(w - 0.16f, 0.05f, 0.56f), _glass, -0.92f); // para-brisa (sobe do capô até o teto)
-                Box(parent, new Vector3(0f, 1.0f, 1.42f), new Vector3(w - 0.06f, 0.55f, 0.12f), paint); // traseira reta
+                const float w = 1.62f, l = 3.8f;
+                Box(parent, new Vector3(0f, 0.58f, 0f), new Vector3(w, 0.56f, l), paint);
+                Box(parent, new Vector3(0f, 0.87f, -1.3f), new Vector3(w - 0.04f, 0.04f, 1.1f), paint); // capô reto
+                Greenhouse(parent, w - 0.02f, 0.86f, 1.36f, -0.72f, -0.18f, 1.25f, 1.62f, paint);
+                Box(parent, new Vector3(0f, 0.6f, 1.9f), new Vector3(w - 0.04f, 0.5f, 0.02f), paint);
+                Box(parent, new Vector3(0f, 0.47f, 0f), new Vector3(w + 0.012f, 0.06f, l - 0.6f), _rubber); // friso lateral
                 Details(parent, w, l, 0.68f, 0.4f);
-                foreach (float x in new[] { -0.8f, 0.8f })
-                    foreach (float z in new[] { -1.2f, 1.2f })
-                        Wheel(parent, new Vector3(x, 0.31f, z), 0.31f, 0.22f);
+                Badges(parent, "folksvagem", "GOU", l, 0.68f, 0.8f);
+                foreach (float x in new[] { -0.77f, 0.77f })
+                    foreach (float z in new[] { -1.2f, 1.25f })
+                        Wheel(parent, new Vector3(x, 0.3f, z), 0.3f, 0.2f);
                 return new Vector3(w, 1.4f, l);
             }
-            case CarType.Pickup:
+            case CarType.Pickup: // "F-Mil" (Fórdi)
             {
-                const float w = 1.85f, l = 4.9f;
-                Box(parent, new Vector3(0f, 0.62f, 0f), new Vector3(w, 0.6f, l), paint);
-                Box(parent, new Vector3(0f, 0.95f, -1.8f), new Vector3(w - 0.04f, 0.1f, 1.2f), paint);
-                Box(parent, new Vector3(0f, 1.2f, -0.55f), new Vector3(w - 0.12f, 0.5f, 1.3f), _glass);
-                Box(parent, new Vector3(0f, 1.48f, -0.5f), new Vector3(w - 0.08f, 0.07f, 1.25f), paint);
-                Box(parent, new Vector3(0f, 1.225f, -1.2f), new Vector3(w - 0.14f, 0.05f, 0.52f), _glass, -1.06f); // para-brisa
-                // Caçamba
-                Box(parent, new Vector3(0f, 0.95f, 1.25f), new Vector3(w - 0.2f, 0.06f, 2.1f), _interior);
-                Box(parent, new Vector3(w * 0.5f - 0.05f, 1.1f, 1.25f), new Vector3(0.1f, 0.35f, 2.2f), paint);
-                Box(parent, new Vector3(-w * 0.5f + 0.05f, 1.1f, 1.25f), new Vector3(0.1f, 0.35f, 2.2f), paint);
-                Box(parent, new Vector3(0f, 1.1f, 2.4f), new Vector3(w, 0.35f, 0.1f), paint);
-                Details(parent, w, l, 0.78f, 0.45f);
-                foreach (float x in new[] { -0.88f, 0.88f })
-                    foreach (float z in new[] { -1.55f, 1.5f })
-                        Wheel(parent, new Vector3(x, 0.36f, z), 0.36f, 0.26f);
-                return new Vector3(w, 1.55f, l);
+                const float w = 1.95f, l = 5.0f;
+                Box(parent, new Vector3(0f, 0.68f, 0f), new Vector3(w, 0.62f, l), paint);
+                Box(parent, new Vector3(0f, 1.0f, -1.75f), new Vector3(w - 0.04f, 0.04f, 1.4f), paint); // capô longo
+                Greenhouse(parent, w - 0.06f, 0.99f, 1.62f, -1.02f, -0.62f, 0.15f, 0.25f, paint, bPillar: false);
+                Box(parent, new Vector3(0f, 1.3f, 0.27f), new Vector3(w - 0.06f, 0.62f, 0.06f), paint); // parede da cabine
+                // Caçamba com assoalho e laterais.
+                Box(parent, new Vector3(0f, 1.0f, 1.45f), new Vector3(w - 0.2f, 0.05f, 2.2f), _interior);
+                Box(parent, new Vector3(w * 0.5f - 0.05f, 1.17f, 1.4f), new Vector3(0.1f, 0.36f, 2.3f), paint);
+                Box(parent, new Vector3(-w * 0.5f + 0.05f, 1.17f, 1.4f), new Vector3(0.1f, 0.36f, 2.3f), paint);
+                Box(parent, new Vector3(0f, 1.17f, 2.46f), new Vector3(w, 0.36f, 0.08f), paint);
+                // Para-lamas saltados.
+                foreach (float x in new[] { -1f, 1f })
+                    foreach (float z in new[] { -1.6f, 1.55f })
+                        Box(parent, new Vector3(x * (w * 0.5f + 0.03f), 0.78f, z), new Vector3(0.08f, 0.12f, 0.95f), _rubber);
+                Details(parent, w, l, 0.82f, 0.45f);
+                Badges(parent, "fordi", "F-MIL", l, 0.82f, 1.17f, 0.22f);
+                foreach (float x in new[] { -0.9f, 0.9f })
+                    foreach (float z in new[] { -1.6f, 1.55f })
+                        Wheel(parent, new Vector3(x, 0.38f, z), 0.38f, 0.26f);
+                return new Vector3(w, 1.7f, l);
             }
-            case CarType.Kombi:
+            case CarType.Kombi: // "Kombe" (Folksvagem), saia-e-blusa
             {
-                const float w = 1.8f, l = 4.3f;
-                Box(parent, new Vector3(0f, 0.75f, 0f), new Vector3(w, 0.9f, l), paint);
-                Box(parent, new Vector3(0f, 1.62f, 0f), new Vector3(w, 0.85f, l - 0.2f), PaintFor(new Color(0.88f, 0.86f, 0.8f)));
-                Box(parent, new Vector3(0f, 1.6f, 0.1f), new Vector3(w + 0.02f, 0.42f, 3.0f), _glass);
-                Box(parent, new Vector3(0f, 1.62f, -2.07f), new Vector3(w - 0.2f, 0.45f, 0.04f), _glass);
-                Box(parent, new Vector3(0f, 1.1f, -2.165f), new Vector3(0.9f, 0.42f, 0.03f), PaintFor(new Color(0.88f, 0.86f, 0.8f))); // "V" frontal
-                Details(parent, w, l, 0.75f, 0.38f);
-                foreach (float x in new[] { -0.82f, 0.82f })
+                const float w = 1.75f, l = 4.3f;
+                StandardMaterial3D cream = PaintFor(new Color(0.9f, 0.88f, 0.82f));
+                Box(parent, new Vector3(0f, 0.72f, 0f), new Vector3(w, 0.86f, l), paint);
+                Box(parent, new Vector3(0f, 1.98f, 0.02f), new Vector3(w - 0.06f, 0.1f, l - 0.12f), cream); // teto
+                // Faixa de janelas com colunas (frente: para-brisa bipartido).
+                Box(parent, new Vector3(0f, 1.55f, 0f), new Vector3(w - 0.02f, 0.78f, l - 0.04f), _glassDouble);
+                Box(parent, new Vector3(0f, 1.17f, 0f), new Vector3(w + 0.004f, 0.06f, l + 0.004f), cream); // cintura
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    foreach (float z in new[] { -2.1f, -1.25f, -0.4f, 0.45f, 1.3f, 2.1f })
+                        Box(parent, new Vector3(side * (w * 0.5f + 0.005f), 1.55f, z), new Vector3(0.03f, 0.78f, 0.1f), cream);
+                }
+                Box(parent, new Vector3(0f, 1.55f, -l * 0.5f - 0.005f), new Vector3(0.08f, 0.78f, 0.03f), cream); // coluna do meio do para-brisa
+                Box(parent, new Vector3(0f, 1.55f, l * 0.5f + 0.005f), new Vector3(w, 0.3f, 0.03f), cream);
+                // "V" na frente, sobre a lata creme.
+                Box(parent, new Vector3(0f, 0.95f, -l * 0.5f - 0.004f), new Vector3(w - 0.1f, 0.5f, 0.01f), cream);
+                Strut(parent, new Vector3(-0.55f, 1.15f, -l * 0.5f - 0.012f), new Vector3(0f, 0.75f, -l * 0.5f - 0.012f), 0.08f, 0.01f, paint);
+                Strut(parent, new Vector3(0.55f, 1.15f, -l * 0.5f - 0.012f), new Vector3(0f, 0.75f, -l * 0.5f - 0.012f), 0.08f, 0.01f, paint);
+                Details(parent, w, l, 0.62f, 0.36f);
+                Badges(parent, "folksvagem", "KOMBE", l, 1.0f, 1.05f, 0.24f);
+                foreach (float x in new[] { -0.8f, 0.8f })
                     foreach (float z in new[] { -1.4f, 1.4f })
-                        Wheel(parent, new Vector3(x, 0.33f, z), 0.33f, 0.22f);
+                        Wheel(parent, new Vector3(x, 0.32f, z), 0.32f, 0.2f);
                 return new Vector3(w, 2.05f, l);
             }
-            default: // Sedan
+            case CarType.Fusca: // "Fuska" (Folksvagem): tudo arredondado
             {
-                const float w = 1.8f, l = 4.5f;
-                Box(parent, new Vector3(0f, 0.56f, 0f), new Vector3(w, 0.52f, l), paint);
-                Box(parent, new Vector3(0f, 0.86f, -1.5f), new Vector3(w - 0.04f, 0.1f, 1.3f), paint); // capô
-                Box(parent, new Vector3(0f, 0.86f, 1.7f), new Vector3(w - 0.04f, 0.1f, 0.95f), paint); // porta-malas
-                Box(parent, new Vector3(0f, 1.1f, 0.15f), new Vector3(w - 0.16f, 0.44f, 1.75f), _glass);
-                Box(parent, new Vector3(0f, 1.35f, 0.15f), new Vector3(w - 0.12f, 0.07f, 1.6f), paint); // teto
-                Box(parent, new Vector3(0f, 1.12f, -0.86f), new Vector3(w - 0.18f, 0.05f, 0.62f), _glass, -0.83f); // para-brisa (do capô ao teto)
-                Box(parent, new Vector3(0f, 1.125f, 1.1f), new Vector3(w - 0.18f, 0.05f, 0.54f), _glass, 0.96f); // vidro traseiro (do teto ao porta-malas)
+                const float w = 1.55f, l = 4.05f;
+                var sphere = new SphereMesh { Radius = 0.5f, Height = 1f, RadialSegments = 14, Rings = 8 };
+                void Blob(Vector3 pos, Vector3 scale, Material m) => parent.AddChild(new MeshInstance3D { Mesh = sphere, Position = pos, Scale = scale, MaterialOverride = m });
+                Box(parent, new Vector3(0f, 0.42f, 0.05f), new Vector3(w - 0.25f, 0.34f, l - 0.5f), paint); // assoalho
+                Blob(new Vector3(0f, 0.72f, 0.05f), new Vector3(w - 0.1f, 0.9f, l - 0.1f), paint);       // carroceria
+                Blob(new Vector3(0f, 1.0f, 0.2f), new Vector3(w - 0.22f, 0.88f, 2.2f), paint);            // capota
+                // Janelas: placas de vidro rentes à capota (laterais, para-brisa e o vidrinho de trás).
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    Box(parent, new Vector3(side * 0.6f, 1.17f, -0.1f), new Vector3(0.05f, 0.28f, 0.62f), _glassDouble);
+                    Box(parent, new Vector3(side * 0.58f, 1.17f, 0.62f), new Vector3(0.05f, 0.24f, 0.5f), _glassDouble);
+                }
+                Box(parent, new Vector3(0f, 1.17f, -0.72f), new Vector3(0.95f, 0.36f, 0.05f), _glassDouble, -0.75f);
+                Box(parent, new Vector3(0f, 1.15f, 1.12f), new Vector3(0.7f, 0.26f, 0.05f), _glassDouble, 0.85f);
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    // Para-lamas redondos e faróis em cima dos da frente.
+                    Blob(new Vector3(side * 0.62f, 0.5f, -1.15f), new Vector3(0.42f, 0.55f, 0.95f), paint);
+                    Blob(new Vector3(side * 0.62f, 0.5f, 1.2f), new Vector3(0.42f, 0.55f, 0.95f), paint);
+                    parent.AddChild(new MeshInstance3D { Mesh = _wheel, Position = new Vector3(side * 0.62f, 0.72f, -1.6f), Scale = new Vector3(0.2f, 0.06f, 0.2f), Rotation = new Vector3(Mathf.Pi * 0.5f, 0f, 0f), MaterialOverride = _head });
+                    Box(parent, new Vector3(side * 0.52f, 0.68f, 1.97f), new Vector3(0.12f, 0.16f, 0.04f), _tail);
+                    Box(parent, new Vector3(side * 0.78f, 0.25f, 0f), new Vector3(0.1f, 0.05f, 1.5f), _rubber); // estribo
+                }
+                Box(parent, new Vector3(0f, 0.32f, -2.0f), new Vector3(w + 0.05f, 0.08f, 0.08f), _chrome); // para-choque cromado
+                Box(parent, new Vector3(0f, 0.32f, 2.02f), new Vector3(w + 0.05f, 0.08f, 0.08f), _chrome);
+                Box(parent, new Vector3(0f, 0.42f, 2.05f), new Vector3(0.4f, 0.11f, 0.02f), _plate);
+                for (int i = 0; i < 4; i++)
+                    Box(parent, new Vector3(0f, 0.76f + i * 0.04f, 1.95f), new Vector3(0.4f, 0.015f, 0.03f), _grille); // grade do motor atrás
+                Badges(parent, "folksvagem", "FUSKA", l, 0.72f, 0.95f, 0.16f);
+                foreach (float x in new[] { -0.66f, 0.66f })
+                    foreach (float z in new[] { -1.2f, 1.25f })
+                        Wheel(parent, new Vector3(x, 0.3f, z), 0.3f, 0.18f);
+                return new Vector3(w, 1.5f, l);
+            }
+            default: // Sedan: "Opalinha" (Chevrolé), três volumes
+            {
+                const float w = 1.8f, l = 4.6f;
+                Box(parent, new Vector3(0f, 0.57f, 0f), new Vector3(w, 0.5f, l), paint);
+                Box(parent, new Vector3(0f, 0.84f, -1.5f), new Vector3(w - 0.04f, 0.04f, 1.55f), paint); // capô longo
+                Box(parent, new Vector3(0f, 0.84f, 1.75f), new Vector3(w - 0.04f, 0.04f, 1.05f), paint); // porta-malas
+                Greenhouse(parent, w - 0.04f, 0.83f, 1.34f, -0.72f, -0.25f, 0.85f, 1.22f, paint);
+                Box(parent, new Vector3(0f, 0.6f, 0f), new Vector3(w + 0.012f, 0.03f, l - 0.4f), _chrome); // friso cromado
                 Details(parent, w, l, 0.66f, 0.4f);
+                Badges(parent, "chevrole", "OPALINHA", l, 0.66f, 0.76f, 0.2f);
                 foreach (float x in new[] { -0.84f, 0.84f })
-                    foreach (float z in new[] { -1.4f, 1.4f })
+                    foreach (float z in new[] { -1.45f, 1.45f })
                         Wheel(parent, new Vector3(x, 0.32f, z), 0.32f, 0.22f);
                 return new Vector3(w, 1.4f, l);
             }

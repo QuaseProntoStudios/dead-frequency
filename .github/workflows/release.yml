@@ -50,8 +50,8 @@ jobs:
           ALT="https://github.com/godotengine/godot-builds/releases/download/${TAG}"
           EDITOR="Godot_v${TAG}_mono_linux_x86_64.zip"
           TPZ="Godot_v${TAG}_mono_export_templates.tpz"
-          curl -fsSL -o editor.zip "$BASE/$EDITOR" || curl -fsSL -o editor.zip "$ALT/$EDITOR"
-          curl -fsSL -o templates.tpz "$BASE/$TPZ" || curl -fsSL -o templates.tpz "$ALT/$TPZ"
+          curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o editor.zip "$BASE/$EDITOR" || curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o editor.zip "$ALT/$EDITOR"
+          curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o templates.tpz "$BASE/$TPZ" || curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o templates.tpz "$ALT/$TPZ"
           unzip -q editor.zip -d godot
           GODOT_BIN=$(find godot -type f -name "Godot_v*_mono_linux.x86_64" | head -1)
           chmod +x "$GODOT_BIN"
@@ -90,8 +90,8 @@ jobs:
           ALT="https://github.com/godotengine/godot-builds/releases/download/${TAG}"
           ED="Godot_v${TAG}_linux.x86_64.zip"
           TPZ="Godot_v${TAG}_export_templates.tpz"
-          curl -fsSL -o std.zip "$BASE/$ED" || curl -fsSL -o std.zip "$ALT/$ED"
-          curl -fsSL -o std.tpz "$BASE/$TPZ" || curl -fsSL -o std.tpz "$ALT/$TPZ"
+          curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o std.zip "$BASE/$ED" || curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o std.zip "$ALT/$ED"
+          curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o std.tpz "$BASE/$TPZ" || curl -fsSL --retry 6 --retry-delay 15 --retry-all-errors -o std.tpz "$ALT/$TPZ"
           unzip -q std.zip -d godot_std
           STD=$(find godot_std -type f -name "Godot_v*_linux.x86_64" | head -1)
           chmod +x "$STD"

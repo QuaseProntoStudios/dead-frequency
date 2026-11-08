@@ -6,7 +6,7 @@ ganhe um apartamento no Edifício Sintonia e ajude a cidade da zona morta a func
 os amigos online. Tem física nas caixas, ciclo de dia e noite, rádio com músicas originais, itens,
 lojas paródia e multiplayer.
 
-**Versão atual:** v0.9.2 · veja o [CHANGELOG](CHANGELOG.md) · roteiro em [ROADMAP](ROADMAP.md)
+**Versão atual:** v0.9.3 · veja o [CHANGELOG](CHANGELOG.md) · roteiro em [ROADMAP](ROADMAP.md)
 
 ## Baixar e jogar
 

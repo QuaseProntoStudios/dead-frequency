@@ -77,6 +77,7 @@ Cada profissão nova = um `JobBase` em `Scripts/Jobs/` + a regra em `PROFESSIONS
 ## Notas técnicas
 - **Sorteios da cidade:** `_rng` (layout e endereços) e `_decoRng` (detalhes). Quarteirões especiais pulam o `_rng`; mexer neles muda a cidade: suba `PROTOCOL_VERSION` (servidor) e `NetClient.ProtocolVersion` juntos (o LocalServer usa o do NetClient).
 - **Quarteirões especiais:** depósito (0,0), bombeiros (1,-1), delegacia (-1,1), caixa d'água (-1,-1), postos (2,1) com lava-jato, (-2,-2) e (-3,1), **rádio (1,2)**, **mercado (-2,2)**, **Edifício Sintonia (2,-2)**.
+- **Veículos:** `VanController.NetId` ↔ `VEHICLES` no servidor ↔ `LocalServer.Vehicles` (van, moto, truck_yellow, truck_red). Moto e caminhões são montados pelo `VehicleFactory`.
 - **Listas que precisam bater:** `CargoCatalog` ↔ `CARGO_CATALOG` ↔ `LocalServer.CargoPayments`; `ItemCatalog` ↔ `SHOP_PRICES`; `Professions` ↔ `PROFESSIONS` ↔ `LocalServer.ProfessionRules`; `GameLevels` ↔ `LEVELS`.
 - **Rádio:** `RadioStation` calcula música e posição pelo `Time.GetUnixTimeFromSystem()` — sem tráfego de rede. Músicas em `Audio/Radio/*.ogg`, geradas por `Audio/synth_radio.py.txt`.
 - **Apartamentos:** salas montadas 60 m abaixo do quarteirão; o elevador e a porta teletransportam (`PlayerController.Teleport`). Apartamento = `(MyId - 1) % 8 + 1`.

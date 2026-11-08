@@ -235,6 +235,12 @@ public partial class GameHud : CanvasLayer
         _compass.Target = target;
         _compass.Label = label;
         bool depot = label == "DEPÓSITO";
+        if (label == "CASA")
+        {
+            _compass.HideDistance = 3f;
+            _compass.Color = new Color(1f, 0.85f, 0.5f);
+            return;
+        }
         _compass.HideDistance = depot ? 30f : 4f;
         _compass.Color = depot ? new Color(1f, 0.6f, 0.15f) : Professions.Get(pm.Current).Color;
     }

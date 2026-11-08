@@ -31,6 +31,11 @@ public partial class NetSync : Node
     private readonly Dictionary<string, int> _owners = new();
     private readonly Dictionary<int, bool> _remoteDriving = new();
     private Node3D _remoteRoot;
+    /// <summary>Todos os veículos da fase por NetId (van, moto, caminhões).</summary>
+    private readonly Dictionary<string, VanController> _vehicles = new();
+
+    private VanController VehicleOf(string id) =>
+        id != null && _vehicles.TryGetValue(id, out VanController v) && IsInstanceValid(v) ? v : null;
     private double _tickTimer;
     private bool _active;
 
@@ -54,6 +59,10 @@ public partial class NetSync : Node
     {
         _remoteRoot = new Node3D { Name = "RemotePlayers" };
         AddChild(_remoteRoot);
+        _vehicles[VanId] = Van;
+        foreach (Node n in GetTree().GetNodesInGroup(VanController.GroupName))
+            if (n is VanController v && !string.IsNullOrEmpty(v.NetId))
+                _vehicles[v.NetId] = v;
 
         // As caixas colocadas na cena são só do modo solo.
         foreach (Node node in GetTree().GetNodesInGroup(CargoItem.GroupName))
@@ -245,9 +254,9 @@ public partial class NetSync : Node
         Quaternion rotation = ReadQuaternion(o.GetProperty("q"));
         Vector3 velocity = o.TryGetProperty("v", out JsonElement v) ? ReadVector(v) : Vector3.Zero;
 
-        if (id == VanId)
+        if (VehicleOf(id) is VanController vehicle)
         {
-            Van.ApplyRemoteState(position, rotation, velocity);
+            vehicle.ApplyRemoteState(position, rotation, velocity);
             return;
         }
 
@@ -264,12 +273,12 @@ public partial class NetSync : Node
         // Sem dono: cada cliente simula sozinho (objeto parado). Só segue o estado remoto se OUTRO jogador for dono.
         bool remote = owner != 0 && owner != MyId;
 
-        if (id == VanId)
+        if (VehicleOf(id) is VanController vehicle)
         {
-            // Se eu estou dirigindo, a van continua comigo até eu sair.
-            if (!mine && Player.CurrentVehicle == Van && Player.State == PlayerState.Driving)
+            // Se eu estou dirigindo, o veículo continua comigo até eu sair.
+            if (!mine && Player.CurrentVehicle == vehicle && Player.State == PlayerState.Driving)
                 return;
-            Van.SetRemote(remote);
+            vehicle.SetRemote(remote);
             RefreshRemoteDriver();
             return;
         }
@@ -284,9 +293,9 @@ public partial class NetSync : Node
 
     private void OnClaimFailed(string id, int owner)
     {
-        if (id == VanId)
+        if (VehicleOf(id) is VanController vehicle)
         {
-            if (Player.CurrentVehicle == Van)
+            if (Player.CurrentVehicle == vehicle)
                 Player.ExitVehicle();
             SetOwner(id, owner);
             return;
@@ -298,9 +307,14 @@ public partial class NetSync : Node
 
     private void RefreshRemoteDriver()
     {
-        _owners.TryGetValue(VanId, out int vanOwner);
-        bool remoteDriving = vanOwner != 0 && vanOwner != MyId && _remoteDriving.TryGetValue(vanOwner, out bool d) && d;
-        Van.SetRemoteDriver(remoteDriving);
+        foreach ((string id, VanController v) in _vehicles)
+        {
+            if (!IsInstanceValid(v))
+                continue;
+            _owners.TryGetValue(id, out int owner);
+            bool remoteDriving = owner != 0 && owner != MyId && _remoteDriving.TryGetValue(owner, out bool d) && d;
+            v.SetRemoteDriver(remoteDriving);
+        }
     }
 
     private void OnDisconnected(string message)
@@ -339,14 +353,14 @@ public partial class NetSync : Node
 
     private void OnVehicleEntered(VanController van)
     {
-        Van.SetRemote(false);
-        Claim(VanId);
+        van.SetRemote(false);
+        Claim(van.NetId);
     }
 
     private void OnVehicleExited(VanController van)
     {
-        if (IsMine(VanId))
-            Net.Send(new { t = "release", id = VanId });
+        if (IsMine(van.NetId))
+            Net.Send(new { t = "release", id = van.NetId });
     }
 
     private void OnDeliveryReached(DeliveryJob job)
@@ -379,8 +393,9 @@ public partial class NetSync : Node
     private void SendTick()
     {
         var objs = new List<Dictionary<string, object>>();
-        if (IsMine(VanId))
-            objs.Add(ObjectState(VanId, Van, null));
+        foreach ((string id, VanController v) in _vehicles)
+            if (IsInstanceValid(v) && IsMine(id))
+                objs.Add(ObjectState(id, v, null));
         foreach (DeliveryJob job in Delivery.Jobs)
         {
             if (objs.Count >= 16)

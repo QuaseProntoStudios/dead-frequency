@@ -219,8 +219,64 @@ public partial class CityGenerator
         if (withCarWash)
             BuildCarWash(st, new Vector3(-11f, 0f, -6f));
 
+        // Calçada rebaixada na entrada (direita) e na saída (esquerda): rampa do meio-fio até a rua,
+        // com o meio-fio pintado de amarelo e preto dos lados.
+        StandardMaterial3D rampMat = Flat(new Color(0.55f, 0.54f, 0.5f), 0.9f);
+        rampMat.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+        StandardMaterial3D yellow = Flat(new Color(0.95f, 0.78f, 0.1f), 0.6f);
+        float edge = BlockSize * 0.5f;
+        foreach ((float x0, float x1, string label) in new[] { (7f, 17f, "ENTRADA"), (-18f, -8f, "SAÍDA") })
+        {
+            AddRamp(st, (x0 + x1) * 0.5f, x1 - x0, edge, edge + 1.6f, 0f, -CurbHeight + 0.01f, rampMat);
+            AddBox(st, new Vector3((x0 + x1) * 0.5f, 0.005f, edge - 1.2f), new Vector3(x1 - x0, 0.012f, 2.4f), rampMat, false);
+            for (int i = 0; i < 4; i++)
+            {
+                AddBox(st, new Vector3(x0 - 0.15f, -CurbHeight * 0.5f + 0.002f, edge - 0.3f - i * 0.6f), new Vector3(0.3f, CurbHeight + 0.01f, 0.3f), i % 2 == 0 ? yellow : _darkMetal, false);
+                AddBox(st, new Vector3(x1 + 0.15f, -CurbHeight * 0.5f + 0.002f, edge - 0.3f - i * 0.6f), new Vector3(0.3f, CurbHeight + 0.01f, 0.3f), i % 2 == 0 ? yellow : _darkMetal, false);
+            }
+            // Seta pintada no chão do posto.
+            st.AddChild(new Label3D
+            {
+                Text = label,
+                FontSize = 64,
+                PixelSize = 0.01f,
+                Modulate = new Color(0.95f, 0.95f, 0.9f),
+                OutlineSize = 0,
+                Position = new Vector3((x0 + x1) * 0.5f, 0.03f, edge - 2.6f),
+                Rotation = new Vector3(-Mathf.Pi * 0.5f, 0f, 0f),
+            });
+        }
+
         RegisterObstacle(center + new Vector3(13.5f, 0f, 14f));
         MarkPoi(st, "G", brandColor);
+    }
+
+    /// <summary>Rampa (cunha) de largura width ao longo de X, descendo de (zTop, yTop) até (zBottom, yBottom). Com colisão.</summary>
+    private void AddRamp(Node3D parent, float x, float width, float zTop, float zBottom, float yTop, float yBottom, Material mat)
+    {
+        float hw = width * 0.5f;
+        Vector3[] v =
+        {
+            new(x - hw, yTop, zTop), new(x + hw, yTop, zTop), new(x + hw, yBottom, zBottom), new(x - hw, yBottom, zBottom),
+            new(x - hw, yBottom, zTop), new(x + hw, yBottom, zTop),
+        };
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        void Tri(Vector3 a, Vector3 b, Vector3 c)
+        {
+            Vector3 n = (c - a).Cross(b - a).Normalized();
+            foreach (Vector3 p in new[] { a, b, c })
+            {
+                st.SetNormal(n);
+                st.AddVertex(p);
+            }
+        }
+        Tri(v[0], v[1], v[2]); Tri(v[0], v[2], v[3]);   // rampa
+        Tri(v[0], v[3], v[4]); Tri(v[1], v[5], v[2]);   // laterais
+        var body = new StaticBody3D { CollisionLayer = 1, CollisionMask = 0 };
+        body.AddChild(new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = mat });
+        body.AddChild(new CollisionShape3D { Shape = new ConvexPolygonShape3D { Points = v } });
+        parent.AddChild(body);
     }
 
     private void BuildCarWash(Node3D parent, Vector3 pos)

@@ -1,6 +1,7 @@
 // Scripts/Jobs/FrentistaJob.cs
-// Frentista: um carro entra no posto mais perto de você e para na bomba. Mire na tampa do tanque,
-// aperte E e fique por perto até encher (4 s). R$ 45 por tanque.
+// Frentista: um carro vem lá do fim da avenida (escondido pela neblina), entra no posto mais perto de você
+// pela calçada rebaixada e para na bomba. Mire na tampa do tanque, aperte E e fique por perto até encher (4 s).
+// Depois ele faz a volta por trás das bombas, sai pela outra rampa e some na avenida. R$ 45 por tanque.
 using Godot;
 
 namespace DeadFrequency;
@@ -46,19 +47,16 @@ public partial class FrentistaJob : JobBase
                 best = i;
         (_spot, _brand) = City.GasSpots[best];
 
-        _car = new StaticBody3D { Name = "CarroPosto", CollisionLayer = 1, CollisionMask = 0 };
+        _car = new AnimatableBody3D { Name = "CarroPosto", CollisionLayer = 1, CollisionMask = 0, SyncToPhysics = false };
         AddChild(_car);
-        var type = (CarType)Rng.RandiRange(0, 3);
+        _car.AddToGroup(PedestrianSignal.TrafficGroup);
+        var type = (CarType)Rng.RandiRange(0, 4);
         Vector3 size = CarModels.Build(_car, type, Color.FromHsv(Rng.Randf(), 0.55f, 0.6f));
         _car.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size }, Position = new Vector3(0f, size.Y * 0.5f, 0f) });
-        // Frente do carro = -Z: entra vindo da avenida (+Z) e para na bomba.
-        _car.GlobalPosition = _spot + new Vector3(0f, 0f, 24f);
         _arrived = false;
         _filling = false;
         _fill = 0f;
-        Tween tw = _car.CreateTween();
-        tw.TweenProperty(_car, "global_position", _spot, 3.5).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
-        tw.TweenCallback(Callable.From(OnArrived));
+        StartPath(ArrivalPath(), arriving: true);
 
         _label = new Label3D
         {
@@ -96,6 +94,95 @@ public partial class FrentistaJob : JobBase
         GameHud.Toast(this, "Abastecendo... fique perto da bomba.", Green, 2.0);
     }
 
+    // ---------------- trajeto do carro ----------------
+
+    private Curve3D _path;
+    private float _offset;
+    private bool _pathArriving;
+    private bool _moving;
+    private double _leaveDelay = -1;
+
+    /// <summary>Pontos em volta do posto (x, y, z locais ao centro do posto; y = 0 na rua, 1 na calçada).</summary>
+    private Vector3 Local(float x, bool curb, float z)
+    {
+        Vector3 o = _spot - new Vector3(0f, 0f, 5f); // centro do posto (topo da calçada)
+        return new Vector3(o.X + x, curb ? o.Y : 0.02f, o.Z + z);
+    }
+
+    // A avenida em frente ao posto fica em z = +24 (meio da rua); a faixa de quem vai para -X é z = +21.
+    private Vector3[] ArrivalPath() => new[]
+    {
+        Local(170f, false, 21f), Local(60f, false, 21f), Local(24f, false, 21f), Local(15f, false, 19.5f),
+        Local(11f, true, 15.5f), Local(5f, true, 11f), Local(0.6f, true, 8.5f), Local(0f, true, 6.5f), _spot,
+    };
+
+    // Sai para a frente, contorna a ilha da esquerda por trás, desce a outra rampa e vai embora.
+    private Vector3[] ExitPath() => new[]
+    {
+        _spot, Local(0f, true, 1.8f), Local(-2.5f, true, -1.2f), Local(-7f, true, -1.4f), Local(-10f, true, 2.5f),
+        Local(-11.5f, true, 9f), Local(-13f, true, 15.5f), Local(-17f, false, 19.8f), Local(-26f, false, 21f),
+        Local(-70f, false, 21f), Local(-170f, false, 21f),
+    };
+
+    private void StartPath(Vector3[] pts, bool arriving)
+    {
+        _path = new Curve3D { BakeInterval = 0.25f };
+        for (int i = 0; i < pts.Length; i++)
+        {
+            Vector3 prev = pts[Mathf.Max(0, i - 1)], next = pts[Mathf.Min(pts.Length - 1, i + 1)];
+            Vector3 h = (next - prev) / 6f; // Catmull-Rom: curvas suaves passando pelos pontos
+            _path.AddPoint(pts[i], -h, h);
+        }
+        _offset = 0f;
+        _pathArriving = arriving;
+        _moving = true;
+        PlaceOnPath();
+    }
+
+    private void PlaceOnPath()
+    {
+        float len = _path.GetBakedLength();
+        Vector3 pos = _path.SampleBaked(Mathf.Min(_offset, len), true);
+        Vector3 ahead = _path.SampleBaked(Mathf.Min(_offset + 1.2f, len), true);
+        Vector3 dir = ahead - pos;
+        dir.Y = 0f;
+        if (dir.LengthSquared() < 0.0004f && _offset > 0.5f)
+        {
+            Vector3 back = _path.SampleBaked(Mathf.Max(0f, _offset - 1.2f), true);
+            dir = pos - back;
+            dir.Y = 0f;
+        }
+        float yaw = dir.LengthSquared() > 0.0004f ? Mathf.Atan2(-dir.X, -dir.Z) : _car.Rotation.Y; // frente do carro = -Z
+        _car.GlobalPosition = pos;
+        _car.Rotation = new Vector3(0f, Mathf.LerpAngle(_car.Rotation.Y, yaw, _offset < 0.01f ? 1f : 0.25f), 0f);
+    }
+
+    private void MoveCar(float dt)
+    {
+        float len = _path.GetBakedLength();
+        float speed = _pathArriving
+            ? Mathf.Clamp((len - _offset) * 0.55f, 1.2f, 13f)   // freia chegando na bomba
+            : Mathf.Clamp(1.5f + _offset * 0.45f, 1.5f, 13f);   // sai devagar e acelera na avenida
+        _offset += speed * dt;
+        if (_offset >= len)
+        {
+            _offset = len;
+            PlaceOnPath();
+            _moving = false;
+            if (_pathArriving)
+            {
+                OnArrived();
+            }
+            else
+            {
+                _car.QueueFree();
+                _car = null;
+            }
+            return;
+        }
+        PlaceOnPath();
+    }
+
     public override void _Process(double delta)
     {
         if (_car == null || !IsInstanceValid(_car))
@@ -103,6 +190,18 @@ public partial class FrentistaJob : JobBase
             _next -= delta;
             if (_next <= 0)
                 SpawnCar();
+            return;
+        }
+        if (_leaveDelay > 0)
+        {
+            _leaveDelay -= delta;
+            if (_leaveDelay <= 0)
+                StartPath(ExitPath(), arriving: false);
+            return;
+        }
+        if (_moving)
+        {
+            MoveCar((float)delta);
             return;
         }
         if (!_filling)
@@ -129,12 +228,7 @@ public partial class FrentistaJob : JobBase
         M.Earn(1, $"Tanque cheio no posto {BrandName(_brand)}");
         if (_label != null)
             _label.Text = "VALEU, CHEFE!";
-        Node3D car = _car;
-        _car = null;
-        Tween tw = car.CreateTween();
-        tw.TweenInterval(0.8);
-        tw.TweenProperty(car, "global_position", _spot + new Vector3(0f, 0f, 30f), 3.0).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.In);
-        tw.TweenCallback(Callable.From(car.QueueFree));
+        _leaveDelay = 0.8;
         _next = Rng.RandfRange(5f, 10f);
     }
 
@@ -153,7 +247,7 @@ public partial class FrentistaJob : JobBase
         label = "POSTO";
         if (City.GasSpots.Count == 0)
             return false;
-        if (_car != null && IsInstanceValid(_car))
+        if (_car != null && IsInstanceValid(_car) && (_pathArriving || _arrived || _filling))
         {
             position = _car.GlobalPosition;
             label = "CARRO";
@@ -179,7 +273,7 @@ public partial class FrentistaJob : JobBase
     {
         if (City.GasSpots.Count == 0)
             return "Sem postos nesta fase.";
-        if (_car == null || !IsInstanceValid(_car))
+        if (_car == null || !IsInstanceValid(_car) || (!_pathArriving && !_arrived && !_filling))
             return $"· Esperando o próximo carro... ({Mathf.Max(0, _next):0} s)";
         float d = PlayerPos.DistanceTo(_car.GlobalPosition);
         if (!_arrived && !_filling)

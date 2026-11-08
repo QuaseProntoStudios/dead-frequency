@@ -44,6 +44,15 @@ public partial class VanController : VehicleBody3D
     /// <summary>Velocidade máxima (m/s) em que o motorista pode descer.</summary>
     [Export] public float ExitMaxSpeed { get; set; } = 2f;
 
+    [ExportGroup("Identidade")]
+    /// <summary>Id no online ("van", "moto", "truck_yellow", "truck_red"). Precisa existir no servidor (VEHICLES).</summary>
+    [Export] public string NetId { get; set; } = "van";
+    /// <summary>"van" monta o acabamento da van (VanDetails); "moto"/"truck" usam o modelo próprio.</summary>
+    [Export] public string Kind { get; set; } = "van";
+    [Export] public string DisplayName { get; set; } = "van";
+
+    public const string GroupName = "vehicles";
+
     public PlayerController Driver { get; private set; }
     /// <summary>Outro jogador está dirigindo: aqui a van só segue o estado recebido.</summary>
     public bool IsRemote { get; private set; }
@@ -76,6 +85,8 @@ public partial class VanController : VehicleBody3D
 
     public override void _Ready()
     {
+        AddToGroup(PedestrianSignal.TrafficGroup);
+        AddToGroup(GroupName);
         _steeringWheel = GetNodeOrNull<Node3D>("Cabin/SteeringWheel");
         _headlights = GetNodeOrNull<Node3D>("Headlights");
         if (_headlights != null)
@@ -118,10 +129,11 @@ public partial class VanController : VehicleBody3D
             AddChild(_skid);
         }
 
-        Radio = new RadioPlayer { Name = "Radio", On = false, VolumeDb = -4f, UnitSize = 3f, MaxDistance = 18f, Position = new Vector3(0f, 1.25f, 1.75f) };
+        Radio = new RadioPlayer { Name = "Radio", On = false, VolumeDb = -4f, UnitSize = 3f, MaxDistance = 18f, Position = Kind == "van" ? new Vector3(0f, 1.25f, 1.75f) : new Vector3(0f, 1.2f, 0.5f) };
         AddChild(Radio);
 
-        VanDetails.Build(this);
+        if (Kind == "van")
+            VanDetails.Build(this);
     }
 
     public override void _UnhandledInput(InputEvent @event)

@@ -172,6 +172,7 @@ public partial class BusLine : Node3D
     private void BuildBus()
     {
         _bus = new AnimatableBody3D { Name = "Bus", SyncToPhysics = true, CollisionLayer = 1, CollisionMask = 0 };
+        _bus.AddToGroup(PedestrianSignal.TrafficGroup); // semáforos de pedestre ficam vermelhos quando ele passa
         _bus.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(2.5f, 2.9f, 11f) }, Position = new Vector3(0f, 1.75f, 0f) });
         AddChild(_bus);
         _bus.AddToGroup(MinimapView.MarkerGroup);

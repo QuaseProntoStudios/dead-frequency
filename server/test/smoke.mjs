@@ -15,7 +15,7 @@ function connect(code, name, prof = "entregador") {
     const inbox = [];
     ws.on("message", (data) => inbox.push(JSON.parse(data.toString())));
     ws.on("open", () => {
-      ws.send(JSON.stringify({ t: "hello", version: 4, prof }));
+      ws.send(JSON.stringify({ t: "hello", version: 5, prof }));
       resolve({ ws, inbox, send: (m) => ws.send(JSON.stringify(m)), find: (t) => inbox.find((m) => m.t === t), all: (t) => inbox.filter((m) => m.t === t) });
     });
     ws.on("error", reject);
@@ -170,6 +170,31 @@ assert(restart.shift === 1 && restart.money === 0, "sala recomeça no turno 1 de
   await sleep(150);
   assert(g.all("prof").some((m) => m.prof === "repositor" && m.id === r.find("welcome").you), "troca de profissão avisada");
   g.ws.close(); r.ws.close();
+}
+
+// ---------------- veículos do pátio (v0.9.3) ----------------
+{
+  const { code: vc } = await (await fetch(base + "/api/rooms", { method: "POST" })).json();
+  const v1 = await connect(vc, "Motoqueiro");
+  const v2 = await connect(vc, "Caminhoneiro");
+  await sleep(300);
+  v1.send({ t: "claim", id: "moto" });
+  await sleep(150);
+  v1.send({ t: "tick", p: [0, 0, 0], ry: 0, hp: 0, st: 1, held: null, objs: [{ id: "moto", p: [5, 0, 5], q: [0, 0, 0, 1] }] });
+  await sleep(150);
+  assert(v2.all("owner").some((m) => m.id === "moto" && m.owner === v1.find("welcome").you), "moto tem dono");
+  assert(v2.all("tick").some((m) => m.objs.some((o) => o.id === "moto")), "estado da moto repassado");
+  v2.send({ t: "claim", id: "moto" });
+  v2.send({ t: "claim", id: "truck_red" });
+  v2.send({ t: "claim", id: "aviao" });
+  await sleep(200);
+  assert(v2.find("claimFail")?.id === "moto", "não toma a moto de quem está pilotando");
+  assert(v1.all("owner").some((m) => m.id === "truck_red"), "caminhão emprestado");
+  assert(!v1.all("owner").some((m) => m.id === "aviao"), "veículo desconhecido ignorado");
+  v1.send({ t: "release", id: "moto" });
+  await sleep(150);
+  assert(v2.all("owner").some((m) => m.id === "moto" && m.owner === null), "moto liberada ao descer");
+  v1.ws.close(); v2.ws.close();
 }
 
 // ---------------- admin ----------------
