@@ -29,8 +29,10 @@ export interface Env {
   REGISTRY: DurableObjectNamespace<Registry>;
   /** Defina com: npx wrangler secret put ADMIN_TOKEN  (local: arquivo .dev.vars) */
   ADMIN_TOKEN?: string;
-  /** DEBUG_PASSWORD (opcional) para debug local: npx wrangler secret put DEBUG_PASSWORD  (local: arquivo .dev.vars) */
+  /** Senha do modo desenvolvedor. */
   DEBUG_PASSWORD?: string;
+  /** Segredo HMAC para pseudonimizar IPs no limite de tentativas. Configure com: npx wrangler secret put DEBUG_RATE_LIMIT_SECRET */
+  DEBUG_RATE_LIMIT_SECRET?: string;
 }
 
 /** Momento em que esta instância do Worker atendeu a primeira requisição (Date.now() no escopo global vale 0). */
@@ -46,6 +48,9 @@ const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
 const CODE_LENGTH = 5;
 const MAX_MESSAGE_BYTES = 8 * 1024;
 const EMPTY_ROOM_TTL_MS = 30 * 60 * 1000;
+const DEBUG_AUTH_WINDOW_MS = 15 * 60 * 1000;
+const DEBUG_AUTH_LOCK_MS = 15 * 60 * 1000;
+const DEBUG_AUTH_MAX_ATTEMPTS = 5;
 const NEXT_SHIFT_DELAY_MS = 4000;
 
 /** Mesma ordem de DeliveryManager.CargoCatalog no Godot. */
@@ -275,6 +280,19 @@ export interface RoomSummary {
   autoProfession?: boolean;
 }
 
+interface DebugAuthRecord {
+  attempts: number;
+  windowStartedAt: number;
+  lockedUntil: number;
+  expiresAt: number;
+}
+
+interface DebugAuthAttemptResult {
+  allowed: boolean;
+  lockedUntil: number;
+  attemptsRemaining: number;
+}
+
 interface GlobalStats {
   roomsCreated: number;
   joins: number;
@@ -297,6 +315,57 @@ export class Registry extends DurableObject<Env> {
         roomsCreated: 0, joins: 0, deliveries: 0, lostCargo: 0, moneyEarned: 0, shiftsCompleted: 0, peakPlayers: 0, peakPlayersAt: 0, since: Date.now(),
       }
     );
+  }
+
+  /**
+   * Controla tentativas de debug por identificador HMAC, compartilhado entre salas e conexões.
+   * O IP original nunca é persistido; somente a chave derivada é usada como identificador.
+   */
+  async attemptDebugAuth(clientId: string, passwordValid: boolean): Promise<DebugAuthAttemptResult> {
+    const now = Date.now();
+    const key = `debug-auth:${clientId}`;
+    let record = await this.ctx.storage.get<DebugAuthRecord>(key);
+
+    if (record && now < record.lockedUntil) {
+      return { allowed: false, lockedUntil: record.lockedUntil, attemptsRemaining: 0 };
+    }
+
+    if (!record || now >= record.expiresAt || now - record.windowStartedAt >= DEBUG_AUTH_WINDOW_MS) {
+      record = { attempts: 0, windowStartedAt: now, lockedUntil: 0, expiresAt: now + DEBUG_AUTH_WINDOW_MS };
+    }
+
+    if (passwordValid) {
+      await this.ctx.storage.delete(key);
+      return { allowed: true, lockedUntil: 0, attemptsRemaining: DEBUG_AUTH_MAX_ATTEMPTS };
+    }
+
+    record.attempts++;
+    if (record.attempts >= DEBUG_AUTH_MAX_ATTEMPTS) {
+      record.lockedUntil = now + DEBUG_AUTH_LOCK_MS;
+      record.expiresAt = record.lockedUntil;
+    }
+    await this.ctx.storage.put(key, record);
+    await this.ctx.storage.setAlarm(now + DEBUG_AUTH_WINDOW_MS);
+
+    return {
+      allowed: false,
+      lockedUntil: record.lockedUntil,
+      attemptsRemaining: Math.max(0, DEBUG_AUTH_MAX_ATTEMPTS - record.attempts),
+    };
+  }
+
+  /** Remove identificadores de autenticação expirados; mantém apenas hashes temporários. */
+  async alarm(): Promise<void> {
+    const records = await this.ctx.storage.list<DebugAuthRecord>({ prefix: "debug-auth:" });
+    const now = Date.now();
+    let nextExpiry = Number.POSITIVE_INFINITY;
+
+    for (const [key, record] of records) {
+      if (record.expiresAt <= now) await this.ctx.storage.delete(key);
+      else nextExpiry = Math.min(nextExpiry, record.expiresAt);
+    }
+
+    if (Number.isFinite(nextExpiry)) await this.ctx.storage.setAlarm(nextExpiry);
   }
 
   async report(summary: RoomSummary, event: RegistryEvent, amount = 0): Promise<void> {
@@ -429,7 +498,8 @@ interface Attachment {
   joined: boolean;
   prof?: string;
   debugAuthorizedUntil?: number;
-  debugAuthAttempts?: number;
+  /** HMAC-SHA-256 do IP de origem; nunca contém o IP original. */
+  debugClientId?: string;
 }
 
 interface PlayerSnapshot {
@@ -593,7 +663,17 @@ export class GameRoom extends DurableObject<Env> {
       const [client, server] = Object.values(pair);
       const id = this.room.nextPlayerId++;
       const name = sanitizeName(url.searchParams.get("name") ?? "") || `Entregador ${id}`;
-      const attachment: Attachment = { id, name, color: PLAYER_COLORS[(id - 1) % PLAYER_COLORS.length], joined: false };
+      const sourceIp = request.headers.get("CF-Connecting-IP")?.trim() || "unknown";
+      const debugClientId = this.env.DEBUG_RATE_LIMIT_SECRET
+        ? await deriveDebugClientId(sourceIp, this.env.DEBUG_RATE_LIMIT_SECRET)
+        : undefined;
+      const attachment: Attachment = {
+        id,
+        name,
+        color: PLAYER_COLORS[(id - 1) % PLAYER_COLORS.length],
+        joined: false,
+        debugClientId,
+      };
       this.ctx.acceptWebSocket(server);
       server.serializeAttachment(attachment);
       this.room.emptySince = null;
@@ -640,59 +720,44 @@ export class GameRoom extends DurableObject<Env> {
         }
 
         const configuredPassword = this.env.DEBUG_PASSWORD;
-
-        if (!configuredPassword) {
+        if (!configuredPassword || !this.env.DEBUG_RATE_LIMIT_SECRET || !me.debugClientId) {
           ws.send(JSON.stringify({
             t: "debug_auth_result",
             ok: false,
-            msg: "Autenticação de debug não configurada no servidor."
+            msg: "Autenticação de debug não configurada corretamente no servidor."
           }));
           return;
         }
 
-        const attempts = me.debugAuthAttempts ?? 0;
+        const password = typeof msg.password === "string" ? msg.password : "";
+        const passwordValid = constantTimeEquals(password, configuredPassword);
+        const registry = this.env.REGISTRY.get(this.env.REGISTRY.idFromName("global"));
+        const attempt = await registry.attemptDebugAuth(me.debugClientId, passwordValid);
 
-        if (attempts >= 5) {
+        if (!attempt.allowed) {
+          const locked = attempt.lockedUntil > Date.now();
+          const retryAfter = locked ? Math.ceil((attempt.lockedUntil - Date.now()) / 1000) : 0;
           ws.send(JSON.stringify({
             t: "debug_auth_result",
             ok: false,
-            msg: "Limite de tentativas atingido."
+            msg: locked
+              ? "Muitas tentativas. Tente novamente em 15 minutos."
+              : "Senha incorreta.",
+            attemptsRemaining: attempt.attemptsRemaining,
+            retryAfter
           }));
-          ws.close(4003, "Too many debug auth attempts");
+          if (locked) ws.close(4003, "Too many debug auth attempts");
           return;
         }
 
-        const password =
-          typeof msg.password === "string" ? msg.password : "";
-
-        me.debugAuthAttempts = attempts + 1;
-
-        if (password === configuredPassword) {
-          me.debugAuthorizedUntil = Date.now() + 30 * 60 * 1000;
-          me.debugAuthAttempts = 0;
-
-          ws.serializeAttachment(me);
-
-          ws.send(JSON.stringify({
-            t: "debug_auth_result",
-            ok: true,
-            msg: "Modo desenvolvedor autorizado.",
-            expiresIn: 1800
-          }));
-        } else {
-          ws.serializeAttachment(me);
-
-          ws.send(JSON.stringify({
-            t: "debug_auth_result",
-            ok: false,
-            msg: "Senha incorreta."
-          }));
-
-          if (me.debugAuthAttempts >= 5) {
-            ws.close(4003, "Too many debug auth attempts");
-          }
-        }
-
+        me.debugAuthorizedUntil = Date.now() + 30 * 60 * 1000;
+        ws.serializeAttachment(me);
+        ws.send(JSON.stringify({
+          t: "debug_auth_result",
+          ok: true,
+          msg: "Modo desenvolvedor autorizado.",
+          expiresIn: 1800
+        }));
         return;
       }
       case "hello":
@@ -1089,6 +1154,32 @@ export class GameRoom extends DurableObject<Env> {
 
 function attachmentOf(ws: WebSocket): Attachment {
   return ws.deserializeAttachment() as Attachment;
+}
+
+/** Gera um identificador estável por IP sem persistir ou expor o endereço original. */
+async function deriveDebugClientId(ip: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(`dead-frequency:debug-auth:v1:${ip}`)
+  );
+  return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/** Comparação sem saída antecipada para reduzir vazamento de tempo sobre a senha. */
+function constantTimeEquals(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let difference = 0;
+  for (let i = 0; i < a.length; i++) difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return difference === 0;
 }
 
 function sanitizeName(raw: string): string {
