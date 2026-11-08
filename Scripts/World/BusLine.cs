@@ -113,6 +113,8 @@ public partial class BusLine : Node3D
         Vector3 pos = _path[segment] + dir * _stopAt[segment] + right * sidewalkOffset + new Vector3(0f, City.CurbHeight, 0f);
 
         var stop = new Node3D { Name = $"BusStop{segment}", Position = pos };
+        // Só o ônibus da linha para aqui: nada de carro estacionado na frente do ponto.
+        City.ForbidParking(pos, dir, 11f);
         City.RegisterObstacle(pos + right * 0.6f + dir * 1.6f);
         City.RegisterObstacle(pos + right * 0.6f - dir * 1.6f);
         City.RegisterObstacle(pos + right * 0.6f);

@@ -172,6 +172,20 @@ public partial class PlayerInventory : Node
         public List<string> Items { get; set; } = new();
         public Dictionary<string, string> Equipped { get; set; } = new();
         public int Wallet { get; set; }
+        public List<string> Cars { get; set; } = new();
+    }
+
+    private readonly List<string> _cars = new();
+
+    /// <summary>Carros comprados no modo solo (online quem guarda é a sala no servidor).</summary>
+    public IReadOnlyList<string> Cars => _cars;
+
+    public void AddCar(string id)
+    {
+        if (_cars.Contains(id))
+            return;
+        _cars.Add(id);
+        NotifyAndSave();
     }
 
     private void NotifyAndSave()
@@ -187,6 +201,7 @@ public partial class PlayerInventory : Node
             Items = new List<string>(_items),
             Equipped = _equipped.ToDictionary(kv => kv.Key.ToString(), kv => kv.Value),
             Wallet = Wallet,
+            Cars = new List<string>(_cars),
         };
         using FileAccess file = FileAccess.Open(SavePath, FileAccess.ModeFlags.Write);
         file?.StoreString(JsonSerializer.Serialize(data));
@@ -211,6 +226,9 @@ public partial class PlayerInventory : Node
                     _equipped[slot] = id;
             }
             Wallet = Math.Max(0, data.Wallet);
+            _cars.Clear();
+            if (data.Cars != null)
+                _cars.AddRange(data.Cars.Where(id => ItemCatalog.Get(id)?.Car == true));
         }
         catch (Exception e)
         {

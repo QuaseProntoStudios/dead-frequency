@@ -136,26 +136,47 @@ public static class CarModels
         return m;
     }
 
-    /// <summary>Logo da marca na frente (grade) e atrás, mais o nome do modelo na tampa traseira.</summary>
+    /// <summary>Logo da marca na frente (grade) e atrás, mais o nome do modelo na tampa traseira,
+    /// ao lado do logo e acima das lanternas (v0.9.7: antes o nome caía em cima da lanterna).</summary>
     private static void Badges(Node3D car, string brand, string model, float length, float frontY, float rearY, float size = 0.16f)
     {
         float hz = length * 0.5f;
+        BadgeAt(car, brand, new Vector3(0f, frontY, -hz - 0.055f), Vector3.Forward, size);
+        BadgeAt(car, brand, new Vector3(0f, rearY, hz + 0.045f), Vector3.Back, size * 0.8f);
+        LabelAt(car, model, new Vector3(size * 0.5f + 0.05f, rearY, hz + 0.046f), Vector3.Back);
+    }
+
+    /// <summary>Logo colado numa superfície (normal = para onde a face aponta).</summary>
+    private static void BadgeAt(Node3D car, string brand, Vector3 pos, Vector3 normal, float size)
+    {
         StandardMaterial3D logo = LogoMaterial(brand);
-        if (logo != null)
-        {
-            car.AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(size, size) }, MaterialOverride = logo, Position = new Vector3(0f, frontY, -hz - 0.055f), Rotation = new Vector3(0f, Mathf.Pi, 0f) });
-            car.AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(size * 0.8f, size * 0.8f) }, MaterialOverride = logo, Position = new Vector3(0f, rearY, hz + 0.045f) });
-        }
+        if (logo == null)
+            return;
+        car.AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(size, size) }, MaterialOverride = logo, Transform = new Transform3D(Facing(normal), pos) });
+    }
+
+    /// <summary>Nome do modelo; pos = canto esquerdo (visto de trás), centro na altura.</summary>
+    private static void LabelAt(Node3D car, string text, Vector3 pos, Vector3 normal)
+    {
         car.AddChild(new Label3D
         {
-            Text = model,
-            FontSize = 28,
-            PixelSize = 0.0025f,
+            Text = text,
+            FontSize = 24,
+            PixelSize = 0.0022f,
+            HorizontalAlignment = HorizontalAlignment.Left,
             Modulate = new Color(0.85f, 0.85f, 0.88f),
             OutlineSize = 3,
             OutlineModulate = new Color(0.1f, 0.1f, 0.1f),
-            Position = new Vector3(0.42f, rearY - 0.06f, hz + 0.046f),
+            Transform = new Transform3D(Facing(normal), pos),
         });
+    }
+
+    /// <summary>Base com +Z apontando para a normal (QuadMesh e Label3D olham para +Z).</summary>
+    private static Basis Facing(Vector3 normal)
+    {
+        Vector3 z = normal.Normalized();
+        Vector3 x = Vector3.Up.Cross(z).Normalized();
+        return new Basis(x, z.Cross(x), z);
     }
 
     /// <summary>Caixa orientada entre dois pontos (colunas inclinadas).</summary>
@@ -422,9 +443,41 @@ public static class CarModels
                 Box(parent, new Vector3(0f, 0.32f, -2.02f), new Vector3(w + 0.05f, 0.08f, 0.08f), _chrome); // para-choques cromados
                 Box(parent, new Vector3(0f, 0.32f, 2.02f), new Vector3(w + 0.05f, 0.08f, 0.08f), _chrome);
                 Box(parent, new Vector3(0f, 0.44f, 2.04f), new Vector3(0.4f, 0.11f, 0.02f), _plate);
+                // Tampa do motor e capô são curvos: acha onde a superfície passa em cada altura
+                // (pelo topo da seção) e cola grade, logo e nome ali, inclinados junto (v0.9.7).
+                (Vector3 pos, Vector3 normal) OnSurface(float y, float x, bool rear)
+                {
+                    float lo = rear ? 0.6f : -2.0f, hi = rear ? 2.0f : -0.6f;
+                    float Top(float z) { var b = Body(z); return b.yc + b.hh; }
+                    for (int k = 0; k < 24; k++)
+                    {
+                        float mid = (lo + hi) * 0.5f;
+                        bool above = Top(mid) > y;
+                        if (above == rear) lo = mid; else hi = mid;
+                    }
+                    float zs = (lo + hi) * 0.5f;
+                    float slope = (Top(zs + 0.01f) - Top(zs - 0.01f)) / 0.02f; // dy/dz da superfície
+                    Vector3 n = new Vector3(0f, -slope, 1f).Normalized() * (rear ? 1f : -1f);
+                    if (!rear) n = new Vector3(0f, Mathf.Abs(n.Y), -Mathf.Abs(n.Z)).Normalized();
+                    return (new Vector3(x, y, zs) + n * 0.012f, n);
+                }
                 for (int i = 0; i < 4; i++)
-                    Box(parent, new Vector3(0f, 0.72f + i * 0.04f, 1.9f), new Vector3(0.38f, 0.015f, 0.04f), _grille); // grade do motor
-                Badges(parent, "folksvagem", "FUSKA", l, 0.72f, 0.95f, 0.16f);
+                {
+                    var (gp, gn) = OnSurface(0.66f + i * 0.035f, 0f, true);
+                    parent.AddChild(new MeshInstance3D { Mesh = _box, MaterialOverride = _grille, Transform = new Transform3D(Facing(gn) * Basis.FromScale(new Vector3(0.36f, 0.014f, 0.02f)), gp) });
+                }
+                var (rl, rn) = OnSurface(0.83f, 0f, true);
+                BadgeAt(parent, "folksvagem", rl, rn, 0.12f);
+                var (nl, nn) = OnSurface(0.6f, 0.22f, true);
+                LabelAt(parent, "FUSKA", nl, nn);
+                var (fl, fn) = OnSurface(0.66f, 0f, false);
+                BadgeAt(parent, "folksvagem", fl, fn, 0.14f);
+                // Retrovisor redondo na porta do motorista (haste + espelho).
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    Box(parent, new Vector3(side * 0.74f, 0.98f, -0.62f), new Vector3(0.1f, 0.02f, 0.02f), _chrome);
+                    parent.AddChild(new MeshInstance3D { Mesh = _wheel, Position = new Vector3(side * 0.8f, 1.03f, -0.62f), Scale = new Vector3(0.11f, 0.03f, 0.11f), Rotation = new Vector3(Mathf.Pi * 0.5f, 0f, 0f), MaterialOverride = _chrome });
+                }
                 foreach (float x in new[] { -0.66f, 0.66f })
                     foreach (float z in new[] { -1.2f, 1.25f })
                         Wheel(parent, new Vector3(x, 0.3f, z), 0.3f, 0.18f);
@@ -439,7 +492,7 @@ public static class CarModels
                 Greenhouse(parent, w - 0.04f, 0.83f, 1.34f, -0.72f, -0.25f, 0.85f, 1.22f, paint);
                 Box(parent, new Vector3(0f, 0.6f, 0f), new Vector3(w + 0.012f, 0.03f, l - 0.4f), _chrome); // friso cromado
                 Details(parent, w, l, 0.66f, 0.4f);
-                Badges(parent, "chevrole", "OPALINHA", l, 0.66f, 0.76f, 0.2f);
+                Badges(parent, "chevrole", "OPALINHA", l, 0.66f, 0.79f, 0.2f);
                 foreach (float x in new[] { -0.84f, 0.84f })
                     foreach (float z in new[] { -1.45f, 1.45f })
                         Wheel(parent, new Vector3(x, 0.32f, z), 0.32f, 0.22f);

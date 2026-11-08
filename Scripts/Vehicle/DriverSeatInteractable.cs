@@ -19,7 +19,7 @@ public partial class DriverSeatInteractable : Area3D, IInteractable
             GD.PushWarning($"{Name}: preencha Van, SeatMarker e ExitMarker no Inspector.");
     }
 
-    private string VehicleWord => Van?.Kind == "moto" ? "a moto" : Van?.Kind == "truck" ? "o caminhão" : "a van";
+    private string VehicleWord => Van?.Kind == "moto" ? "a moto" : Van?.Kind == "truck" ? "o caminhão" : Van?.Kind == "car" ? "o " + Van.DisplayName : "a van";
 
     /// <summary>Entra como carona: porta do carona, ou motorista ocupado por outro jogador.</summary>
     private bool AsPassenger => Passenger || (Van != null && Van.HasRemoteDriver);

@@ -11,6 +11,8 @@ uniform int road_count = 0;
 uniform vec3 lake = vec3(0.0, 0.0, -1.0);
 /// Metade do lado do pátio de cascalho do depósito (centrado na origem).
 uniform float yard_half = 18.0;
+/// Textura pixelada do gramado (v0.9.7), 1 tile = 2 m; só o brilho dela entra.
+uniform sampler2D grass_tex : source_color, filter_nearest_mipmap, repeat_enable;
 
 varying vec3 world_pos;
 
@@ -47,6 +49,8 @@ void fragment() {
 	vec3 grass = mix(vec3(0.13, 0.22, 0.07), vec3(0.24, 0.31, 0.1), n1);
 	grass = mix(grass, vec3(0.34, 0.3, 0.14), smoothstep(0.62, 0.9, n1 * 0.6 + n2 * 0.5));
 	grass *= 0.82 + 0.36 * n3;
+	vec3 gt = texture(grass_tex, p * 0.5).rgb;
+	grass *= dot(gt, vec3(0.3, 0.55, 0.15)) * 2.0;
 
 	// Estradas de terra com marcas de pneu.
 	float road = 0.0;

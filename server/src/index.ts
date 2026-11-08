@@ -36,7 +36,9 @@ let SERVER_STARTED = 0;
 
 const PROTOCOL_VERSION = 5;
 /** Veículos da fase (VanController.NetId no Godot): a van e, desde a v0.9.3, a moto e os caminhões do pátio. */
-const VEHICLES = ["van", "moto", "truck_yellow", "truck_red"];
+const VEHICLES = ["van", "moto", "truck_yellow", "truck_red", "car_gou", "car_fusca", "car_opalinha"];
+/** Carros da concessionária (v0.9.7): comprados uma vez por sala, com o dinheiro do grupo. */
+const CARS = ["car_gou", "car_fusca", "car_opalinha"];
 const MAX_PLAYERS = 8;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
 const CODE_LENGTH = 5;
@@ -77,6 +79,10 @@ const SHOP_PRICES: Record<string, number> = {
   espetinho: 12,
   chinelos: 80,
   prego: 10,
+  // v0.9.7 — Auto Center Dois Mil
+  car_gou: 2000,
+  car_fusca: 2000,
+  car_opalinha: 2000,
 };
 
 const GAME_OVER_RESTART_MS = 8000;
@@ -403,6 +409,7 @@ interface RoomState {
   nextPlayerId: number;
   hostId: number | null;
   owners: Record<string, number | null>; // objeto → id do jogador dono
+  cars?: string[]; // carros da concessionária já comprados (v0.9.7)
   pendingShift: boolean;
   /** O servidor escolhe a profissão de cada jogador (equilibrando as vagas). */
   autoProfession?: boolean;
@@ -694,6 +701,7 @@ export class GameRoom extends DurableObject<Env> {
         money: room.money,
         jobs: room.jobs,
         owners: room.owners,
+        cars: room.cars ?? [],
         objects: Array.from(this.objects.values()),
       }),
     );
@@ -780,11 +788,13 @@ export class GameRoom extends DurableObject<Env> {
   private async onBuy(ws: WebSocket, me: Attachment, item: string, req: number): Promise<void> {
     const room = this.room!;
     const price = SHOP_PRICES[item];
-    if (price === undefined || room.money < price) {
+    const isCar = CARS.includes(item);
+    if (price === undefined || room.money < price || (isCar && (room.cars ?? []).includes(item))) {
       ws.send(JSON.stringify({ t: "buyFail", item, req }));
       return;
     }
     room.money -= price;
+    if (isCar) room.cars = [...(room.cars ?? []), item];
     await this.save();
     this.broadcast({ t: "money", money: room.money, by: me.id, name: me.name, item, req });
     this.report("update");

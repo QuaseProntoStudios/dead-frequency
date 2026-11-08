@@ -232,7 +232,7 @@ public partial class CityGenerator
             Vector3 counter = new(x, 0.9f, 3.6f);
             ActionArea.Create(st, counter, new Vector3(1.0f, 0.5f, 2.6f),
                 _ => "[E] Comprar no Atacadinho",
-                _ => ShopScreen.Instance?.OpenFor("Supermercado Atacadinho"),
+                _ => ShopScreen.Instance?.OpenFor("Supermercado Atacadinho", ShopStock.Market),
                 p => ShopScreen.Instance != null && !p.IsHolding);
         }
         Poster(st, new Vector3(x1 - 0.17f, 1.7f, 5.2f), -Mathf.Pi * 0.5f);

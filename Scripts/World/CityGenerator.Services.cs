@@ -117,6 +117,11 @@ public partial class CityGenerator
             BuildApartmentBuilding(block, center);
             return true;
         }
+        if (bx == DealerBlock.X && bz == DealerBlock.Y)
+        {
+            BuildDealer(block, center);
+            return true;
+        }
         if (bx == WaterTowerBlock.X && bz == WaterTowerBlock.Y)
         {
             BuildWaterTowerPlaza(block, center);
@@ -315,6 +320,7 @@ public partial class CityGenerator
         block.AddChild(plaza);
         // Gramado com árvores nos cantos e bancos.
         AddBox(plaza, new Vector3(0f, 0.02f, 0f), new Vector3(24f, 0.04f, 24f), _grass, false);
+        GrassTufts.Fill(plaza, new Vector3(0f, 0.04f, 0f), new Vector2(23f, 23f), 0.6f, new Color(0.8f, 0.95f, 0.75f));
         foreach (Vector3 c in new[] { new Vector3(-9f, 0f, -9f), new Vector3(9f, 0f, -9f), new Vector3(-9f, 0f, 9f), new Vector3(9f, 0f, 9f) })
         {
             AddCylinder(plaza, c + new Vector3(0f, 1.2f, 0f), 0.2f, 2.4f, _trunk);

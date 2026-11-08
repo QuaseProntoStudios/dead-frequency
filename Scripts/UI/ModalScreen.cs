@@ -49,7 +49,7 @@ public partial class ModalScreen : CanvasLayer
 
     public override void _Input(InputEvent @event)
     {
-        if (!IsOpen || !@event.IsActionPressed("pause"))
+        if (!IsOpen || !@event.IsActionPressed("pause") || PauseMenu.Instance?.IsOpen == true)
             return;
         GetViewport().SetInputAsHandled();
         if (ClosableWithEscape)

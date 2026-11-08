@@ -231,5 +231,5 @@ public partial class StreetVendor : Area3D, IInteractable
 
     public bool CanInteract(PlayerController player) => ShopScreen.Instance != null && !player.IsHolding;
 
-    public void Interact(PlayerController player) => ShopScreen.Instance?.OpenFor(VendorName, Churrasco);
+    public void Interact(PlayerController player) => ShopScreen.Instance?.OpenFor(VendorName, Churrasco ? ShopStock.Churrasco : ShopStock.Ze);
 }

@@ -107,10 +107,12 @@ public partial class CityGenerator
         BuildFarmPhones();
         BuildTrees();
         BuildUndergrowth();
+        BuildFarmGrass();
         BuildFarmBoundary();
         BuildRadioTower(new Vector3(-FarmExtent + 25f, 0f, -FarmExtent + 25f));
 
         FlushBatches(_staticRoot);
+        OptimizeVisibility(this);
         AddChild(new Mosquitoes { Name = "Pernilongos" });
     }
 
@@ -202,6 +204,7 @@ public partial class CityGenerator
         mat.SetShaderParameter("road_count", count);
         mat.SetShaderParameter("lake", new Vector3(_lakeCenter.X, _lakeCenter.Z, LakeRadius));
         mat.SetShaderParameter("yard_half", 18f);
+        mat.SetShaderParameter("grass_tex", GD.Load<Texture2D>("res://Assets/Textures/City/lawn.png"));
     }
 
     private float DistanceToRoads(Vector2 p, int skip = -1)
@@ -896,6 +899,15 @@ public partial class CityGenerator
             AddInstance("qg_" + model, mesh, null, new Transform3D(new Basis(Vector3.Up, rng.Randf() * Mathf.Tau) * Basis.FromScale(Vector3.One * sc), new Vector3(p.X, 0f, p.Y)), Colors.White);
             placed++;
         }
+    }
+
+    /// <summary>Capim baixo no sítio todo (v0.9.7), fora das estradas, construções, lago e pátio.</summary>
+    private void BuildFarmGrass()
+    {
+        var root = new Node3D { Name = "Capim" };
+        _staticRoot.AddChild(root);
+        GrassTufts.Fill(root, Vector3.Zero, new Vector2(FarmExtent * 2f - 6f, FarmExtent * 2f - 6f), 1.25f, new Color(0.95f, 0.9f, 0.7f),
+            p => Mathf.Max(Mathf.Abs(p.X), Mathf.Abs(p.Y)) > 20f && DistanceToRoads(p) > 1.2f && IsFree(p, 0.3f));
     }
 
     private void BuildFarmBoundary()

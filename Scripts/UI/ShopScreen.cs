@@ -5,8 +5,33 @@ using Godot;
 
 namespace DeadFrequency;
 
+/// <summary>O que cada vendedor tem (v0.9.7): cada item só aparece em quem vende ele.</summary>
+public enum ShopStock { Ze, Churrasco, Market, Dealer }
+
 public partial class ShopScreen : ModalScreen
 {
+    /// <summary>Abas da loja: equipamento, consertos e comida/bebida.</summary>
+    private enum Tab { Gear, Repair, Food, Cars }
+
+    private static readonly string[] TabNames = { "Equipamentos", "Consertos", "Comida e bebida", "Carros" };
+
+    private static Tab TabOf(ItemDef def) => def.Car ? Tab.Cars : def.IsGear ? Tab.Gear : def.Food || def.Id == ItemCatalog.EnergyDrink ? Tab.Food : Tab.Repair;
+
+    /// <summary>Barraca do Zé: equipamento e conserto. Churrasquinho: comida. Atacadinho: comida, bebida
+    /// e o básico de conserto (fita e prego), mas nada de equipamento.</summary>
+    private static bool Sells(ShopStock stock, ItemDef def) => def.Car ? stock == ShopStock.Dealer : stock switch
+    {
+        ShopStock.Dealer => false,
+        ShopStock.Churrasco => def.Id is ItemCatalog.Skewer or ItemCatalog.Guarana,
+        ShopStock.Market => TabOf(def) == Tab.Food && def.Id != ItemCatalog.Skewer || def.Id is ItemCatalog.DuctTape or ItemCatalog.Nail,
+        _ => TabOf(def) != Tab.Food || def.Id == ItemCatalog.Guarana,
+    };
+
+    private ShopStock _stock;
+    private Tab _tab;
+    private HBoxContainer _tabs;
+    private Label _tagline;
+
     [Export] public DeliveryManager Delivery { get; set; }
 
     public static ShopScreen Instance { get; private set; }
@@ -28,10 +53,17 @@ public partial class ShopScreen : ModalScreen
 
         _title = UiStyle.MakeLabel("BARRACA", 28);
         stack.AddChild(_title);
-        stack.AddChild(UiStyle.MakeLabel("\"Tudo testado, tudo funcionando. Quase tudo.\"", 15, color: UiStyle.PhosphorDim));
-        _list = new VBoxContainer();
+        _tagline = UiStyle.MakeLabel("", 15, color: UiStyle.PhosphorDim);
+        stack.AddChild(_tagline);
+        _tabs = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        _tabs.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(_tabs);
+        // Lista rola quando passa da tela (antes os itens ficavam cortados embaixo).
+        var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(0, 430), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        stack.AddChild(scroll);
+        _list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         _list.AddThemeConstantOverride("separation", 6);
-        stack.AddChild(_list);
+        scroll.AddChild(_list);
 
         _feedback = UiStyle.MakeLabel("", 16, color: UiStyle.Warning);
         stack.AddChild(_feedback);
@@ -59,13 +91,18 @@ public partial class ShopScreen : ModalScreen
         base._ExitTree();
     }
 
-    /// <summary>Só comida e bebida (Churrasquinho do Duvidoso).</summary>
-    private bool _foodOnly;
-
-    public void OpenFor(string vendorName, bool foodOnly = false)
+    public void OpenFor(string vendorName, ShopStock stock = ShopStock.Ze)
     {
-        _foodOnly = foodOnly;
+        _stock = stock;
+        _tab = stock switch { ShopStock.Ze => Tab.Gear, ShopStock.Dealer => Tab.Cars, _ => Tab.Food };
         _title.Text = vendorName.ToUpperInvariant();
+        _tagline.Text = stock switch
+        {
+            ShopStock.Churrasco => "\"Procedência? Confia.\"",
+            ShopStock.Market => "\"Leve 3, pague 3.\"",
+            ShopStock.Dealer => Online ? "\"Carro comprado com o dinheiro do grupo é da sala toda.\"" : "\"Dono único, só ia na missa.\"",
+            _ => "\"Tudo testado, tudo funcionando. Quase tudo.\"",
+        };
         _feedback.Text = "";
         Open();
     }
@@ -85,10 +122,27 @@ public partial class ShopScreen : ModalScreen
             return;
         foreach (Node child in _list.GetChildren())
             child.QueueFree();
+        foreach (Node child in _tabs.GetChildren())
+            child.QueueFree();
+
+        // Abas: só as que este vendedor tem; com uma só, nem mostra.
+        var tabs = ItemCatalog.All.Where(d => !d.Hidden && Sells(_stock, d)).Select(TabOf).Distinct().OrderBy(t => t).ToList();
+        if (!tabs.Contains(_tab) && tabs.Count > 0)
+            _tab = tabs[0];
+        if (tabs.Count > 1)
+        {
+            foreach (Tab t in tabs)
+            {
+                Tab tab = t;
+                Button b = UiStyle.MakeButton(t == _tab ? $"[ {TabNames[(int)t]} ]" : TabNames[(int)t], () => { _tab = tab; Refresh(); }, 220);
+                b.Disabled = t == _tab;
+                _tabs.AddChild(b);
+            }
+        }
 
         foreach (ItemDef def in ItemCatalog.All)
         {
-            if (def.Hidden || (_foodOnly && !def.Food))
+            if (def.Hidden || !Sells(_stock, def) || TabOf(def) != _tab)
                 continue;
             var row = new HBoxContainer();
             row.AddThemeConstantOverride("separation", 12);
@@ -102,7 +156,7 @@ public partial class ShopScreen : ModalScreen
             info.AddChild(desc);
             row.AddChild(info);
 
-            bool owned = def.IsGear && (PlayerInventory.Instance?.IsEquipped(def.Id) == true || (PlayerInventory.Instance?.Items.Contains(def.Id) ?? false));
+            bool owned = def.Car ? CarGarage.Owns(def.Id) : def.IsGear && (PlayerInventory.Instance?.IsEquipped(def.Id) == true || (PlayerInventory.Instance?.Items.Contains(def.Id) ?? false));
             string id = def.Id;
             Button buy = UiStyle.MakeButton(owned ? "Já tem" : $"$ {def.Price}", () => Buy(id), 120);
             buy.Disabled = owned;
@@ -116,6 +170,8 @@ public partial class ShopScreen : ModalScreen
         PlayerInventory inv = PlayerInventory.Instance;
         if (inv == null)
             return false;
+        if (def.Car)
+            return !CarGarage.Owns(def.Id);
         if (def.IsGear && !inv.Equipped.ContainsKey(def.Slot))
             return true;
         return !inv.IsFull;
@@ -128,7 +184,7 @@ public partial class ShopScreen : ModalScreen
             return;
         if (!HasSpaceFor(def))
         {
-            _feedback.Text = "Mochila cheia. Descarte algo ou compre a mochila maior.";
+            _feedback.Text = def.Car ? "Esse carro já é seu." : "Mochila cheia. Descarte algo ou compre a mochila maior.";
             return;
         }
         if (Delivery.Money < def.Price)
@@ -161,8 +217,15 @@ public partial class ShopScreen : ModalScreen
             _feedback.Text = "O servidor recusou a compra (dinheiro do grupo insuficiente?).";
             return;
         }
-        PlayerInventory.Instance?.TryAdd(def.Id);
         _buySound.Play();
+        if (def.Car)
+        {
+            CarGarage.MarkBought(def.Id);
+            _feedback.Text = $"{def.Name} é seu! Está no pátio da concessionária, chave na porta.";
+            Refresh();
+            return;
+        }
+        PlayerInventory.Instance?.TryAdd(def.Id);
         _feedback.Text = def.IsGear ? $"{def.Name} comprado e equipado (veja no inventário: I)." : $"{def.Name} foi para a mochila.";
         Refresh();
     }

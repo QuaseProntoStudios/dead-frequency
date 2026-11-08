@@ -500,7 +500,8 @@ public partial class PlayerController : CharacterBody3D
             }
             else if (State == PlayerState.Driving && CurrentVehicle != null)
             {
-                prompt = CurrentVehicle.CanExit ? "[E] Sair da van" : "Pare a van para sair";
+                string word = CurrentVehicle.Kind switch { "moto" => "da moto", "truck" => "do caminhão", "car" => "do carro", _ => "da van" };
+                prompt = CurrentVehicle.CanExit ? $"[E] Sair {word}" : "Pare para sair";
             }
             else if (State == PlayerState.Riding && CurrentVehicle != null)
             {

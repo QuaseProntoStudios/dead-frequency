@@ -99,8 +99,23 @@ public partial class NetSync : Node
 
     // ================================================================ recebendo
 
+    /// <summary>Veículo criado depois do início (carro comprado na concessionária, v0.9.7).</summary>
+    public void RegisterVehicle(VanController v)
+    {
+        if (v != null && !string.IsNullOrEmpty(v.NetId))
+            _vehicles[v.NetId] = v;
+    }
+
     private void ApplyWelcome(JsonElement m)
     {
+        // Carros da sala (precisam existir antes de aplicar donos e posições).
+        var cars = new System.Collections.Generic.List<string>();
+        if (m.TryGetProperty("cars", out JsonElement carsEl) && carsEl.ValueKind == JsonValueKind.Array)
+            foreach (JsonElement c in carsEl.EnumerateArray())
+                if (c.ValueKind == JsonValueKind.String)
+                    cars.Add(c.GetString());
+        CarGarage.SetOnline(cars);
+
         foreach (JsonElement p in m.GetProperty("players").EnumerateArray())
         {
             RemotePlayer remote = SpawnRemote(p.GetProperty("id").GetInt32(), p.GetProperty("name").GetString(), NetClient.ParseColor(p.GetProperty("color").GetString()));
@@ -200,6 +215,9 @@ public partial class NetSync : Node
             case "money":
             {
                 Delivery.ApplyNetMoney(m.GetProperty("money").GetInt32());
+                // Carro comprado (por qualquer um da sala) aparece no pátio da concessionária.
+                if (m.TryGetProperty("item", out JsonElement boughtItem) && boughtItem.ValueKind == JsonValueKind.String && ItemCatalog.Get(boughtItem.GetString())?.Car == true)
+                    CarGarage.MarkBought(boughtItem.GetString());
                 // Resposta de uma compra minha?
                 if (m.TryGetProperty("by", out JsonElement by) && by.GetInt32() == MyId
                     && m.TryGetProperty("req", out JsonElement req) && _purchaseCallbacks.Remove(req.GetInt32(), out Action<bool> done))

@@ -29,6 +29,98 @@ public static class VehicleFactory
             2600f, 4200f, 70f, 80f, new Vector3(0.5f, 0.85f, 1.2f), new Vector3(2.0f, 0f, 1.2f), new Vector3(0f, 1.1f, 2.35f), "[E] Pegar o caminhão emprestado"),
     };
 
+    /// <summary>Carro da concessionária (v0.9.7), com o mesmo modelo dos carros da rua (CarModels).
+    /// netId = id do item (car_gou...), que também é o id do veículo no servidor.</summary>
+    public static VanController BuildCar(CarGarage.Model model)
+    {
+        var v = new VanController
+        {
+            Name = model.Id,
+            NetId = model.Id,
+            Kind = "car",
+            DisplayName = ItemCatalog.Get(model.Id)?.Name ?? "carro",
+            Mass = 1100f,
+            CollisionLayer = 16,
+            CollisionMask = 1 | 2 | 8,
+            CenterOfMassMode = RigidBody3D.CenterOfMassModeEnum.Custom,
+            CenterOfMass = new Vector3(0f, 0.35f, 0f),
+            MaxEngineForce = 2600f,
+            MaxReverseForce = 1200f,
+            BrakeForce = 38f,
+            HandbrakeForce = 76f,
+            ParkedBrake = 27f,
+            CoastBrake = 2.6f,
+            MaxSpeedKmh = model.Type == CarType.Fusca ? 110f : model.Type == CarType.Sedan ? 140f : 125f,
+            MaxSteerDegrees = 30f,
+        };
+        // O CarModels monta com a frente em -Z; o VanController anda para +Z: gira meia volta.
+        var body = new Node3D { Name = "Model", Rotation = new Vector3(0f, Mathf.Pi, 0f) };
+        Vector3 size = CarModels.Build(body, model.Type, model.Color);
+        v.AddChild(body);
+        v.AddChild(new CollisionShape3D { Name = "BodyShape", Shape = new BoxShape3D { Size = new Vector3(size.X, size.Y - 0.35f, size.Z) }, Position = new Vector3(0f, size.Y * 0.5f + 0.17f, 0f) });
+
+        float wx = size.X * 0.5f - 0.12f, wz = size.Z * 0.31f;
+        foreach ((string name, float x, float z, bool steer) in new[]
+        {
+            ("WheelFL", wx, wz, true), ("WheelFR", -wx, wz, true), ("WheelRL", wx, -wz, false), ("WheelRR", -wx, -wz, false),
+        })
+        {
+            v.AddChild(new VehicleWheel3D
+            {
+                Name = name,
+                Position = new Vector3(x, 0.42f, z),
+                WheelRadius = 0.3f,
+                WheelRestLength = 0.15f,
+                WheelFrictionSlip = 2.6f,
+                WheelRollInfluence = 0.1f,
+                SuspensionTravel = 0.2f,
+                SuspensionStiffness = 50f,
+                SuspensionMaxForce = 1100f * 7f,
+                DampingCompression = 1.2f,
+                DampingRelaxation = 1.4f,
+                UseAsSteering = steer,
+                // Fusca: tração traseira (motor atrás). Os outros também, como os carros da época.
+                UseAsTraction = !steer,
+            });
+        }
+
+        // Motorista do lado esquerdo (+X olhando para a frente +Z), como no Brasil.
+        var seat = new Marker3D { Name = "SeatMarker", Position = new Vector3(0.36f, 0.32f, -0.15f), Rotation = new Vector3(0f, Mathf.Pi, 0f) };
+        var exit = new Marker3D { Name = "ExitMarker", Position = new Vector3(size.X * 0.5f + 0.8f, 0f, -0.15f), Rotation = new Vector3(0f, Mathf.Pi * 0.5f, 0f) };
+        v.AddChild(seat);
+        v.AddChild(exit);
+        var door = new DriverSeatInteractable
+        {
+            Name = "DriverDoor",
+            Van = v,
+            SeatMarker = seat,
+            ExitMarker = exit,
+            CollisionLayer = 4,
+            CollisionMask = 0,
+            Monitoring = false,
+            Position = new Vector3(0f, size.Y * 0.5f, 0f),
+        };
+        door.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size + new Vector3(0.5f, 0.2f, 0.2f) } });
+        v.AddChild(door);
+
+        var lights = new Node3D { Name = "Headlights" };
+        v.AddChild(lights);
+        foreach (float x in new[] { -0.55f, 0.55f })
+        {
+            lights.AddChild(new SpotLight3D
+            {
+                Position = new Vector3(x, 0.7f, size.Z * 0.5f + 0.1f),
+                Rotation = new Vector3(0f, Mathf.Pi, 0f),
+                LightColor = new Color(1f, 0.94f, 0.78f),
+                LightEnergy = 5f,
+                SpotRange = 28f,
+                SpotAngle = 28f,
+                ShadowEnabled = false,
+            });
+        }
+        return v;
+    }
+
     /// <summary>Monta o veículo (ainda fora da árvore). Posicione e adicione depois.</summary>
     public static VanController Build(VehicleKind kind)
     {

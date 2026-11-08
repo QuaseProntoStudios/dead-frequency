@@ -310,6 +310,7 @@ public partial class LocalServer : Node
             ["money"] = _money,
             ["jobs"] = JobsPayload(),
             ["owners"] = _owners,
+            ["cars"] = _cars,
             ["objects"] = _objects.Values.ToList(),
         });
         Broadcast(new { t = "join", player = new { id = me.Id, name = me.Name, color = me.Color, prof = me.Prof } }, me);
@@ -412,12 +413,14 @@ public partial class LocalServer : Node
     private void OnBuy(Peer me, string item, int req)
     {
         ItemDef def = ItemCatalog.Get(item);
-        if (def == null || def.Hidden || _money < def.Price)
+        if (def == null || def.Hidden || _money < def.Price || (def.Car && _cars.Contains(item)))
         {
             Send(me, new { t = "buyFail", item, req });
             return;
         }
         _money -= def.Price;
+        if (def.Car)
+            _cars.Add(item);
         Broadcast(new { t = "money", money = _money, by = me.Id, name = me.Name, item, req });
     }
 
@@ -559,7 +562,8 @@ public partial class LocalServer : Node
         _jobs.Select(j => new Dictionary<string, object> { ["id"] = j.Id, ["type"] = j.Type, ["pick"] = j.Pick, ["slot"] = j.Slot, ["status"] = j.Status }).ToList();
 
     /// <summary>Mesmos de VEHICLES no servidor.</summary>
-    private static readonly string[] Vehicles = { "van", "moto", "truck_yellow", "truck_red" };
+    private static readonly string[] Vehicles = { "van", "moto", "truck_yellow", "truck_red", "car_gou", "car_fusca", "car_opalinha" };
+    private readonly List<string> _cars = new();
 
     private bool IsKnownObject(string id) => Vehicles.Contains(id) || _jobs.Any(j => j.Id == id && j.Status == "pending");
 

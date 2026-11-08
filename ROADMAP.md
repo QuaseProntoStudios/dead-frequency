@@ -54,6 +54,18 @@ Tudo que apareceu jogando a v0.9.5. Vem antes de qualquer conteúdo novo.
 | 10 | Visual | **Ícone novo** do jogo e do launcher, e a etiqueta amarela **ALPHA** ao lado do número da versão (menu, launcher, site e ícone). |
 
 ### v0.9.7 — Mãos ocupadas (itens e online) ← próxima build
+Já feito nesta build (feedback de 08/11):
+- ✅ Texturas da cidade: fachadas (reboco, tijolo, pastilha, chapisco), calçada, pedra portuguesa, asfalto.
+- ✅ Mochila virou bag quadrada de entregador, presa às costas dos bonecos novos.
+- ✅ Ponto de ônibus e frente da concessionária sem carro estacionado.
+- ✅ Placas e nomes dos carros no lugar; Fusca com grade, logo e retrovisores certos.
+- ✅ Lojas com abas e estoque por vendedor (Zé, Churrasquinho, Atacadinho); pausa sempre por cima.
+- ✅ Grama: textura nos gramados e no sítio + capim pixel art balançando (some além de 45 m).
+- ✅ Otimização: peças pequenas somem na neblina, luz de poste apaga longe.
+- ✅ Auto Center Dois Mil (ao lado do depósito): Gou, Fuska e Opalinha a $ 2000; online o carro é da sala.
+- ⏳ Menu inicial novo (3 propostas em prints, esperando escolha).
+- ⏳ Sons do Pixabay (com créditos).
+
 | Ideia | Como funciona no jogo |
 |---|---|
 | **Barra rápida 1–4** | Os 4 primeiros espaços do inventário viram atalhos (teclas 1–4): segurar o item na mão ou usar. A mochila aumenta o inventário, a barra continua de 1 a 4. |

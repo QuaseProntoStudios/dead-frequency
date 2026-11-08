@@ -20,6 +20,8 @@ public partial class PauseMenu : CanvasLayer
     private static bool Online => NetClient.Instance?.IsOnline == true;
 
     public bool IsOpen => _root != null && _root.Visible;
+    public static PauseMenu Instance { get; private set; }
+    public override void _EnterTree() => Instance = this;
 
     private Control _root;
     private VBoxContainer _mainList;
@@ -39,7 +41,8 @@ public partial class PauseMenu : CanvasLayer
 
     public override void _Ready()
     {
-        Layer = 10;
+        // Sempre na frente das outras telas (loja, inventário...), v0.9.7.
+        Layer = 30;
         ProcessMode = ProcessModeEnum.Always;
 
         _root = new Control { Theme = UiStyle.Theme, MouseFilter = Control.MouseFilterEnum.Stop };
@@ -172,7 +175,9 @@ public partial class PauseMenu : CanvasLayer
 
     public override void _Input(InputEvent @event)
     {
-        if (!@event.IsActionPressed("pause") || ModalScreen.AnyOpen)
+        // Com uma tela aberta, o Esc fecha a tela (ModalScreen); a pausa só abre por cima
+        // dela quando a janela perde o foco, e aí o Esc volta para a tela.
+        if (!@event.IsActionPressed("pause") || (!IsOpen && ModalScreen.AnyOpen))
             return;
 
         GetViewport().SetInputAsHandled();
@@ -227,11 +232,14 @@ public partial class PauseMenu : CanvasLayer
     public void Resume()
     {
         _root.Visible = false;
+        AudioManager.Instance?.SetMuffled(false);
+        // Se tinha uma loja/inventário aberto embaixo, volta para ela do jeito que estava.
+        if (ModalScreen.AnyOpen)
+            return;
         GetTree().Paused = false;
         if (Player != null)
             Player.InputEnabled = true;
         Input.MouseMode = Input.MouseModeEnum.Captured;
-        AudioManager.Instance?.SetMuffled(false);
     }
 
     private void ShowProfessions()

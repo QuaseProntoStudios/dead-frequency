@@ -327,7 +327,16 @@ public partial class CharacterModel : Node3D
             Head.Rotation = new Vector3(_headPitch, 0f, 0f);
         }
         if (_boneSpine >= 0)
-            _back.Position = BonePos(_boneSpine) + new Vector3(0f, -0.28f, 0f);
+        {
+            // As costas seguem o tronco inteiro (inclina junto quando anda/corre). O eixo Y do osso aponta
+            // ao longo da coluna; montamos uma base com esse "cima" e o +Z do boneco (= costas).
+            Transform3D t = toLocal * _skeleton.GetBoneGlobalPose(_boneSpine);
+            // Metade da inclinação do osso: na corrida a coluna dobra muito e a bag tamparia a cabeça.
+            Vector3 up = (t.Basis.Y.Normalized() + Vector3.Up).Normalized();
+            Vector3 back = (Vector3.Back - up * up.Dot(Vector3.Back)).Normalized();
+            Vector3 side = up.Cross(back).Normalized();
+            _back.Transform = new Transform3D(new Basis(side, up, back), t.Origin);
+        }
         FollowBone(_leftHand, _boneHandL, toLocal);
         FollowBone(_rightHand, _boneHandR, toLocal);
         FollowBone(_leftForearm, _boneForearmL, toLocal);
@@ -411,10 +420,29 @@ public partial class CharacterModel : Node3D
                 };
                 break;
             case ItemCatalog.Backpack:
+            {
+                // Bag de entregador (v0.9.7): caixa térmica quadrada, encostada nas costas, com alças
+                // que passam por cima do ombro, tampa com zíper e faixa refletiva.
                 _back.AddChild(root);
-                Part(root, new Vector3(0f, 0.05f, 0.2f), new Vector3(0.36f, 0.44f, 0.18f), color);
-                Part(root, new Vector3(0f, 0.25f, 0.2f), new Vector3(0.38f, 0.07f, 0.2f), dark);
+                StandardMaterial3D strip = Mat(new Color(0.85f, 0.85f, 0.8f));
+                strip.EmissionEnabled = true;
+                strip.Emission = new Color(0.4f, 0.4f, 0.38f);
+                const float s = 0.44f, d = 0.38f, back = 0.11f;
+                Vector3 c = new(0f, -0.14f, back + d * 0.5f);
+                Part(root, c, new Vector3(s, s, d), color);
+                Part(root, c + new Vector3(0f, s * 0.5f + 0.012f, 0f), new Vector3(s + 0.02f, 0.025f, d + 0.02f), dark); // tampa
+                Part(root, c + new Vector3(0f, s * 0.5f - 0.03f, 0f), new Vector3(s + 0.01f, 0.02f, d + 0.01f), dark); // zíper
+                Part(root, c + new Vector3(0f, -0.06f, d * 0.5f + 0.004f), new Vector3(s * 0.8f, 0.05f, 0.01f), strip); // refletivo
+                Part(root, c + new Vector3(0f, -s * 0.5f, 0f), new Vector3(s + 0.01f, 0.02f, d + 0.01f), dark); // fundo
+                foreach (float x in new[] { -0.11f, 0.11f })
+                {
+                    // Alças: descem pelas costas, passam por cima do ombro e voltam na frente do peito.
+                    Part(root, new Vector3(x, 0.02f, back - 0.005f), new Vector3(0.045f, 0.4f, 0.02f), dark);
+                    Part(root, new Vector3(x, 0.2f, -0.02f), new Vector3(0.045f, 0.02f, 0.18f), dark);
+                    Part(root, new Vector3(x, 0.06f, -0.11f), new Vector3(0.045f, 0.28f, 0.02f), dark);
+                }
                 break;
+            }
             case ItemCatalog.Radar:
                 _leftForearm.AddChild(root);
                 Part(root, new Vector3(0f, 0.17f, 0f), new Vector3(0.09f, 0.08f, 0.09f), dark);

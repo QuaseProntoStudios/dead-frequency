@@ -128,6 +128,47 @@ public partial class CityGenerator : Node3D
         BuildRadioTower(new Vector3(-outside, 0f, -outside));
         BuildBoundary();
         BuildBillboards();
+        OptimizeVisibility(this);
+    }
+
+    /// <summary>Otimização (v0.9.7): peça pequena (banco, placa, ar-condicionado, lixeira...) some além de
+    /// 90 m e média além de 170 m, dentro da neblina; luz de poste apaga suave além de 70 m. Prédios e
+    /// chão ficam sempre. Quem já tem distância própria (capim, árvores) não é mexido.</summary>
+    public static void OptimizeVisibility(Node root)
+    {
+        foreach (Node n in root.FindChildren("*", "", true, false))
+        {
+            switch (n)
+            {
+                case GeometryInstance3D g when g.VisibilityRangeEnd <= 0f && g is not MultiMeshInstance3D:
+                {
+                    Aabb box = g is VisualInstance3D v ? v.GetAabb() : new Aabb();
+                    Vector3 size = box.Size * g.GlobalTransform.Basis.Scale;
+                    float biggest = Mathf.Max(size.X, Mathf.Max(size.Y, size.Z));
+                    if (biggest < 1.6f)
+                        g.VisibilityRangeEnd = 110f;
+                    else if (biggest < 5f)
+                        g.VisibilityRangeEnd = 170f;
+                    if (g.VisibilityRangeEnd > 0f)
+                        g.VisibilityRangeEndMargin = 10f;
+                    if (biggest < 0.6f)
+                        g.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+                    break;
+                }
+                case OmniLight3D or SpotLight3D:
+                {
+                    var l = (Light3D)n;
+                    if (!l.DistanceFadeEnabled)
+                    {
+                        l.DistanceFadeEnabled = true;
+                        l.DistanceFadeBegin = 70f;
+                        l.DistanceFadeLength = 20f;
+                        l.DistanceFadeShadow = 30f;
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     /// <summary>Dia: postes e holofotes apagados, poucas janelas acesas.</summary>
@@ -175,6 +216,13 @@ public partial class CityGenerator : Node3D
         _darkMetal = Flat(new Color(0.12f, 0.12f, 0.13f), 0.6f);
         _concrete = Flat(new Color(0.38f, 0.37f, 0.35f));
         _grass = Flat(new Color(0.12f, 0.2f, 0.1f));
+        // Gramado com textura (v0.9.7) projetada pelo mundo: qualquer tamanho de canteiro funciona.
+        _grass.AlbedoColor = new Color(0.32f, 0.5f, 0.26f);
+        _grass.AlbedoTexture = GD.Load<Texture2D>("res://Assets/Textures/City/lawn.png");
+        _grass.Uv1Triplanar = true;
+        _grass.Uv1WorldTriplanar = true;
+        _grass.Uv1Scale = Vector3.One * 0.5f;
+        _grass.TextureFilter = BaseMaterial3D.TextureFilterEnum.NearestWithMipmaps;
         _leaves = Flat(new Color(0.08f, 0.17f, 0.09f));
         _trunk = Flat(new Color(0.22f, 0.15f, 0.1f));
         _warehouse = Flat(new Color(0.28f, 0.33f, 0.36f), 0.7f);
@@ -450,6 +498,7 @@ public partial class CityGenerator : Node3D
     private void BuildPark(Node3D block, Vector3 center, float inner)
     {
         AddBox(block, center + new Vector3(0f, CurbHeight + 0.05f, 0f), new Vector3(inner, 0.1f, inner), _grass, false);
+        GrassTufts.Fill(block, center + new Vector3(0f, CurbHeight + 0.1f, 0f), new Vector2(inner - 0.6f, inner - 0.6f), 0.55f, new Color(0.8f, 0.95f, 0.75f));
 
         int trees = _rng.RandiRange(7, 14);
         for (int i = 0; i < trees; i++)
@@ -699,6 +748,38 @@ public partial class CityGenerator : Node3D
         }
     }
 
+    private readonly List<Node3D> _parkedCars = new();
+    private readonly List<(Vector3 center, Vector3 dir, float halfLength)> _noParking = new();
+
+    /// <summary>Proíbe estacionar num trecho de rua (ponto de ônibus, v0.9.7): tira os carros que já estão
+    /// lá e impede os próximos. Não mexe no sorteio da cidade (o carro é sorteado e só não aparece).</summary>
+    public void ForbidParking(Vector3 center, Vector3 dir, float halfLength)
+    {
+        _noParking.Add((center, dir.Normalized(), halfLength));
+        for (int i = _parkedCars.Count - 1; i >= 0; i--)
+        {
+            if (IsInstanceValid(_parkedCars[i]) && InNoParking(_parkedCars[i].Position))
+            {
+                _parkedCars[i].QueueFree();
+                _parkedCars.RemoveAt(i);
+            }
+        }
+    }
+
+    private bool InNoParking(Vector3 p)
+    {
+        foreach (var z in _noParking)
+        {
+            Vector3 d = p - z.center;
+            d.Y = 0f;
+            float along = d.Dot(z.dir);
+            float across = (d - z.dir * along).Length();
+            if (Mathf.Abs(along) < z.halfLength && across < 6f)
+                return true;
+        }
+        return false;
+    }
+
     private void BuildCar(Node3D parent, Vector3 groundPos, float rotationY)
     {
         Color color = CarPalette[_rng.RandiRange(0, CarPalette.Length - 1)];
@@ -708,7 +789,13 @@ public partial class CityGenerator : Node3D
         var car = new StaticBody3D { Position = groundPos, Rotation = new Vector3(0f, rotationY + (_rng.Randf() < 0.5f ? 0f : Mathf.Pi), 0f), CollisionLayer = 1, CollisionMask = 0 };
         Vector3 size = CarModels.Build(car, type, color);
         car.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(size.X, size.Y - 0.2f, size.Z) }, Position = new Vector3(0f, size.Y * 0.5f + 0.1f, 0f) });
+        if (InNoParking(groundPos))
+        {
+            car.QueueFree();
+            return;
+        }
         parent.AddChild(car);
+        _parkedCars.Add(car);
     }
 
     // ------------------------------------------------------------------ placas

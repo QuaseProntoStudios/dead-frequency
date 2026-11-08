@@ -8,6 +8,8 @@ wall_atlas.png  (2x2 tiles de 64 px, cada um cobre 2 m x 2 m de parede)
 sidewalk.png    placas de concreto com rachadura e chiclete (1,5 m)
 sidewalk_pt.png pedra portuguesa em ondas, calçadão (3 m)
 asphalt.png     asfalto com brita e remendo (4 m)
+lawn.png        gramado (2 m), multiplicado pela cor da grama
+grass_tuft.png  tufo de capim pixel art 32x32 com transparência (GrassTufts)
 """
 import os
 import numpy as np
@@ -162,7 +164,45 @@ def asphalt():
     to_img(v).save(os.path.join(OUT, "asphalt.png"))
 
 
+def lawn():
+    n = T
+    g = grain(n, 20)
+    v = 0.5 + (noise(n, 4, 3, 21) - 0.5) * 0.25 + (g - 0.5) * 0.18
+    # Fiapos mais claros e mais escuros (folhas vistas de cima).
+    v += (g > 0.93) * 0.18 - (g < 0.06) * 0.15
+    to_img(v, (0.85, 1.15, 0.7)).save(os.path.join(OUT, "lawn.png"))
+
+
+def grass_tuft():
+    """Tufo de capim: 7 a 9 folhas finas saindo de baixo, cores de verde escuro a verde-claro."""
+    n = 32
+    img = np.zeros((n, n, 4))
+    r = np.random.default_rng(22)
+    greens = [(0.18, 0.36, 0.12), (0.24, 0.46, 0.15), (0.32, 0.55, 0.2), (0.42, 0.62, 0.24), (0.55, 0.66, 0.3)]
+    for k in range(9):
+        x0 = 6 + r.random() * 20
+        h = 14 + r.random() * 16
+        lean = (r.random() - 0.5) * 10
+        col = greens[r.integers(0, len(greens))]
+        for i in range(int(h)):
+            t = i / h
+            x = int(round(x0 + lean * t * t))
+            y = n - 1 - i
+            if 0 <= x < n and 0 <= y < n:
+                shade = 0.75 + 0.45 * t  # pontas mais claras
+                img[y, x, :3] = [c * shade for c in col]
+                img[y, x, 3] = 1
+                if t < 0.45 and x + 1 < n:  # base mais grossa
+                    img[y, x + 1, :3] = [c * shade * 0.85 for c in col]
+                    img[y, x + 1, 3] = 1
+    rgb = np.round(np.clip(img[..., :3], 0, 1) * 31) / 31
+    out = np.concatenate([rgb, img[..., 3:]], axis=-1)
+    Image.fromarray((out * 255).astype(np.uint8), "RGBA").save(os.path.join(OUT, "grass_tuft.png"))
+
+
 if __name__ == "__main__":
+    lawn()
+    grass_tuft()
     wall_atlas()
     sidewalk()
     sidewalk_pt()

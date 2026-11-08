@@ -59,6 +59,9 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
    ✅ v0.9.6 Oficina: CharacterLook + CharacterPanel (aparência no menu, campo "lk" no tick), PlayerState.Riding
       (carona: VanController.PassengerSeat), st=2 no servidor, câmera estável no carro, Fusca via CarModels.Loft,
       muro+serra no sítio, ícone (Assets/Textures/icon.py.txt) e UiStyle.AlphaBadge.
+   🚧 v0.9.7 (em andamento): texturas da cidade (Assets/Textures/City/city_textures.py.txt), GrassTufts (capim),
+      CityGenerator.OptimizeVisibility, ShopStock (abas por vendedor), concessionária (CityGenerator.Dealer + CarGarage +
+      VehicleFactory.BuildCar; carros = CARS/VEHICLES/SHOP_PRICES no servidor, room.cars), ForbidParking.
 3. Painel diegético: DashboardButton, ElectricalSystem, EngineSystem, fusíveis
 4. CargoBayManager + SaveManager (.tzn)
 5. Shaders PS1 + monitor CRT
