@@ -7,12 +7,25 @@ namespace DeadFrequency;
 
 public static class GameVersion
 {
-    public const string Current = "0.9.5";
+    public const string Current = "0.9.6";
 
     public readonly record struct Release(string Version, string Date, string Title, string[] Changes);
 
     public static readonly Release[] Changelog =
     {
+        new("0.9.6", "08/11/2026", "Oficina", new[]
+        {
+            "Personagem: novo menu para escolher homem ou mulher e as cores da pele, do cabelo, da camisa e da calça. No online todo mundo vê você do seu jeito.",
+            "Online: quem está dirigindo agora aparece sentado no banco para os outros (antes sumia).",
+            "Carona: dá para entrar como passageiro na van (porta da esquerda), nos caminhões e na garupa da moto. Se outro jogador está dirigindo, a porta do motorista vira carona.",
+            "Dirigir sem enjoo: câmera estabilizada (o horizonte não balança com a carroceria), suspensão mais firme e menos rolagem nas curvas. Dá para desligar em Opções → Jogo.",
+            "O volante da van ganhou raios: agora dá para ver ele girando nas curvas. A cabine ganhou chão.",
+            "Fuska refeito com carroceria arredondada de verdade e os vidros no lugar.",
+            "Viatura com uma sirene só (estava duplicada) e botijão novo do Gás do Zé (costura, pé, colarinho e regulador).",
+            "O fim do sítio deixou de ser parede invisível: muro de pedra com pilares e a serra atrás.",
+            "Ícone novo do jogo e do launcher, e a etiqueta amarela ALPHA ao lado da versão.",
+            "Online: atualize o servidor (npm run deploy) para a aparência e a carona aparecerem para os outros.",
+        }),
         new("0.9.5", "08/11/2026", "Calçada viva", new[]
         {
             "Fôlego: correr cansa (barra no HUD). Esgotou, só volta a correr com um quarto do fôlego.",

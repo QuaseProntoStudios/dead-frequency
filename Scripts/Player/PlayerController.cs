@@ -19,6 +19,8 @@ public enum PlayerState
 {
     Walking,
     Driving,
+    /// <summary>Carona no banco do passageiro (v0.9.6): não controla o veículo.</summary>
+    Riding,
 }
 
 public partial class PlayerController : CharacterBody3D
@@ -229,7 +231,8 @@ public partial class PlayerController : CharacterBody3D
 
     private void RotateLook(Vector2 relative)
     {
-        float sens = BaseMouseSensitivity * _sensitivityMultiplier * (State == PlayerState.Driving ? _vehicleSensitivity : 1f);
+        bool seatedLook = State == PlayerState.Driving || State == PlayerState.Riding;
+        float sens = BaseMouseSensitivity * _sensitivityMultiplier * (seatedLook ? _vehicleSensitivity : 1f);
         float pitchDelta = relative.Y * sens * (_invertY ? -1f : 1f);
         float maxPitch = Mathf.DegToRad(MaxPitchDegrees);
 
@@ -237,7 +240,7 @@ public partial class PlayerController : CharacterBody3D
         Vector3 headRotation = _head.Rotation;
         headRotation.X = Mathf.Clamp(headRotation.X - pitchDelta, -maxPitch, maxPitch);
 
-        if (State == PlayerState.Driving)
+        if (seatedLook)
         {
             // Sentado: o corpo fica preso ao banco, só a cabeça gira.
             float maxYaw = Mathf.DegToRad(DrivingMaxYawDegrees);
@@ -266,7 +269,29 @@ public partial class PlayerController : CharacterBody3D
             target += new Vector3(Mathf.Cos(_bobTime * 0.5f) * 0.025f * amount, Mathf.Abs(Mathf.Sin(_bobTime * 0.5f)) * 0.04f * amount, 0f);
         }
         _camera.Position = _camera.Position.Lerp(target, 1f - Mathf.Exp(-12f * (float)delta));
+
+        // Dentro do veículo: horizonte nivelado (sem rolagem/arfagem da carroceria) e o pulo da
+        // suspensão amortecido — o balanço dava vertigem (v0.9.6).
+        bool seated = State == PlayerState.Driving || State == PlayerState.Riding;
+        if (seated && (GameSettings.Instance?.StableVehicleCamera ?? true) && !_inTransition)
+        {
+            Vector3 fwd = -_head.GlobalBasis.Z;
+            float yaw = Mathf.Atan2(-fwd.X, -fwd.Z);
+            _camera.GlobalBasis = Basis.FromEuler(new Vector3(_head.Rotation.X, yaw, 0f));
+            Vector3 gp = _camera.GlobalPosition;
+            _stableY = _stableReset ? gp.Y : Mathf.Lerp(_stableY, gp.Y, 1f - Mathf.Exp(-6f * (float)delta));
+            _stableReset = false;
+            _camera.GlobalPosition = new Vector3(gp.X, _stableY, gp.Z);
+        }
+        else
+        {
+            _camera.Rotation = Vector3.Zero;
+            _stableReset = true;
+        }
     }
+
+    private float _stableY;
+    private bool _stableReset = true;
 
     // ---------------- Física ----------------
 
@@ -477,6 +502,10 @@ public partial class PlayerController : CharacterBody3D
             {
                 prompt = CurrentVehicle.CanExit ? "[E] Sair da van" : "Pare a van para sair";
             }
+            else if (State == PlayerState.Riding && CurrentVehicle != null)
+            {
+                prompt = CurrentVehicle.SpeedKmh < 12f ? "[E] Descer (carona)" : "Carona: espere o veículo parar para descer";
+            }
         }
 
         CurrentPrompt = prompt;
@@ -511,6 +540,8 @@ public partial class PlayerController : CharacterBody3D
         }
 
         if (State == PlayerState.Driving && CurrentVehicle != null && CurrentVehicle.CanExit)
+            ExitVehicle();
+        else if (State == PlayerState.Riding && CurrentVehicle != null && CurrentVehicle.SpeedKmh < 12f)
             ExitVehicle();
     }
 
@@ -580,19 +611,21 @@ public partial class PlayerController : CharacterBody3D
     // ---------------- Van ----------------
 
     /// <summary>Chamado pelo DriverSeatInteractable.</summary>
-    public void EnterVehicle(VanController van, Node3D seatMarker, Node3D exitMarker)
+    public void EnterVehicle(VanController van, Node3D seatMarker, Node3D exitMarker, bool passenger = false)
     {
-        if (State == PlayerState.Driving || _inTransition || van == null || seatMarker == null)
+        if (State != PlayerState.Walking || _inTransition || van == null || seatMarker == null)
             return;
 
         DropHeld();
-        VehicleEntered?.Invoke(van);
+        _passengerSeat = passenger;
+        if (!passenger)
+            VehicleEntered?.Invoke(van);
         van.PlayDoorSound();
         _inTransition = true;
         _returnParent = GetParent();
         _exitMarker = exitMarker;
         CurrentVehicle = van;
-        State = PlayerState.Driving;
+        State = passenger ? PlayerState.Riding : PlayerState.Driving;
         Velocity = Vector3.Zero;
         _collisionShape.SetDeferred(CollisionShape3D.PropertyName.Disabled, true);
 
@@ -614,20 +647,26 @@ public partial class PlayerController : CharacterBody3D
         tween.Chain().TweenCallback(Callable.From(() =>
         {
             _inTransition = false;
-            CurrentVehicle?.SetDriver(this);
+            if (!_passengerSeat)
+                CurrentVehicle?.SetDriver(this);
         }));
     }
 
+    private bool _passengerSeat;
+
     public void ExitVehicle()
     {
-        if (State != PlayerState.Driving || _inTransition)
+        if ((State != PlayerState.Driving && State != PlayerState.Riding) || _inTransition)
             return;
 
         _inTransition = true;
         CurrentVehicle?.PlayDoorSound();
-        CurrentVehicle?.SetDriver(null);
-        if (CurrentVehicle != null)
-            VehicleExited?.Invoke(CurrentVehicle);
+        if (State == PlayerState.Driving)
+        {
+            CurrentVehicle?.SetDriver(null);
+            if (CurrentVehicle != null)
+                VehicleExited?.Invoke(CurrentVehicle);
+        }
         Callable.From(FinishExitVehicle).CallDeferred();
     }
 

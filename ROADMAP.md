@@ -37,7 +37,7 @@ Conecta os itens com a "gente de verdade" da v0.9.4.
 | **Botijão do Gás do Zé** | O botijão que já existia agora vaza: arremessado ou caindo forte da caçamba, solta um chiado com gás saindo e perde integridade até parar. |
 | **Churrasquinho do Duvidoso** | Barraca de calçada: depois das 18h acende a chapa, solta fumaça e junta gente em volta. Vende espetinho, guaraná, café e marmitex. |
 
-### v0.9.6 — Oficina (bugs e feedback dos testes) ← próxima build
+### v0.9.6 — Oficina (bugs e feedback dos testes) ✅
 Tudo que apareceu jogando a v0.9.5. Vem antes de qualquer conteúdo novo.
 
 | # | Tipo | O que corrigir |
@@ -53,7 +53,7 @@ Tudo que apareceu jogando a v0.9.5. Vem antes de qualquer conteúdo novo.
 | 9 | Feedback | **Modelo do botijão** melhor (corpo, alça e válvula). |
 | 10 | Visual | **Ícone novo** do jogo e do launcher, e a etiqueta amarela **ALPHA** ao lado do número da versão (menu, launcher, site e ícone). |
 
-### v0.9.7 — Mãos ocupadas (itens e online)
+### v0.9.7 — Mãos ocupadas (itens e online) ← próxima build
 | Ideia | Como funciona no jogo |
 |---|---|
 | **Barra rápida 1–4** | Os 4 primeiros espaços do inventário viram atalhos (teclas 1–4): segurar o item na mão ou usar. A mochila aumenta o inventário, a barra continua de 1 a 4. |

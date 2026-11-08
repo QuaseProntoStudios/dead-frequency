@@ -186,15 +186,58 @@ public static class CargoVisuals
 
     private static Vector3 GasCylinder(Node3D r)
     {
-        StandardMaterial3D paint = M(new Color(0.25f, 0.42f, 0.62f), 0.5f);
-        Cyl(r, new Vector3(0f, -0.04f, 0f), 0.17f, 0.42f, paint, 16);
-        r.AddChild(new MeshInstance3D { Mesh = new SphereMesh { Radius = 0.17f, Height = 0.17f, IsHemisphere = true, RadialSegments = 16, Rings = 4 }, Position = new Vector3(0f, 0.17f, 0f), MaterialOverride = paint });
-        Cyl(r, new Vector3(0f, -0.27f, 0f), 0.15f, 0.06f, Dark, 16); // base
-        // Alça (anel) e válvula.
-        r.AddChild(new MeshInstance3D { Mesh = new TorusMesh { InnerRadius = 0.07f, OuterRadius = 0.095f, Rings = 12, RingSegments = 6 }, Position = new Vector3(0f, 0.3f, 0f), MaterialOverride = paint });
-        Cyl(r, new Vector3(0f, 0.3f, 0f), 0.02f, 0.06f, Metal, 8);
-        Text(r, "GÁS · 13 kg", new Vector3(0f, -0.02f, 0.172f), 0f, Colors.White, 0.0012f);
+        // Botijão P13 "Gás do Zé" (v0.9.6): corpo torneado com a costura no meio, pé com recortes,
+        // colarinho de proteção em volta da válvula e o regulador.
+        StandardMaterial3D paint = M(new Color(0.92f, 0.42f, 0.08f), 0.45f);
+        // Perfil (raio, altura) de baixo para cima: pé, ombro arredondado, corpo, cúpula.
+        Vector2[] body =
+        {
+            new(0.0f, -0.24f), new(0.12f, -0.245f), new(0.155f, -0.225f), new(0.172f, -0.19f), new(0.178f, -0.14f),
+            new(0.178f, 0.06f), new(0.172f, 0.12f), new(0.155f, 0.17f), new(0.12f, 0.205f), new(0.07f, 0.222f), new(0.0f, 0.226f),
+        };
+        r.AddChild(new MeshInstance3D { Mesh = Lathe(body, 20), MaterialOverride = paint });
+        // Costura soldada no meio.
+        r.AddChild(new MeshInstance3D { Mesh = new TorusMesh { InnerRadius = 0.176f, OuterRadius = 0.184f, Rings = 20, RingSegments = 4 }, Position = new Vector3(0f, -0.04f, 0f), MaterialOverride = paint });
+        // Pé (anel) com quatro recortes escuros.
+        Cyl(r, new Vector3(0f, -0.275f, 0f), 0.15f, 0.07f, paint, 18);
+        for (int i = 0; i < 4; i++)
+        {
+            float a = i * Mathf.Pi * 0.5f;
+            Box(r, new Vector3(Mathf.Cos(a) * 0.151f, -0.275f, Mathf.Sin(a) * 0.151f), new Vector3(0.05f, 0.035f, 0.05f), Dark);
+        }
+        // Colarinho (alça) em volta da válvula: anel alto com duas "janelas" para a mão.
+        Vector2[] collar = { new(0.105f, 0.2f), new(0.11f, 0.2f), new(0.11f, 0.33f), new(0.1f, 0.34f), new(0.1f, 0.2f) };
+        r.AddChild(new MeshInstance3D { Mesh = Lathe(collar, 20), MaterialOverride = paint });
+        foreach (float side in new[] { -1f, 1f })
+            Box(r, new Vector3(side * 0.106f, 0.29f, 0f), new Vector3(0.02f, 0.05f, 0.09f), Dark);
+        // Válvula e regulador.
+        Cyl(r, new Vector3(0f, 0.25f, 0f), 0.025f, 0.07f, Metal, 10);
+        Cyl(r, new Vector3(0f, 0.3f, 0f), 0.045f, 0.035f, M(new Color(0.85f, 0.85f, 0.82f), 0.4f), 12);
+        Box(r, new Vector3(0.06f, 0.3f, 0f), new Vector3(0.07f, 0.02f, 0.02f), Metal);
+        Text(r, "GÁS DO ZÉ", new Vector3(0f, 0.02f, 0.181f), 0f, Colors.White, 0.0013f);
+        Text(r, "P13 · 13 kg", new Vector3(0f, -0.1f, 0.181f), 0f, Colors.White, 0.0009f);
         return new Vector3(0.36f, 0.64f, 0.36f);
+    }
+
+    /// <summary>Malha de revolução em volta do eixo Y a partir de um perfil (raio, altura).</summary>
+    private static ArrayMesh Lathe(Vector2[] profile, int segments)
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        for (int i = 0; i < profile.Length - 1; i++)
+        {
+            Vector2 p0 = profile[i], p1 = profile[i + 1];
+            for (int k = 0; k < segments; k++)
+            {
+                float a0 = Mathf.Tau * k / segments, a1 = Mathf.Tau * (k + 1) / segments;
+                Vector3 v00 = new(Mathf.Cos(a0) * p0.X, p0.Y, Mathf.Sin(a0) * p0.X), v01 = new(Mathf.Cos(a1) * p0.X, p0.Y, Mathf.Sin(a1) * p0.X);
+                Vector3 v10 = new(Mathf.Cos(a0) * p1.X, p1.Y, Mathf.Sin(a0) * p1.X), v11 = new(Mathf.Cos(a1) * p1.X, p1.Y, Mathf.Sin(a1) * p1.X);
+                st.AddVertex(v00); st.AddVertex(v11); st.AddVertex(v10);
+                st.AddVertex(v00); st.AddVertex(v01); st.AddVertex(v11);
+            }
+        }
+        st.GenerateNormals();
+        return st.Commit();
     }
 
     private static Vector3 Cake(Node3D r)

@@ -233,7 +233,8 @@ public partial class NetSync : Node
     private static void ApplyPlayerState(RemotePlayer remote, JsonElement s)
     {
         string equipment = s.TryGetProperty("eq", out JsonElement eq) && eq.ValueKind == JsonValueKind.String ? eq.GetString() : "";
-        remote.ApplyState(ReadVector(s.GetProperty("p")), s.GetProperty("ry").GetSingle(), s.GetProperty("hp").GetSingle(), s.GetProperty("st").GetInt32() == 1, equipment);
+        string look = s.TryGetProperty("lk", out JsonElement lk) && lk.ValueKind == JsonValueKind.String ? lk.GetString() : "";
+        remote.ApplyState(ReadVector(s.GetProperty("p")), s.GetProperty("ry").GetSingle(), s.GetProperty("hp").GetSingle(), s.GetProperty("st").GetInt32(), equipment, look);
     }
 
     /// <summary>Compra online: o servidor confere o preço e desconta do dinheiro do grupo.</summary>
@@ -411,7 +412,8 @@ public partial class NetSync : Node
             p = Vec(Player.GlobalPosition),
             ry = Round(look.Y),
             hp = Round(look.X),
-            st = Player.State == PlayerState.Driving ? 1 : 0,
+            st = Player.State == PlayerState.Driving ? 1 : Player.State == PlayerState.Riding ? 2 : 0,
+            lk = CharacterLook.Local.Encode(),
             held = Player.HeldItem?.NetId,
             eq = PlayerInventory.Instance?.EquipmentCsv() ?? "",
             objs,

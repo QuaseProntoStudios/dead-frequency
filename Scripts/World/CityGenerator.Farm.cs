@@ -910,6 +910,38 @@ public partial class CityGenerator
                      (new Vector3(0f, h * 0.5f, -limit), new Vector3(limit * 2f, h, 1f)),
                  })
             AddShape(new BoxShape3D { Size = size }, new Transform3D(Basis.Identity, c));
+
+        // v0.9.6: o limite deixa de ser uma parede invisível — muro de pedra com pilares e, atrás, a serra.
+        var rng = new RandomNumberGenerator { Seed = 3220 };
+        var stone = Flat(new Color(0.48f, 0.46f, 0.42f), 0.95f);
+        var cap = Flat(new Color(0.38f, 0.36f, 0.33f), 0.95f);
+        var mountainMat = Flat(new Color(0.22f, 0.33f, 0.17f), 1f);
+        var cone = new CylinderMesh { TopRadius = 0.05f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 7, Rings = 2 };
+        float wallX = limit - 0.6f;
+        foreach ((Vector3 dir, Vector3 along) in new[] { (Vector3.Right, Vector3.Back), (Vector3.Left, Vector3.Back), (Vector3.Back, Vector3.Right), (Vector3.Forward, Vector3.Right) })
+        {
+            for (float t = -limit; t < limit; t += 6f)
+            {
+                float wh = rng.RandfRange(2.6f, 3.1f);
+                Vector3 c = dir * wallX + along * (t + 3f);
+                var size = dir.X != 0f ? new Vector3(0.8f, wh, 6.05f) : new Vector3(6.05f, wh, 0.8f);
+                AddInstance("muro", _unitBox, stone, new Transform3D(Basis.FromScale(size), c + new Vector3(0f, wh * 0.5f, 0f)), new Color(0.9f + rng.Randf() * 0.2f, 0.9f + rng.Randf() * 0.2f, 0.9f + rng.Randf() * 0.15f));
+                if (Mathf.PosMod(t, 12f) < 0.5f)
+                    AddInstance("muro_pilar", _unitBox, cap, new Transform3D(Basis.FromScale(new Vector3(1.1f, 3.6f, 1.1f)), c - along * 3f + new Vector3(0f, 1.8f, 0f)), Colors.White);
+            }
+            // Serra: morros cônicos logo depois do muro (dois "anéis", os de trás maiores).
+            for (int ring = 0; ring < 2; ring++)
+            {
+                for (float t = -limit - 40f; t < limit + 40f; t += ring == 0 ? 26f : 38f)
+                {
+                    float r = ring == 0 ? rng.RandfRange(18f, 30f) : rng.RandfRange(30f, 48f);
+                    float hgt = ring == 0 ? rng.RandfRange(22f, 40f) : rng.RandfRange(40f, 75f);
+                    Vector3 c = dir * (limit + r * 0.75f + ring * 30f) + along * (t + rng.RandfRange(-8f, 8f));
+                    var tint = new Color(0.8f + rng.Randf() * 0.35f, 0.8f + rng.Randf() * 0.3f, 0.75f + rng.Randf() * 0.3f);
+                    AddInstance("serra", cone, mountainMat, new Transform3D(new Basis(Vector3.Up, rng.Randf() * 3f) * Basis.FromScale(new Vector3(r * 2f, hgt, r * 2f)), c + new Vector3(0f, hgt * 0.5f - 1f, 0f)), tint);
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------------ cercas, colisão e MultiMesh

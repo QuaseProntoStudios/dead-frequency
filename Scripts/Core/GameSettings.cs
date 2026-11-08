@@ -35,6 +35,14 @@ public partial class GameSettings : Node
     /// <summary>Endereço do "meu servidor" (só usado no modo 1).</summary>
     public string ServerUrl { get; set; } = "";
     public string PlayerName { get; set; } = "Entregador";
+    // Personagem (v0.9.6): homem/mulher e índices das paletas de CharacterLook.
+    public bool CharWoman { get; set; }
+    public int CharSkin { get; set; } = 2;
+    public int CharHair { get; set; } = 1;
+    public int CharShirt { get; set; }
+    public int CharPants { get; set; }
+    /// <summary>Câmera estabilizada no carro: o horizonte não balança com a carroceria (contra enjoo).</summary>
+    public bool StableVehicleCamera { get; set; } = true;
 
     // ---------------- v0.9.2: opções completas (abas) ----------------
     /// <summary>0 = janela, 1 = tela cheia (sem borda), 2 = tela cheia exclusiva, 3 = janela maximizada.</summary>
@@ -243,6 +251,12 @@ public partial class GameSettings : Node
         cfg.SetValue("network", "server_mode", ServerMode);
         cfg.SetValue("network", "server_url", ServerUrl);
         cfg.SetValue("network", "player_name", PlayerName);
+        cfg.SetValue("character", "woman", CharWoman);
+        cfg.SetValue("character", "skin", CharSkin);
+        cfg.SetValue("character", "hair", CharHair);
+        cfg.SetValue("character", "shirt", CharShirt);
+        cfg.SetValue("character", "pants", CharPants);
+        cfg.SetValue("game", "stable_vehicle_camera", StableVehicleCamera);
         cfg.SetValue("video", "window_mode", WindowMode);
         cfg.SetValue("video", "render_scale", RenderScale);
         cfg.SetValue("video", "max_fps", MaxFps);
@@ -307,6 +321,12 @@ public partial class GameSettings : Node
             ServerUrl = "";
         ServerMode = cfg.GetValue("network", "server_mode", string.IsNullOrWhiteSpace(ServerUrl) ? 0 : 1).AsInt32();
         PlayerName = cfg.GetValue("network", "player_name", PlayerName).AsString();
+        CharWoman = cfg.GetValue("character", "woman", CharWoman).AsBool();
+        CharSkin = cfg.GetValue("character", "skin", CharSkin).AsInt32();
+        CharHair = cfg.GetValue("character", "hair", CharHair).AsInt32();
+        CharShirt = cfg.GetValue("character", "shirt", CharShirt).AsInt32();
+        CharPants = cfg.GetValue("character", "pants", CharPants).AsInt32();
+        StableVehicleCamera = cfg.GetValue("game", "stable_vehicle_camera", StableVehicleCamera).AsBool();
         WindowMode = cfg.GetValue("video", "window_mode", Fullscreen ? 1 : 0).AsInt32();
         RenderScale = cfg.GetValue("video", "render_scale", RenderScale).AsSingle();
         MaxFps = cfg.GetValue("video", "max_fps", MaxFps).AsInt32();
@@ -348,7 +368,7 @@ public partial class GameSettings : Node
         MouseSensitivity = d.MouseSensitivity; InvertY = d.InvertY; Fov = d.Fov;
         MasterVolume = d.MasterVolume; MusicVolume = d.MusicVolume; SfxVolume = d.SfxVolume; UiVolume = d.UiVolume; RadioVolume = d.RadioVolume;
         WindowMode = d.WindowMode; RenderScale = d.RenderScale; MaxFps = d.MaxFps; Quality = d.Quality; AntiAliasing = d.AntiAliasing;
-        Brightness = d.Brightness; Contrast = d.Contrast; VSync = d.VSync; MuteOnFocusLoss = d.MuteOnFocusLoss; PauseOnFocusLoss = d.PauseOnFocusLoss; CheckUpdates = d.CheckUpdates;
+        Brightness = d.Brightness; Contrast = d.Contrast; VSync = d.VSync; MuteOnFocusLoss = d.MuteOnFocusLoss; PauseOnFocusLoss = d.PauseOnFocusLoss; CheckUpdates = d.CheckUpdates; StableVehicleCamera = d.StableVehicleCamera;
         VehicleSensitivity = d.VehicleSensitivity; HeadBob = d.HeadBob; ShowFps = d.ShowFps; UiScale = d.UiScale; Scanlines = d.Scanlines;
         ShowCrosshair = d.ShowCrosshair; ShowKeyHints = d.ShowKeyHints; ShowCompass = d.ShowCompass; ToastDuration = d.ToastDuration;
         SpeedUnit = d.SpeedUnit; Clock24h = d.Clock24h; TimeMode = d.TimeMode; DayLengthMinutes = d.DayLengthMinutes;

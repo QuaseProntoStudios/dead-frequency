@@ -321,9 +321,11 @@ public partial class LocalServer : Node
             return;
         string held = msg.TryGetProperty("held", out JsonElement h) && h.ValueKind == JsonValueKind.String ? Clip(h.GetString(), 24) : null;
         string eq = Str(msg, "eq");
-        eq = new string(eq.Where(c => (c >= 'a' && c <= 'z') || c == ',').ToArray());
+        eq = new string(eq.Where(c => (c >= 'a' && c <= 'z') || c == ',' || c == '_').ToArray());
         me.Held = held;
-        me.Seat = (int)Num(msg, "st") == 1 ? 1 : 0;
+        int st = (int)Num(msg, "st");
+        me.Seat = st is 1 or 2 ? st : 0;
+        string lk = new string(Str(msg, "lk").Where(c => c == 'm' || c == 'w' || c == ',' || char.IsDigit(c)).ToArray());
         me.Snapshot = new Dictionary<string, object>
         {
             ["p"] = Vec(msg, "p", 3),
@@ -332,6 +334,7 @@ public partial class LocalServer : Node
             ["st"] = me.Seat,
             ["held"] = held,
             ["eq"] = Clip(eq, 80),
+            ["lk"] = Clip(lk, 24),
         };
 
         var objs = new List<Dictionary<string, object>>();

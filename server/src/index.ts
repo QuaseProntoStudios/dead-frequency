@@ -428,6 +428,7 @@ interface PlayerSnapshot {
   st: number;
   held: string | null;
   eq: string;
+  lk: string;
 }
 
 interface ObjectSnapshot {
@@ -707,9 +708,10 @@ export class GameRoom extends DurableObject<Env> {
       p: vec(msg.p, 3),
       ry: num(msg.ry),
       hp: num(msg.hp),
-      st: msg.st === 1 ? 1 : 0,
+      st: msg.st === 1 ? 1 : msg.st === 2 ? 2 : 0,
       held: typeof msg.held === "string" ? msg.held.slice(0, 24) : null,
-      eq: typeof msg.eq === "string" ? msg.eq.replace(/[^a-z,]/g, "").slice(0, 80) : "",
+      eq: typeof msg.eq === "string" ? msg.eq.replace(/[^a-z_,]/g, "").slice(0, 80) : "",
+      lk: typeof msg.lk === "string" ? msg.lk.replace(/[^mw0-9,]/g, "").slice(0, 24) : "",
     };
     this.players.set(me.id, snapshot);
 

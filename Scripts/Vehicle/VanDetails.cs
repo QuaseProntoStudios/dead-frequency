@@ -85,6 +85,18 @@ public static class VanDetails
             Position = new Vector3(0f, 0.5f, -1.95f),
         });
 
+        // ---------------- chão da cabine e raios do volante (v0.9.6)
+        Box(root, new Vector3(0f, 0.53f, 1.6f), new Vector3(1.86f, 0.05f, 1.3f), dark);   // assoalho de borracha
+        Box(root, new Vector3(0f, 0.75f, 2.2f), new Vector3(1.86f, 0.42f, 0.12f), dark);  // parede dos pedais
+        if (van.GetNodeOrNull<Node3D>("Cabin/SteeringWheel") is Node3D wheel)
+        {
+            // Raios em "T" e o miolo: sem eles o aro redondo girava sem dar para ver.
+            Box(wheel, Vector3.Zero, new Vector3(0.34f, 0.035f, 0.025f), dark);
+            Box(wheel, new Vector3(0f, -0.085f, 0f), new Vector3(0.035f, 0.17f, 0.025f), dark);
+            Box(wheel, new Vector3(0f, 0f, 0.01f), new Vector3(0.08f, 0.08f, 0.04f), green);
+            Box(wheel, new Vector3(0f, 0.17f, 0.012f), new Vector3(0.04f, 0.02f, 0.03f), amber); // marca do "meio"
+        }
+
         // ---------------- cabine avançada (z 0,92 .. 2,3)
         const float cz0 = 0.92f, cz1 = 2.3f, cy1 = 2.42f, hw = 0.97f;
         float cmid = (cz0 + cz1) * 0.5f, clen = cz1 - cz0;

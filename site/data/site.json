@@ -1,6 +1,49 @@
 {
- "version": "0.9.5",
+ "version": "0.9.6",
  "changelog": [
+  {
+   "version": "0.9.6",
+   "date": "08/11/2026",
+   "title": "Oficina",
+   "changes": [
+    "Personagem: novo menu para escolher homem ou mulher e as cores da pele, do cabelo, da camisa e da calça. No online todo mundo vê você do seu jeito.",
+    "Online: quem está dirigindo agora aparece sentado no banco para os outros (antes sumia).",
+    "Carona: dá para entrar como passageiro na van (porta da esquerda), nos caminhões e na garupa da moto. Se outro jogador está dirigindo, a porta do motorista vira carona.",
+    "Dirigir sem enjoo: câmera estabilizada (o horizonte não balança com a carroceria), suspensão mais firme e menos rolagem nas curvas. Dá para desligar em Opções → Jogo.",
+    "O volante da van ganhou raios: agora dá para ver ele girando nas curvas. A cabine ganhou chão.",
+    "Fuska refeito com carroceria arredondada de verdade e os vidros no lugar.",
+    "Viatura com uma sirene só (estava duplicada) e botijão novo do Gás do Zé (costura, pé, colarinho e regulador).",
+    "O fim do sítio deixou de ser parede invisível: muro de pedra com pilares e a serra atrás.",
+    "Ícone novo do jogo e do launcher, e a etiqueta amarela ALPHA ao lado da versão.",
+    "Online: atualize o servidor (npm run deploy) para a aparência e a carona aparecerem para os outros."
+   ],
+   "shots": [
+    {
+     "src": "assets/shots/v0.9.6/personagem.jpg",
+     "caption": "Novo menu Personagem: homem ou mulher e as cores"
+    },
+    {
+     "src": "assets/shots/v0.9.6/sitio_muro.jpg",
+     "caption": "O fim do sítio agora tem muro de pedra e a serra"
+    },
+    {
+     "src": "assets/shots/v0.9.6/van_carona.jpg",
+     "caption": "Banco do carona, chão na cabine e o volante com raios"
+    },
+    {
+     "src": "assets/shots/v0.9.6/menu.jpg",
+     "caption": "Etiqueta ALPHA ao lado da versão"
+    },
+    {
+     "src": "assets/shots/v0.9.6/fusca.jpg",
+     "caption": "Fuska refeito: vidros no lugar"
+    },
+    {
+     "src": "assets/shots/v0.9.6/botijao.jpg",
+     "caption": "Botijão novo do Gás do Zé"
+    }
+   ]
+  },
   {
    "version": "0.9.5",
    "date": "08/11/2026",
@@ -453,6 +496,22 @@
    "caption": "Menu principal com as novidades da versão"
   },
   {
+   "src": "assets/shots/v0.9.6/personagem.jpg",
+   "caption": "Novo menu Personagem: homem ou mulher e as cores"
+  },
+  {
+   "src": "assets/shots/v0.9.6/sitio_muro.jpg",
+   "caption": "O fim do sítio agora tem muro de pedra e a serra"
+  },
+  {
+   "src": "assets/shots/v0.9.6/van_carona.jpg",
+   "caption": "Banco do carona, chão na cabine e o volante com raios"
+  },
+  {
+   "src": "assets/shots/v0.9.6/menu.jpg",
+   "caption": "Etiqueta ALPHA ao lado da versão"
+  },
+  {
    "src": "assets/shots/v0.9.5/churrasquinho_noite.jpg",
    "caption": "Churrasquinho do Duvidoso à noite: fumaça, freguesia e o caramelo seguindo"
   },
@@ -499,22 +558,6 @@
   {
    "src": "assets/shots/v0.9.3/frota.jpg",
    "caption": "Moto e caminhões do pátio"
-  },
-  {
-   "src": "assets/shots/v0.9.2/4_progresso.jpg",
-   "caption": "Launcher baixando o jogo"
-  },
-  {
-   "src": "assets/shots/v0.9.2/1_pasta.jpg",
-   "caption": "Escolha da pasta de instalação"
-  },
-  {
-   "src": "assets/shots/v0.9.2/2_auto.jpg",
-   "caption": "Atualizações automáticas ou perguntando"
-  },
-  {
-   "src": "assets/shots/v0.9.2/tab0.jpg",
-   "caption": "Opções: aba Vídeo"
   }
  ],
  "pix": "00020126700014br.gov.bcb.pix0124contato@badwolf3d.com.br0220Apoio Dead Frequency5204000053039865802BR5914DEAD FREQUENCY6006BRASIL62120508DEADFREQ6304D998"
