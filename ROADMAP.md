@@ -37,21 +37,69 @@ Conecta os itens com a "gente de verdade" da v0.9.4.
 | **Botijão do Gás do Zé** | O botijão que já existia agora vaza: arremessado ou caindo forte da caçamba, solta um chiado com gás saindo e perde integridade até parar. |
 | **Churrasquinho do Duvidoso** | Barraca de calçada: depois das 18h acende a chapa, solta fumaça e junta gente em volta. Vende espetinho, guaraná, café e marmitex. |
 
-### v0.9.6 — Lojas da zona morta
+### v0.9.6 — Oficina (bugs e feedback dos testes) ← próxima build
+Tudo que apareceu jogando a v0.9.5. Vem antes de qualquer conteúdo novo.
+
+| # | Tipo | O que corrigir |
+|---|---|---|
+| 1 | Bug | **Fusca com os vidros fora do lugar** (a estufa não acompanha a carroceria arredondada). |
+| 2 | Bug | **Sirene da viatura duplicada** (o giroflex do modelo + o que o jogo desenhava por cima): deixar uma só. |
+| 3 | Bug | **Jogador dirigindo some para os outros** no online: mostrar o boneco sentado no banco do veículo. |
+| 4 | Feedback | **Balanço do carro dá vertigem**: câmera estabilizada (o horizonte não gira com a carroceria), suspensão mais firme e menos rolagem nas curvas; opção nas Opções. |
+| 5 | Feedback | **Volante gira** quando você vira. |
+| 6 | Bug | **Van sem chão na cabine** e **sem lugar para passageiro**: chão de verdade e banco do carona para outro jogador entrar (online). |
+| 7 | Feedback | **Personagem virou mulher sozinho**: escolher homem ou mulher e personalizar (cor da pele, do cabelo, da camisa e da calça) no menu, visível para todos no online. |
+| 8 | Bug | **Parede invisível no fundo do sítio**: muralha/serra de verdade no limite do mapa, como na cidade. |
+| 9 | Feedback | **Modelo do botijão** melhor (corpo, alça e válvula). |
+| 10 | Visual | **Ícone novo** do jogo e do launcher, e a etiqueta amarela **ALPHA** ao lado do número da versão (menu, launcher, site e ícone). |
+
+### v0.9.7 — Mãos ocupadas (itens e online)
 | Ideia | Como funciona no jogo |
 |---|---|
-| **Agro-Tudão (casa de rações)** | Na estrada de terra entre a cidade e o sítio. Profissão/entrega nova: sacos pesados de ração para os cercados dos bichos. |
-| **Conserta-Tudo do Primo** | O gari junta **sucata** nas calçadas e vende aqui, ou troca por melhorias permanentes (lanterna de longo alcance, pilhas melhores para a visão noturna). |
-| **Caixa de Lã de Aço 1001 Utilidades** | Carga leve do repositor; guardada no inventário, melhora a imagem chiada da TV do apartamento. |
-| Fachadas novas | Texturas geradas em Python (`Assets/Textures/Stores/*.py.txt`) para as lojas acima. |
+| **Barra rápida 1–4** | Os 4 primeiros espaços do inventário viram atalhos (teclas 1–4): segurar o item na mão ou usar. A mochila aumenta o inventário, a barra continua de 1 a 4. |
+| **Largar e entregar itens** | **G** larga o item no chão (qualquer um pega). Mirando em outro jogador com o item na mão: **[E] Entregar item**. |
+| **Ver o que os outros seguram** | O servidor repassa o item na mão / a caixa que cada jogador está carregando. |
+| **Vender para o Zé** | Na barraca do Zé, aba **Vender**: ele compra seus itens por uma parte do preço. |
+| **Chat da sala (T)** | Mensagens de texto na sala, com limite anti-spam no servidor. No painel admin: mensagens enviadas por dia/sala (sem guardar o conteúdo). |
+| **Salas permanentes do admin** | No painel admin: criar salas fixas, públicas ou com senha (ex.: "ADMIN 1", código `ADMIN0`, senha gerada na hora e mostrada uma vez). Já nasce com 4: duas de admin (cidade e sítio) e duas do servidor (cidade e sítio), que nunca fecham. Precisa de protocolo novo (senha na entrada). |
 
-### v0.9.7 — Trânsito de verdade
+### v0.9.8 — Rua de verdade
 | Ideia | Como funciona no jogo |
 |---|---|
-| **Trânsito procedural** | Carros andando pelas ruas, parando no semáforo e no PARE (base para os dois abaixo). |
-| **Duno Mille (com escada)** | Hatch quadrado; quando nasce com a escada de fibra no teto, ignora o limite de velocidade e anda mais rápido que a viatura. |
-| **Maré-Azar 20V** | Sedã esportivo para o jogador e o trânsito, com temperatura escondida: acelerador no talo por muito tempo na estrada de terra → fumaça preta no capô e o motor morre (som `motor_ferveu.wav` já pronto). Precisa de protocolo novo (lista `VEHICLES`). |
+| **Meio-fio pintado** | Amarelo onde é proibido parar (bombeiros, delegacia, entradas de loja, garagens) e branco intercalado onde pode estacionar. Os carros gerados só estacionam no branco. |
+| **Placas de proibido estacionar** | Nos trechos amarelos; na delegacia e nos bombeiros com a plaquinha embaixo "POLÍCIA" / "BOMBEIROS". |
+| **Bocas de lobo e bueiros** | Bocas de lobo na beira das calçadas (abertura preta ou grade com fundo fundo) e tampas de bueiro na rua. Perto delas dá para ouvir a água correndo embaixo. Sem rede de túneis. |
+| **Ciclovia e ciclista** | Faixa de ciclovia pintada e um ciclista NPC que roda pela cidade como o ônibus (posição pelo relógio, igual para todos) e toca o sininho quando você está na frente. |
+| **Polícia** | Faixa na fachada da delegacia, ícone no minimapa e policiais NPC fardados (só figurantes por enquanto). |
 
+### v0.9.9 — Lojas de verdade
+| Ideia | Como funciona no jogo |
+|---|---|
+| **Prédios do tamanho da loja** | Mercados, lojas e postos deixam de ser "térreo de prédio": cada um ganha o próprio prédio, com o tamanho da loja. |
+| **Shopping** | Shopping com várias lojas, dois andares e escada (a primeira construção com andar de cima andável). |
+| **Táxi amarelo** | O taxista ganha o próprio carro: táxi amarelo com placa luminosa "TÁXI" no teto e o nome de uma cooperativa fictícia. |
+| **Agro-Tudão (casa de rações)** | Na estrada de terra entre a cidade e o sítio: entregas de sacos de ração para os cercados. |
+| **Conserta-Tudo do Primo** | O gari junta sucata nas calçadas e vende aqui, ou troca por melhorias (lanterna de longo alcance, pilhas para a visão noturna). |
+| **Lã de Aço 1001 Utilidades** | Carga leve do repositor; no apartamento, melhora a imagem chiada da TV. |
+
+### v0.10 — Carreira
+| Ideia | Como funciona no jogo |
+|---|---|
+| **Níveis de profissão** | Cada tarefa dá experiência na profissão. A cada nível: bônus em dinheiro por tarefa e itens de presente (ex.: luvas no nível 3 de entregador, café grátis para o taxista da madrugada). Salvo no save e conferido pelo servidor no online. |
+
+### v0.10.x — Trânsito de verdade
+| Ideia | Como funciona no jogo |
+|---|---|
+| **Trânsito procedural** | Carros andando pelas ruas, parando no semáforo e no PARE. |
+| **Duno Mille (com escada)** | Hatch quadrado; com a escada de fibra no teto, ignora o limite de velocidade e anda mais rápido que a viatura. |
+| **Maré-Azar 20V** | Sedã esportivo com temperatura escondida: acelerador no talo na estrada de terra → fumaça preta e motor morto (som pronto). |
+
+### Infraestrutura (em paralelo)
+| Tarefa | Detalhe |
+|---|---|
+| **Launcher menor** | Hoje o launcher leva o motor Godot inteiro dentro do .exe (~105 MB descompactado), por isso é maior que o zip do jogo (que é compactado). Dá para cortar para ~25–40 MB compilando um "template" do Godot só com o que o launcher usa (sem 3D e física) no CI. |
+| **Atualização incremental** | Em vez de baixar o zip inteiro a cada versão: publicar um manifesto com o hash de cada arquivo e o launcher baixar só o que mudou. O maior arquivo é o `.pck` (todos os assets); separar em um `.pck` base (modelos, sons, texturas — muda pouco) e um de patch (código e cenas) deixa a maioria das atualizações com poucos MB. |
+| **Arte gerada** | Texturas/sprites de muros e fachadas com o SpriteCook e um modelo de jogador novo com o Meshy, quando os conectores estiverem ligados na conversa (hoje não estão). |
 
 ## Fase 1 — Polimento da v0.9 (curto prazo)
 | Tarefa | Por quê | Esforço |
