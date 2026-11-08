@@ -73,7 +73,7 @@ public partial class CityGenerator
             m.EmissionEnergyMultiplier = Mathf.Lerp(0.08f, 0.9f, night);
     }
 
-    private StandardMaterial3D _acBody, _acGrille, _storeWindow, _doorDark, _brick, _whiteWall, _policeBlue, _fireRed, _redLight, _blueLight, _hydrant, _phoneOrange, _phonePurple, _phoneGrey;
+    private StandardMaterial3D _acBody, _acGrille, _storeWindow, _doorDark, _brick, _whiteWall, _policeBlue, _fireRed, _redLight, _blueLight, _hydrant, _phoneGrey;
     private BoxMesh _acBox;
 
     private void BuildLandmarkResources()
@@ -93,10 +93,6 @@ public partial class CityGenerator
         _redLight = Emissive(new Color(1f, 0.08f, 0.05f), 4f);
         _blueLight = Emissive(new Color(0.15f, 0.35f, 1f), 4f);
         _hydrant = Flat(new Color(0.85f, 0.12f, 0.08f), 0.5f);
-        _phoneOrange = Flat(new Color(0.95f, 0.5f, 0.08f), 0.5f);
-        _phoneOrange.CullMode = BaseMaterial3D.CullModeEnum.Disabled; // dá para ver por dentro da concha
-        _phonePurple = Flat(PhoneBooth.BrandColor(PhoneBrand.Morto), 0.5f);
-        _phonePurple.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
         _phoneGrey = Flat(new Color(0.2f, 0.21f, 0.23f), 0.6f);
         _acBox = new BoxMesh { Size = Vector3.One };
 
@@ -286,18 +282,22 @@ public partial class CityGenerator
         AddPhoneBooth(booths, new Vector3(8f, 0f, BlockSize * 0.5f - 1.4f), Vector3.Back);
     }
 
-    private void AddPhoneBooth(Node3D parent, Vector3 position, Vector3 towardRoad)
+    private void AddPhoneBooth(Node3D parent, Vector3 position, Vector3 towardRoad, PhoneBrand? forced = null)
     {
         RegisterObstacle(position);
-        // Operadora pela posição (não gasta sorteio, então a cidade continua igual para todos).
+        // Operadora e cor pela posição (não gasta sorteio, então a cidade continua igual para todos).
         int hash = Mathf.Abs(Mathf.RoundToInt(position.X * 7.3f) * 31 + Mathf.RoundToInt(position.Z * 3.7f) * 17);
-        PhoneBrand brand = hash % 5 < 3 ? PhoneBrand.Tchau : PhoneBrand.Morto;
+        (PhoneBrand brand, string color) = PhoneBooth.Pick(AssetProps.Hash(position, 66));
+        if (forced == PhoneBrand.Telefobica)
+            (brand, color) = (PhoneBrand.Telefobica, "lime");
+        else if (forced != null && brand == PhoneBrand.Telefobica)
+            (brand, color) = hash % 2 == 0 ? (PhoneBrand.Tchau, "cyan") : (PhoneBrand.Morto, "purple");
         var booth = new PhoneBooth
         {
             Brand = brand,
+            ShellColor = color,
             Position = position,
             Rotation = new Vector3(0f, Mathf.Atan2(towardRoad.X, towardRoad.Z), 0f),
-            ShellMaterial = brand == PhoneBrand.Morto ? _phonePurple : _phoneOrange,
             PhoneMaterial = _phoneGrey,
             PoleMaterial = _darkMetal,
         };
@@ -506,15 +506,27 @@ public partial class CityGenerator
         // CarModels tem a frente em -Z: gira 180° para a frente ficar para a rua.
         var car = new StaticBody3D { Position = position, Rotation = new Vector3(0f, Mathf.Pi, 0f), CollisionLayer = 1, CollisionMask = 0 };
         parent.AddChild(car);
-        Vector3 size = CarModels.Build(car, CarType.Sedan, new Color(0.92f, 0.92f, 0.92f));
-        car.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(size.X, size.Y - 0.2f, size.Z) }, Position = new Vector3(0f, size.Y * 0.5f + 0.1f, 0f) });
-        // Portas pretas e giroflex vermelho/azul.
-        foreach (float x in new[] { -0.91f, 0.91f })
-            AddBox(car, new Vector3(x, 0.62f, 0.1f), new Vector3(0.03f, 0.42f, 1.8f), _doorDark, false);
         StandardMaterial3D red = Emissive(new Color(1f, 0.08f, 0.05f), lightsOn ? 4f : 0.3f);
         StandardMaterial3D blue = Emissive(new Color(0.15f, 0.35f, 1f), lightsOn ? 4f : 0.3f);
-        AddBox(car, new Vector3(-0.35f, 1.45f, 0.15f), new Vector3(0.6f, 0.14f, 0.3f), red, false);
-        AddBox(car, new Vector3(0.35f, 1.45f, 0.15f), new Vector3(0.6f, 0.14f, 0.3f), blue, false);
+        // Viatura da Quaternius (Realistic Car Pack, frente em +Z: gira de volta).
+        bool model = AssetProps.Spawn(car, "res://Assets/Quaternius/Vehicles/Cop.fbx", Vector3.Zero, Mathf.Pi, 1.05f) != null;
+        if (model)
+        {
+            car.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.85f, 1.1f, 3.9f) }, Position = new Vector3(0f, 0.65f, 0f) });
+            // Giroflex aceso por cima da barra de luz do modelo.
+            AddBox(car, new Vector3(-0.3f, 1.33f, 0.2f), new Vector3(0.5f, 0.1f, 0.22f), red, false);
+            AddBox(car, new Vector3(0.3f, 1.33f, 0.2f), new Vector3(0.5f, 0.1f, 0.22f), blue, false);
+        }
+        else
+        {
+            Vector3 size = CarModels.Build(car, CarType.Sedan, new Color(0.92f, 0.92f, 0.92f));
+            car.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(size.X, size.Y - 0.2f, size.Z) }, Position = new Vector3(0f, size.Y * 0.5f + 0.1f, 0f) });
+            // Portas pretas e giroflex vermelho/azul.
+            foreach (float x in new[] { -0.91f, 0.91f })
+                AddBox(car, new Vector3(x, 0.62f, 0.1f), new Vector3(0.03f, 0.42f, 1.8f), _doorDark, false);
+            AddBox(car, new Vector3(-0.35f, 1.45f, 0.15f), new Vector3(0.6f, 0.14f, 0.3f), red, false);
+            AddBox(car, new Vector3(0.35f, 1.45f, 0.15f), new Vector3(0.6f, 0.14f, 0.3f), blue, false);
+        }
         car.AddChild(new Label3D
         {
             Text = "POLÍCIA",
@@ -522,7 +534,7 @@ public partial class CityGenerator
             PixelSize = 0.006f,
             Modulate = new Color(0.05f, 0.1f, 0.3f),
             OutlineSize = 0,
-            Position = new Vector3(0.93f, 0.68f, 0.1f),
+            Position = new Vector3(model ? 0.95f : 0.93f, model ? 0.62f : 0.68f, 0.1f),
             RotationDegrees = new Vector3(0f, 90f, 0f),
         });
         if (lightsOn)

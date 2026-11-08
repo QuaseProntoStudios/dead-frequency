@@ -84,3 +84,4 @@ Cada profissão nova = um `JobBase` em `Scripts/Jobs/` + a regra em `PROFESSIONS
 - **Save:** `SaveManager` grava `user://save.tzn` (JSON). Carteira e inventário continuam em `user://inventory.json`.
 - **Versão nova:** suba `GameVersion.Current`, escreva a entrada em `GameVersion.Changelog`, regenere `CHANGELOG.md` e faça push na main: o GitHub Actions compila Windows/Linux + launcher e cria o release.
 - Assets de terceiros em `Assets/<autor>/` com LICENSE.txt; só CC0 ou licenças que permitam uso comercial.
+- **Quaternius (v0.9.4):** personagens (`CharacterModel`, paleta em faixas pele/olhos/cabelo/camisa/calça/sapato), `FarmAnimal`, `NatureKit`. Texturas de natureza reduzidas para 256 px e sem normal map. Ainda não usados: Downtown City MegaKit e Ultimate Textured Building Pack (prédios modulares), Universal Animation Library (esqueleto diferente; precisaria de retarget).

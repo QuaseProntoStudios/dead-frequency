@@ -107,7 +107,7 @@ public partial class GameHud : CanvasLayer
         // Debug (F3)
         _debug = UiStyle.MakeLabel("", 14, HorizontalAlignment.Left);
         _debug.Visible = false;
-        Place(_debug, 0f, 0f, 0f, 0f, 12, 12, 700, 120);
+        Place(_debug, 0f, 0f, 0f, 0f, 12, 12, 760, 330);
         root.AddChild(_debug);
 
         // Minimapa (só com o radar equipado), canto superior esquerdo.
@@ -218,12 +218,66 @@ public partial class GameHud : CanvasLayer
         UpdateCompass();
 
         if (_debug.Visible)
+            UpdateDebug((float)delta);
+    }
+
+    // ---------------- Debug (F3) ----------------
+
+    private double _cpuLastTotal, _cpuLastWall;
+    private float _cpuPercent, _debugTimer;
+    private string _debugStats = "";
+
+    private void UpdateDebug(float dt)
+    {
+        // Números "pesados" (RAM, CPU) só uma vez por segundo.
+        _debugTimer -= dt;
+        if (_debugTimer <= 0f)
         {
-            _debug.Text = $"FPS {Engine.GetFramesPerSecond()}\n" +
-                          $"Estado: {Player.State}\n" +
-                          $"Mirando: {Player.DebugLookingAt}\n" +
-                          $"Prompt: {(string.IsNullOrEmpty(Player.CurrentPrompt) ? "-" : Player.CurrentPrompt)}";
+            _debugTimer = 1f;
+            var proc = System.Diagnostics.Process.GetCurrentProcess();
+            double total = proc.TotalProcessorTime.TotalSeconds;
+            double wall = Time.GetTicksMsec() / 1000.0;
+            if (_cpuLastWall > 0 && wall > _cpuLastWall)
+                _cpuPercent = (float)((total - _cpuLastTotal) / (wall - _cpuLastWall) / System.Environment.ProcessorCount * 100.0);
+            _cpuLastTotal = total;
+            _cpuLastWall = wall;
+            double ramMb = proc.WorkingSet64 / 1048576.0;
+            double godotMb = OS.GetStaticMemoryUsage() / 1048576.0;
+            double gcMb = System.GC.GetTotalMemory(false) / 1048576.0;
+            double vramMb = Performance.GetMonitor(Performance.Monitor.RenderVideoMemUsed) / 1048576.0;
+            _debugStats = $"RAM {ramMb:0} MB (engine {godotMb:0} · C# {gcMb:0}) · VRAM {vramMb:0} MB\n" +
+                          $"CPU {_cpuPercent:0}% de {System.Environment.ProcessorCount} núcleos · {OS.GetProcessorName()}\n" +
+                          $"GPU {RenderingServer.GetVideoAdapterName()}";
         }
+
+        Vector3 p = Player.GlobalPosition;
+        float yaw = Mathf.PosMod(-Mathf.RadToDeg(Player.GlobalRotation.Y), 360f);
+        string[] dirs = { "N", "NE", "L", "SE", "S", "SO", "O", "NO" };
+        string facing = dirs[Mathf.PosMod(Mathf.RoundToInt(yaw / 45f), 8)];
+        string where = "";
+        CityGenerator city = ProfessionManager.Instance?.City;
+        if (city != null && city.Biome != WorldBiome.Farm)
+        {
+            float period = city.Period;
+            int bx = Mathf.RoundToInt(p.X / period), bz = Mathf.RoundToInt(p.Z / period);
+            int sx = Mathf.RoundToInt(p.X / period - 0.5f), sz = Mathf.RoundToInt(p.Z / period - 0.5f);
+            where = $"Quarteirão ({bx}, {bz}) · perto de {city.StreetNameX(sx)} × {city.StreetNameZ(sz)}\n";
+        }
+        else if (city != null)
+        {
+            where = "Mapa: Sítio\n";
+        }
+
+        double frameMs = Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000.0;
+        double physMs = Performance.GetMonitor(Performance.Monitor.TimePhysicsProcess) * 1000.0;
+        _debug.Text = $"Dead Frequency {GameVersion.Current}  ·  FPS {Engine.GetFramesPerSecond()}  ({frameMs:0.0} ms lógica · {physMs:0.0} ms física)\n" +
+                      $"Posição X {p.X:0.0}  Y {p.Y:0.0}  Z {p.Z:0.0}  ·  olhando {facing} ({yaw:0}°)\n" +
+                      where +
+                      _debugStats + "\n" +
+                      $"Draw calls {Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame):0} · objetos {Performance.GetMonitor(Performance.Monitor.RenderTotalObjectsInFrame):0} · nós {Performance.GetMonitor(Performance.Monitor.ObjectNodeCount):0}\n" +
+                      $"Estado: {Player.State}" + (Player.CurrentVehicle != null ? $" ({Player.CurrentVehicle.DisplayName} {Player.CurrentVehicle.SpeedKmh:0} km/h)" : "") + "\n" +
+                      $"Mirando: {Player.DebugLookingAt}\n" +
+                      $"Prompt: {(string.IsNullOrEmpty(Player.CurrentPrompt) ? "-" : Player.CurrentPrompt)}";
     }
 
     /// <summary>A seta aponta para o lugar de trabalho da profissão (ou para o depósito).</summary>
@@ -252,7 +306,7 @@ public partial class GameHud : CanvasLayer
         _minimap.Visible = radar;
         // Com o minimapa aberto, o debug desce um pouco para não ficar por cima.
         _debug.OffsetTop = radar ? 250 : 12;
-        _debug.OffsetBottom = _debug.OffsetTop + 108;
+        _debug.OffsetBottom = _debug.OffsetTop + 320;
 
         var parts = new System.Collections.Generic.List<string>();
         if (Player.SpeedBoostLeft > 0f)

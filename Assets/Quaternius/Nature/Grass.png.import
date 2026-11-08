@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://mt42g5hpqgak"
-path="res://.godot/imported/phone_shell_morto.png-6c9f8809ce3e3f296a2a938f705c6cec.ctex"
+uid="uid://cw716glsvpgbg"
+path="res://.godot/imported/Grass.png-d716a57cafe361d8467719ee32054801.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Textures/phone_shell_morto.png"
-dest_files=["res://.godot/imported/phone_shell_morto.png-6c9f8809ce3e3f296a2a938f705c6cec.ctex"]
+source_file="res://Assets/Quaternius/Nature/Grass.png"
+dest_files=["res://.godot/imported/Grass.png-d716a57cafe361d8467719ee32054801.ctex"]
 
 [params]
 

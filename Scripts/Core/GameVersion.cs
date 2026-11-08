@@ -7,12 +7,23 @@ namespace DeadFrequency;
 
 public static class GameVersion
 {
-    public const string Current = "0.9.3";
+    public const string Current = "0.9.4";
 
     public readonly record struct Release(string Version, string Date, string Title, string[] Changes);
 
     public static readonly Release[] Changelog =
     {
+        new("0.9.4", "08/11/2026", "Gente de verdade", new[]
+        {
+            "Jogadores, pedestres, comerciantes e passageiros agora são personagens animados (homens e mulheres da Quaternius) que andam, correm e ficam parados de verdade, cada um com roupa, pele e cabelo próprios.",
+            "Os equipamentos (visão noturna, luvas, mochila e radar) acompanham a cabeça, as mãos e as costas do personagem.",
+            "Sítio com bichos animados: vacas, bois, porcos e ovelhas passeando no cercado, cachorro caramelo na varanda e cavalo ou jegue do lado da casa.",
+            "Celeiros, silos e cataventos novos (com as pás girando), árvores, pinheiros, árvores secas, capim, samambaias, flores e pedras no sítio; árvores novas nas praças da cidade.",
+            "Viaturas novas na delegacia.",
+            "Orelhões por operadora: tchau ciano (e uns roxos, mais raros), morto roxo, laranja ou verde, e os raríssimos da Telefóbica (verde-limão com poste azul), todos desativados.",
+            "No sítio agora só há dois orelhões: um que funciona e um velho da Telefóbica, desativado, na frente da capela.",
+            "Debug (F3) completo: posição, quarteirão e ruas mais próximas, direção, FPS e tempo de quadro, RAM, VRAM, uso de CPU, placa de vídeo, draw calls e objetos na tela.",
+        }),
         new("0.9.3", "08/11/2026", "Frota do pátio", new[]
         {
             "A moto de entrega do pátio agora anda: guarde uma caixa de até 20 kg no baú (E) e entregue de moto.",
@@ -169,6 +180,7 @@ public static class GameVersion
             "Kenney · www.kenney.nl — Starter Kit Racing (github.com/KenneyNL/Starter-Kit-Racing)",
             "   caminhões, moto, pneu cantando e batida — licença CC0 (domínio público)",
             "KayKit · Kay Lousberg (www.kaylousberg.com) — City Builder Bits, Furniture Bits, Halloween Bits e Restaurant Bits",
+            "Quaternius · quaternius.com — Man/Woman Animated, Ultimate Animated Animals, Farm Animals, Farm Buildings, Stylized Nature MegaKit, Realistic Car Pack e Public Transport Pack (CC0)",
             "   mobília do escritório e dos apartamentos, bancos, caçambas, caixa d'água, cemitério, abóboras, caixotes do hortifrúti e panela — licença CC0",
             "Operadoras \"tchau\" e \"morto\": paródias, sem relação com empresas reais.",
         }),

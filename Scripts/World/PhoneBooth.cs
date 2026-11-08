@@ -1,7 +1,8 @@
 // Scripts/World/PhoneBooth.cs
 // Orelhão. Mire e aperte E: às vezes a central dá uma dica de entrega, às vezes... é só a frequência morta.
 // O visual é montado em código (concha aberta para a rua = +Z local).
-// Duas operadoras paródia: "tchau" (concha laranja) e "morto" (concha roxa).
+// Operadoras paródia (v0.9.4): "tchau" (concha ciano, às vezes roxa, logo laranja), "morto" (roxa, laranja
+// ou verde) e a rara "Telefóbica" (concha verde-limão, poste azul) — essas estão todas desativadas.
 using Godot;
 
 namespace DeadFrequency;
@@ -10,12 +11,16 @@ public enum PhoneBrand
 {
     Tchau,
     Morto,
+    /// <summary>Paródia da antiga operadora; orelhões raros e desativados.</summary>
+    Telefobica,
 }
 
 public partial class PhoneBooth : Area3D, IInteractable
 {
     public PhoneBrand Brand { get; set; } = PhoneBrand.Tchau;
-    public StandardMaterial3D ShellMaterial { get; set; }
+    /// <summary>Cor da concha: cyan/purple (tchau), purple/orange/green (morto), lime (Telefóbica).</summary>
+    public string ShellColor { get; set; } = "cyan";
+    public bool Disabled => Brand == PhoneBrand.Telefobica;
     public StandardMaterial3D PhoneMaterial { get; set; }
     public StandardMaterial3D PoleMaterial { get; set; }
 
@@ -49,6 +54,14 @@ public partial class PhoneBooth : Area3D, IInteractable
         "Um silêncio total. Até o chiado da linha está morto.",
     };
 
+    private static readonly string[] DeadLineCalls =
+    {
+        "Nada. O fone está mudo. Um adesivo diz: \"LINHA DESATIVADA — a Telefóbica agradece os 30 anos\".",
+        "O gancho está solto e o teclado não acende. Este orelhão não funciona há muito tempo.",
+        "Silêncio. Alguém escreveu no vidro do visor: \"saudades da ficha\".",
+        "Você aperta as teclas e nada acontece. Só um besouro mora aqui agora.",
+    };
+
     private AudioStreamPlayer3D _sound;
     private double _cooldown;
     private static readonly RandomNumberGenerator Rng = new();
@@ -62,7 +75,7 @@ public partial class PhoneBooth : Area3D, IInteractable
 
         AddToGroup(MinimapView.MarkerGroup);
         SetMeta("map_kind", "phone");
-        SetMeta("map_color", new Color(1f, 0.55f, 0.1f));
+        SetMeta("map_color", Disabled ? new Color(0.5f, 0.55f, 0.3f) : BrandColor(Brand));
 
         var body = new StaticBody3D { CollisionLayer = 1, CollisionMask = 0 };
         body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(0.15f, 2.4f, 0.15f) }, Position = new Vector3(0f, 1.2f, -0.65f) });
@@ -70,6 +83,8 @@ public partial class PhoneBooth : Area3D, IInteractable
 
         PhoneMaterial ??= new StandardMaterial3D { AlbedoColor = new Color(0.2f, 0.21f, 0.23f) };
         PoleMaterial ??= new StandardMaterial3D { AlbedoColor = new Color(0.1f, 0.1f, 0.12f) };
+        if (Disabled)
+            PoleMaterial = new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.3f, 0.7f), Roughness = 0.5f }; // poste azul
 
         // Poste atrás da concha, com o braço que a segura.
         AddChild(new MeshInstance3D
@@ -82,7 +97,7 @@ public partial class PhoneBooth : Area3D, IInteractable
 
         // Concha oca de verdade (casca de ovo aberta na frente e embaixo), com o logo uma vez só, nas costas,
         // pintado na textura. Por dentro é cinza claro, como os orelhões de rua.
-        AddChild(new MeshInstance3D { Mesh = ShellMesh(true), Position = ShellCenter, MaterialOverride = OuterMaterial(Brand) });
+        AddChild(new MeshInstance3D { Mesh = ShellMesh(true), Position = ShellCenter, MaterialOverride = OuterMaterial(Brand, ShellColor) });
         AddChild(new MeshInstance3D { Mesh = ShellMesh(false), Position = ShellCenter, MaterialOverride = InnerMaterial() });
 
         // Telefone na parede de dentro, no meio da concha: gancho, fio e o teclado com números e visor.
@@ -93,9 +108,19 @@ public partial class PhoneBooth : Area3D, IInteractable
         if (ResourceLoader.Exists("res://Assets/Textures/phone_keypad.png"))
         {
             _keypad ??= new StandardMaterial3D { AlbedoTexture = GD.Load<Texture2D>("res://Assets/Textures/phone_keypad.png"), EmissionEnabled = true, EmissionTexture = GD.Load<Texture2D>("res://Assets/Textures/phone_keypad.png"), EmissionEnergyMultiplier = 0.25f };
-            AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(0.16f, 0.24f) }, Position = new Vector3(0.03f, py + 0.02f, back + 0.122f), MaterialOverride = _keypad });
+            // Desativado: teclado apagado e encardido.
+            _deadKeypad ??= new StandardMaterial3D { AlbedoTexture = GD.Load<Texture2D>("res://Assets/Textures/phone_keypad.png"), AlbedoColor = new Color(0.45f, 0.42f, 0.36f) };
+            AddChild(new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(0.16f, 0.24f) }, Position = new Vector3(0.03f, py + 0.02f, back + 0.122f), MaterialOverride = Disabled ? _deadKeypad : _keypad });
         }
-        AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.006f, Height = 0.3f }, Position = new Vector3(-0.17f, py - 0.24f, back + 0.12f), MaterialOverride = PoleMaterial });
+        if (Disabled)
+        {
+            // Fio arrancado: o fone pendurado mais baixo, torto.
+            AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.006f, Height = 0.6f }, Position = new Vector3(-0.17f, py - 0.38f, back + 0.12f), MaterialOverride = PhoneMaterial });
+        }
+        else
+        {
+            AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.006f, BottomRadius = 0.006f, Height = 0.3f }, Position = new Vector3(-0.17f, py - 0.24f, back + 0.12f), MaterialOverride = PoleMaterial });
+        }
 
         _sound = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 4f, Position = new Vector3(0f, 1.6f, 0f) };
         if (ResourceLoader.Exists("res://Audio/SFX/phone_call.wav"))
@@ -107,9 +132,9 @@ public partial class PhoneBooth : Area3D, IInteractable
     /// <summary>Semi-eixos da casca (largura, altura, profundidade).</summary>
     private static readonly Vector3 ShellAxes = new(0.5f, 0.56f, 0.52f);
     private static ArrayMesh _outerMesh, _innerMesh;
-    private static readonly System.Collections.Generic.Dictionary<PhoneBrand, StandardMaterial3D> Outer = new();
+    private static readonly System.Collections.Generic.Dictionary<string, StandardMaterial3D> Outer = new();
     private static StandardMaterial3D _inner;
-    private static StandardMaterial3D _keypad;
+    private static StandardMaterial3D _keypad, _deadKeypad;
 
     /// <summary>
     /// Casca de elipsoide aberta na frente e embaixo. A malha é feita em volta do eixo das "costas"
@@ -175,17 +200,18 @@ public partial class PhoneBooth : Area3D, IInteractable
         return st.Commit();
     }
 
-    private static StandardMaterial3D OuterMaterial(PhoneBrand brand)
+    private static StandardMaterial3D OuterMaterial(PhoneBrand brand, string color)
     {
-        if (Outer.TryGetValue(brand, out StandardMaterial3D m))
+        string key = $"{BrandName(brand).ToLowerInvariant()}_{color}";
+        if (Outer.TryGetValue(key, out StandardMaterial3D m))
             return m;
-        string path = $"res://Assets/Textures/phone_shell_{BrandName(brand)}.png";
+        string path = $"res://Assets/Textures/phone_shell_{key}.png";
         m = new StandardMaterial3D { AlbedoColor = Colors.White, Roughness = 0.35f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
         if (ResourceLoader.Exists(path))
             m.AlbedoTexture = GD.Load<Texture2D>(path);
         else
             m.AlbedoColor = BrandColor(brand);
-        Outer[brand] = m;
+        Outer[key] = m;
         return m;
     }
 
@@ -198,19 +224,49 @@ public partial class PhoneBooth : Area3D, IInteractable
             _cooldown -= delta;
     }
 
-    public static Color BrandColor(PhoneBrand brand) =>
-        brand == PhoneBrand.Morto ? new Color(0.42f, 0.12f, 0.58f) : new Color(0.95f, 0.5f, 0.08f);
+    /// <summary>Cor da marca (minimapa e mensagens).</summary>
+    public static Color BrandColor(PhoneBrand brand) => brand switch
+    {
+        PhoneBrand.Morto => new Color(0.42f, 0.12f, 0.58f),
+        PhoneBrand.Telefobica => new Color(0.78f, 0.87f, 0.16f),
+        _ => new Color(0.16f, 0.73f, 0.84f),
+    };
 
-    public static string BrandName(PhoneBrand brand) => brand == PhoneBrand.Morto ? "morto" : "tchau";
+    public static string BrandName(PhoneBrand brand) => brand switch
+    {
+        PhoneBrand.Morto => "morto",
+        PhoneBrand.Telefobica => "Telefóbica",
+        _ => "tchau",
+    };
+
+    /// <summary>
+    /// Sorteio estável de operadora e cor (pelo número dado). Telefóbica ~7%; tchau ~55% (roxo raro); morto ~38%.
+    /// </summary>
+    public static (PhoneBrand brand, string color) Pick(int hash)
+    {
+        hash = Mathf.Abs(hash);
+        int roll = hash % 100;
+        int sub = (hash / 100) % 100;
+        if (roll < 7)
+            return (PhoneBrand.Telefobica, "lime");
+        if (roll < 62)
+            return (PhoneBrand.Tchau, sub < 12 ? "purple" : "cyan");
+        return (PhoneBrand.Morto, sub < 40 ? "purple" : sub < 70 ? "orange" : "green");
+    }
 
     public string GetInteractionPrompt(PlayerController player) =>
-        _cooldown > 0 ? "Orelhão (ocupado...)" : $"[E] Usar o orelhão da {BrandName(Brand)}";
+        _cooldown > 0 ? "Orelhão (ocupado...)" : Disabled ? "[E] Tentar o orelhão da Telefóbica (desativado)" : $"[E] Usar o orelhão da {BrandName(Brand)}";
 
     public bool CanInteract(PlayerController player) => _cooldown <= 0;
 
     public void Interact(PlayerController player)
     {
         _cooldown = 6.0;
+        if (Disabled)
+        {
+            GameHud.Toast(this, "ORELHÃO TELEFÓBICA: " + DeadLineCalls[Rng.RandiRange(0, DeadLineCalls.Length - 1)], new Color(0.8f, 0.9f, 0.4f), 5.0);
+            return;
+        }
         _sound.Play();
         string message = Rng.Randf() < 0.45f ? DeliveryTip(player) : null;
         if (message == null)
@@ -224,7 +280,7 @@ public partial class PhoneBooth : Area3D, IInteractable
         {
             if (IsInsideTree())
                 GameHud.Toast(this, $"ORELHÃO {BrandName(Brand).ToUpperInvariant()}: " + message,
-                    Brand == PhoneBrand.Morto ? new Color(0.85f, 0.6f, 1f) : new Color(1f, 0.75f, 0.35f), 6.0);
+                    Brand == PhoneBrand.Morto ? new Color(0.85f, 0.6f, 1f) : new Color(0.5f, 0.9f, 1f), 6.0);
         };
     }
 

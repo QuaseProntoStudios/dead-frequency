@@ -106,6 +106,7 @@ public partial class CityGenerator
         BuildRoadSigns();
         BuildFarmPhones();
         BuildTrees();
+        BuildUndergrowth();
         BuildFarmBoundary();
         BuildRadioTower(new Vector3(-FarmExtent + 25f, 0f, -FarmExtent + 25f));
 
@@ -398,6 +399,12 @@ public partial class CityGenerator
         // Às vezes uma abóbora iluminada na varanda (KayKit Halloween, CC0).
         if (_rng.Randf() < 0.35f)
             AssetProps.Spawn(house, AssetProps.Halloween + "pumpkin_orange_jackolantern.gltf", new Vector3(-3.2f, 0f, d * 0.5f + 0.9f), _rng.RandfRange(-0.5f, 0.5f), 0.45f);
+        // Caramelo deitado na varanda e, às vezes, um cavalo ou jegue amarrado do lado da casa.
+        int pet = AssetProps.Hash(xf * pos, 13);
+        if (pet % 10 < 6)
+            house.AddChild(FarmAnimal.Create("ShibaInu.gltf", 0.95f, new Vector3(-1.6f, 0f, d * 0.5f + 1.4f), 2.6f, 1.2f));
+        if (pet % 7 < 3)
+            house.AddChild(FarmAnimal.Create(pet % 2 == 0 ? "Horse.gltf" : "Donkey.gltf", pet % 2 == 0 ? 2.3f : 1.8f, new Vector3(w * 0.5f + 2.5f, 0f, 1.5f), Mathf.Pi * 0.5f));
         // Chaminé do fogão a lenha e caixa d'água.
         AddBox(house, new Vector3(-2.6f, h + 1.6f, -1.5f), new Vector3(0.6f, 2.2f, 0.6f), Flat(new Color(0.5f, 0.3f, 0.22f)), false);
         AddCylinder(house, new Vector3(2.5f, h + 1.9f, -2f), 0.7f, 0.9f, _signBlue);
@@ -408,6 +415,15 @@ public partial class CityGenerator
         var barn = new Node3D { Position = pos };
         farm.AddChild(barn);
         const float w = 10f, h = 6f, d = 13f;
+        // Celeiro vermelho da Quaternius (Farm Buildings), escalado para o mesmo espaço de antes.
+        string[] barns = { "Barn.fbx", "BigBarn.fbx", "SmallBarn.fbx" };
+        string file = barns[AssetProps.Hash(xf * pos, 14) % barns.Length];
+        float k = file == "SmallBarn.fbx" ? 1.6f : 1.3f;
+        if (AssetProps.Spawn(barn, "res://Assets/Quaternius/Farm/" + file, Vector3.Zero, 0f, k) != null)
+        {
+            AddShape(new BoxShape3D { Size = new Vector3(w, h + 2f, 10.5f) }, xf * barn.Transform * new Transform3D(Basis.Identity, new Vector3(0f, (h + 2f) * 0.5f, 0f)));
+            return;
+        }
         AddBox(barn, new Vector3(0f, h * 0.5f, 0f), new Vector3(w, h, d), _barnRed);
         Roof(barn, new Vector3(0f, h + 1.5f, 0f), new Vector3(w + 0.8f, 3f, d + 0.6f), _roofBrown);
         // Portão branco com "X" e janela do palheiro.
@@ -426,6 +442,11 @@ public partial class CityGenerator
         var silo = new Node3D { Position = pos };
         farm.AddChild(silo);
         const float r = 2.4f, h = 10f;
+        if (AssetProps.Spawn(silo, "res://Assets/Quaternius/Farm/Silo.fbx", Vector3.Zero, 0f, 1.15f) != null)
+        {
+            AddShape(new CylinderShape3D { Radius = 2.1f, Height = h }, xf * silo.Transform * new Transform3D(Basis.Identity, new Vector3(0f, h * 0.5f, 0f)));
+            return;
+        }
         AddCylinder(silo, new Vector3(0f, h * 0.5f, 0f), r, h, _metalSilo, new CylinderMesh { TopRadius = 0.5f, BottomRadius = 0.5f, Height = 1f, RadialSegments = 16 });
         silo.AddChild(new MeshInstance3D
         {
@@ -484,6 +505,13 @@ public partial class CityGenerator
 
     private void BuildCow(Node3D parent, Vector3 pos, float rotY)
     {
+        // Vacas e às vezes um boi, animados (Quaternius). Passeiam dentro do cercado.
+        if (ResourceLoader.Exists(FarmAnimal.Dir + "Cow.gltf"))
+        {
+            bool bull = AssetProps.Hash(pos, 11) % 6 == 0;
+            parent.AddChild(FarmAnimal.Create(bull ? "Bull.gltf" : "Cow.gltf", bull ? 2.5f : 2.3f, pos, rotY, 2.2f));
+            return;
+        }
         var cow = new Node3D { Position = pos, Rotation = new Vector3(0f, rotY, 0f) };
         parent.AddChild(cow);
         AddBox(cow, new Vector3(0f, 1.05f, 0f), new Vector3(0.75f, 0.75f, 1.6f), _cowWhite, false);
@@ -504,6 +532,13 @@ public partial class CityGenerator
 
     private void BuildPig(Node3D parent, Vector3 pos, float rotY)
     {
+        // Porcos (e umas ovelhas) da Quaternius.
+        if (ResourceLoader.Exists(FarmAnimal.Dir + "Pig.fbx"))
+        {
+            bool sheep = AssetProps.Hash(pos, 12) % 4 == 0;
+            parent.AddChild(FarmAnimal.Create(sheep ? "Sheep.fbx" : "Pig.fbx", sheep ? 1.3f : 1.2f, pos, rotY, 2f));
+            return;
+        }
         var pig = new Node3D { Position = pos, Rotation = new Vector3(0f, rotY, 0f) };
         parent.AddChild(pig);
         AddBox(pig, new Vector3(0f, 0.45f, 0f), new Vector3(0.55f, 0.5f, 0.95f), _pigPink, false);
@@ -547,6 +582,17 @@ public partial class CityGenerator
         var mill = new Node3D { Position = pos };
         farm.AddChild(mill);
         const float h = 9f;
+        // Catavento da Quaternius; as pás giram em volta do cubo.
+        if (AssetProps.Spawn(mill, "res://Assets/Quaternius/Farm/Windmill.fbx", Vector3.Zero, AssetProps.Hash(xf * pos, 15) % 628 / 100f, 0.85f) is Node3D model
+            && model.FindChild("Windmill_Blades", true, false) is Node3D blades)
+        {
+            var hub = new Spinner { Position = blades.Position, Axis = Vector3.Forward, Speed = _rng.RandfRange(1.2f, 2.6f) };
+            model.AddChild(hub);
+            blades.Reparent(hub, false);
+            blades.Position = Vector3.Zero;
+            AddShape(new BoxShape3D { Size = new Vector3(2f, h, 2f) }, xf * mill.Transform * new Transform3D(Basis.Identity, new Vector3(0f, h * 0.5f, 0f)));
+            return;
+        }
         foreach (float x in new[] { -0.9f, 0.9f })
             foreach (float z in new[] { -0.9f, 0.9f })
             {
@@ -755,11 +801,10 @@ public partial class CityGenerator
     {
         var booths = new Node3D { Name = "PhoneBooths" };
         _staticRoot.AddChild(booths);
-        AddPhoneBooth(booths, new Vector3(-5.5f, 0f, 21f), Vector3.Right); // portão da cooperativa
-        AddPhoneBooth(booths, new Vector3(9.5f, 0f, 137f), Vector3.Left); // capela
-        AddPhoneBooth(booths, _lakeCenter + new Vector3(-LakeRadius - 6f, 0f, -4f), Vector3.Left);
-        AddPhoneBooth(booths, new Vector3(-178f, 0f, -255f), Vector3.Left);
-        AddPhoneBooth(booths, new Vector3(156f, 0f, 138f), Vector3.Left);
+        // No sítio só tem dois: um que funciona (tchau ou morto) no portão da cooperativa
+        // e um velho da Telefóbica, desativado, na frente da capela.
+        AddPhoneBooth(booths, new Vector3(-5.5f, 0f, 21f), Vector3.Right, PhoneBrand.Tchau);
+        AddPhoneBooth(booths, new Vector3(9.5f, 0f, 137f), Vector3.Left, PhoneBrand.Telefobica);
     }
 
     // ------------------------------------------------------------------ árvores e limites
@@ -774,9 +819,12 @@ public partial class CityGenerator
                 continue;
             if (_rng.Randf() < 0.05f)
             {
-                // Árvore seca de vez em quando (KayKit Halloween, CC0).
-                string[] dead = { "tree_dead_large.gltf", "tree_dead_medium.gltf", "tree_dead_small.gltf" };
-                AssetProps.Spawn(_staticRoot, AssetProps.Halloween + dead[_rng.RandiRange(0, 2)], new Vector3(p.X, 0f, p.Y), _rng.Randf() * Mathf.Tau, _rng.RandfRange(1.2f, 1.8f));
+                // Árvore seca de vez em quando (Quaternius Stylized Nature, CC0). Mesmo número de sorteios de antes.
+                int kind = _rng.RandiRange(0, 2) + AssetProps.Hash(new Vector3(p.X, 0f, p.Y), 3) % 3;
+                float rot = _rng.Randf() * Mathf.Tau, sc = _rng.RandfRange(1.2f, 1.8f) * 0.3f;
+                var xfDead = new Transform3D(new Basis(Vector3.Up, rot) * Basis.FromScale(Vector3.One * sc), new Vector3(p.X, 0f, p.Y));
+                if (NatureKit.Get(NatureKit.DeadTrees[kind % 5]) is Mesh deadMesh)
+                    AddInstance("q_" + NatureKit.DeadTrees[kind % 5], deadMesh, null, xfDead, Colors.White);
                 AddShape(new CylinderShape3D { Radius = 0.35f, Height = 4f }, new Transform3D(Basis.Identity, new Vector3(p.X, 2f, p.Y)));
             }
             else
@@ -799,6 +847,18 @@ public partial class CityGenerator
         float s = _rng.RandfRange(0.8f, 1.5f);
         var basePos = new Vector3(p.X, 0f, p.Y);
         float trunkH = (pine ? 2.2f : 2.6f) * s;
+        // Modelos da Quaternius (v0.9.4). Os sorteios continuam os mesmos para o resto do mapa não mudar.
+        string[] kinds = pine ? NatureKit.Pines : NatureKit.CommonTrees;
+        string model = kinds[AssetProps.Hash(basePos, 5) % kinds.Length];
+        if (NatureKit.Get(model) is Mesh treeMesh)
+        {
+            _rng.Randf(); _rng.Randf(); _rng.Randf(); // (antes: tom das folhas)
+            float rot = pine ? AssetProps.Hash(basePos, 6) % 628 / 100f : _rng.Randf() * 3f;
+            float k = s * (pine ? 0.85f : 0.8f);
+            AddInstance("q_" + model, treeMesh, null, new Transform3D(new Basis(Vector3.Up, rot) * Basis.FromScale(Vector3.One * k), basePos), Colors.White);
+            AddShape(new CylinderShape3D { Radius = 0.3f * s, Height = trunkH }, new Transform3D(Basis.Identity, basePos + new Vector3(0f, trunkH * 0.5f, 0f)));
+            return;
+        }
         AddInstance("trunk", _unitCylinder, _trunk, new Transform3D(Basis.FromScale(new Vector3(0.35f * s, trunkH, 0.35f * s)), basePos + new Vector3(0f, trunkH * 0.5f, 0f)), Colors.White);
         Color tint = new Color(0.75f + _rng.Randf() * 0.35f, 0.85f + _rng.Randf() * 0.3f, 0.7f + _rng.Randf() * 0.3f);
         if (pine)
@@ -816,6 +876,26 @@ public partial class CityGenerator
     }
 
     private SphereMesh _treeCrown;
+
+    /// <summary>Capim, samambaias, moitas, flores e pedras espalhados (sorteio próprio: não mexe no mapa).</summary>
+    private void BuildUndergrowth()
+    {
+        var rng = new RandomNumberGenerator { Seed = 96601 };
+        int placed = 0;
+        for (int i = 0; i < 9000 && placed < 2600; i++)
+        {
+            var p = new Vector2(rng.RandfRange(-FarmExtent + 4f, FarmExtent - 4f), rng.RandfRange(-FarmExtent + 4f, FarmExtent - 4f));
+            if (DistanceToRoads(p) < 3.2f || !IsFree(p, 1.2f))
+                continue;
+            bool rock = rng.Randf() < 0.06f;
+            string model = rock ? NatureKit.Rocks[rng.RandiRange(0, NatureKit.Rocks.Length - 1)] : NatureKit.Ground[rng.RandiRange(0, NatureKit.Ground.Length - 1)];
+            if (NatureKit.Get(model) is not Mesh mesh)
+                return;
+            float sc = rock ? rng.RandfRange(0.25f, 0.6f) : rng.RandfRange(0.6f, 1.2f);
+            AddInstance("qg_" + model, mesh, null, new Transform3D(new Basis(Vector3.Up, rng.Randf() * Mathf.Tau) * Basis.FromScale(Vector3.One * sc), new Vector3(p.X, 0f, p.Y)), Colors.White);
+            placed++;
+        }
+    }
 
     private void BuildFarmBoundary()
     {
@@ -871,6 +951,34 @@ public partial class CityGenerator
         batch.Colors.Add(color);
     }
 
+    private static void FlushChunked(Node3D parent, string key, Batch batch, float range)
+    {
+        const float chunk = 64f;
+        var groups = new Dictionary<Vector2I, List<int>>();
+        for (int i = 0; i < batch.Transforms.Count; i++)
+        {
+            Vector3 o = batch.Transforms[i].Origin;
+            var c = new Vector2I(Mathf.FloorToInt(o.X / chunk), Mathf.FloorToInt(o.Z / chunk));
+            if (!groups.TryGetValue(c, out List<int> list))
+                groups[c] = list = new List<int>();
+            list.Add(i);
+        }
+        foreach ((Vector2I c, List<int> list) in groups)
+        {
+            var mm = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = batch.Mesh, InstanceCount = list.Count };
+            for (int i = 0; i < list.Count; i++)
+                mm.SetInstanceTransform(i, batch.Transforms[list[i]]);
+            parent.AddChild(new MultiMeshInstance3D
+            {
+                Name = $"MM_{key}_{c.X}_{c.Y}",
+                Multimesh = mm,
+                VisibilityRangeEnd = range,
+                VisibilityRangeEndMargin = 8f,
+                CastShadow = key.StartsWith("qg_") ? GeometryInstance3D.ShadowCastingSetting.Off : GeometryInstance3D.ShadowCastingSetting.On,
+            });
+        }
+    }
+
     private void FlushBatches(Node3D parent)
     {
         foreach ((string key, Batch batch) in _batches)
@@ -888,6 +996,13 @@ public partial class CityGenerator
                 mm.SetInstanceColor(i, batch.Colors[i]);
             }
             var material = batch.Material;
+            if (material == null)
+            {
+                // Modelos da Quaternius (árvores e mato): em pedaços de 64 m, cada um some além da neblina,
+                // senão a placa de vídeo desenharia todas as milhares de árvores do mapa o tempo todo.
+                FlushChunked(parent, key, batch, key.StartsWith("qg_") ? 60f : 240f);
+                continue;
+            }
             if (material is StandardMaterial3D std && !std.VertexColorUseAsAlbedo)
             {
                 // Sem isso a cor por instância seria ignorada; copia para não afetar os outros usos.

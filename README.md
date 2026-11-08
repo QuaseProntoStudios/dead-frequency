@@ -6,7 +6,7 @@ ganhe um apartamento no Edifício Sintonia e ajude a cidade da zona morta a func
 os amigos online. Tem física nas caixas, ciclo de dia e noite, rádio com músicas originais, itens,
 lojas paródia e multiplayer.
 
-**Versão atual:** v0.9.3 · veja o [CHANGELOG](CHANGELOG.md) · roteiro em [ROADMAP](ROADMAP.md)
+**Versão atual:** v0.9.4 · veja o [CHANGELOG](CHANGELOG.md) · roteiro em [ROADMAP](ROADMAP.md)
 
 ## Baixar e jogar
 
@@ -74,6 +74,7 @@ npm run deploy
 - [Godot Engine](https://godotengine.org) (MIT).
 - [Kenney](https://kenney.nl): Starter Kit Racing (CC0).
 - [KayKit](https://kaylousberg.com), de Kay Lousberg: City Builder, Furniture, Halloween e Restaurant Bits (CC0).
+- [Quaternius](https://quaternius.com): personagens animados, animais, prédios da fazenda, natureza e viaturas (CC0).
 - Músicas, efeitos, letreiros e anúncios: gerados por código (`Audio/*.py.txt`, `Assets/Textures/Stores/*.py.txt`).
 - Rádio 96.6: cinco músicas originais de bandas fictícias, geradas por `Audio/synth_radio.py.txt` (livres de direitos autorais).
 - Siga [twitch.tv/teuzin0dev](https://twitch.tv/teuzin0dev) · [github.com/dieguesmosken](https://github.com/dieguesmosken) · [recadin.com.br](https://recadin.com.br)

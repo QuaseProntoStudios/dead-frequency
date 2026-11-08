@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxgdoip4gq154"
-path="res://.godot/imported/phone_shell_tchau.png-f40e83987e42b52125f676f5a7f9c052.ctex"
+uid="uid://baevd26f2lova"
+path="res://.godot/imported/phone_shell_morto_green.png-983c2d54ff5cb440f4d8af7d616d0b3b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Textures/phone_shell_tchau.png"
-dest_files=["res://.godot/imported/phone_shell_tchau.png-f40e83987e42b52125f676f5a7f9c052.ctex"]
+source_file="res://Assets/Textures/phone_shell_morto_green.png"
+dest_files=["res://.godot/imported/phone_shell_morto_green.png-983c2d54ff5cb440f4d8af7d616d0b3b.ctex"]
 
 [params]
 

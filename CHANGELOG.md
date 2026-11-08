@@ -2,6 +2,17 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.9.4 — Gente de verdade  (08/11/2026)
+
+- Jogadores, pedestres, comerciantes e passageiros agora são personagens animados (homens e mulheres da Quaternius) que andam, correm e ficam parados de verdade, cada um com roupa, pele e cabelo próprios.
+- Os equipamentos (visão noturna, luvas, mochila e radar) acompanham a cabeça, as mãos e as costas do personagem.
+- Sítio com bichos animados: vacas, bois, porcos e ovelhas passeando no cercado, cachorro caramelo na varanda e cavalo ou jegue do lado da casa.
+- Celeiros, silos e cataventos novos (com as pás girando), árvores, pinheiros, árvores secas, capim, samambaias, flores e pedras no sítio; árvores novas nas praças da cidade.
+- Viaturas novas na delegacia.
+- Orelhões por operadora: tchau ciano (e uns roxos, mais raros), morto roxo, laranja ou verde, e os raríssimos da Telefóbica (verde-limão com poste azul), todos desativados.
+- No sítio agora só há dois orelhões: um que funciona e um velho da Telefóbica, desativado, na frente da capela.
+- Debug (F3) completo: posição, quarteirão e ruas mais próximas, direção, FPS e tempo de quadro, RAM, VRAM, uso de CPU, placa de vídeo, draw calls e objetos na tela.
+
 ## v0.9.3 — Frota do pátio  (08/11/2026)
 
 - A moto de entrega do pátio agora anda: guarde uma caixa de até 20 kg no baú (E) e entregue de moto.

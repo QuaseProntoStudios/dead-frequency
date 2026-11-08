@@ -48,6 +48,10 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
       caminhonete estilo Bongo (VanDetails), launcher em Godot (launcher/app, publicado pelo CI).
    ✅ v0.9.3: moto (baú) e caminhões drivable (VehicleFactory; NetIds = VEHICLES no servidor), HomeGuide (casa),
       semáforo de pedestre, CarModels com estufa fechada. Protocolo 5.
+   ✅ v0.9.4: assets Quaternius (CC0) em Assets/Quaternius: CharacterModel usa Man/Woman Animated (paleta 32x32
+      gerada em código), FarmAnimal (bichos animados), NatureKit (árvores/mato via MultiMesh), prédios da fazenda,
+      viaturas. Orelhões por operadora/cor (PhoneBooth.Pick) e Telefóbica desativada. Debug F3 completo.
+      Pasta de assets do usuário: C:\Users\teuzin\Documents\Projetos Godot\Assets Download (zips; perguntar antes de pedir novos).
 3. Painel diegético: DashboardButton, ElectricalSystem, EngineSystem, fusíveis
 4. CargoBayManager + SaveManager (.tzn)
 5. Shaders PS1 + monitor CRT

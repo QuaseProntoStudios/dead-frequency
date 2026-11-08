@@ -1,4 +1,4 @@
-"""Texturas das conchas dos orelhões (v0.9.1). Mapa equirretangular: u = volta em torno do poste
+"""Texturas das conchas dos orelhões (v0.9.1; cores por operadora na v0.9.4). Mapa equirretangular: u = volta em torno do poste
 (0,5 = costas da concha), v = de cima (0) para baixo (1). Um logo só, na lateral (u ~ 0,33), longe do poste.
 Uso: python3 phone_shell.py.txt <pasta Assets/Textures>"""
 import sys
@@ -7,17 +7,17 @@ OUT = sys.argv[1]
 D = "/usr/share/fonts/truetype/dejavu/"
 W, H = 1024, 512
 
-def shell(name, base, painter):
+def shell(name, base, painter, logo=None):
     img = Image.new("RGB", (W, H), base)
     d = ImageDraw.Draw(img)
     # leve variação de tom (plástico velho)
     for y in range(H):
         k = 1.0 - 0.10 * (y / H)
         d.line((0, y, W, y), fill=tuple(int(c * k) for c in base))
-    painter(img)
+    painter(img, logo) if logo else painter(img)
     img.filter(ImageFilter.SMOOTH).save(f"{OUT}/phone_shell_{name}.png")
 
-def tchau(img):
+def tchau(img, logo=(244, 120, 16)):
     # "Bolha" amarela irregular em volta do nome (como o logo de uma certa operadora), texto branco.
     k = 0.8
     blob = Image.new("L", (W, H), 0)
@@ -26,12 +26,12 @@ def tchau(img):
     E = lambda x0, y0, x1, y1: b.ellipse((cx + x0 * k, cy + y0 * k, cx + x1 * k, cy + y1 * k), fill=255)
     E(-120, -70, 95, 75); E(30, -95, 140, 10); E(-140, 10, -40, 95)
     blob = blob.filter(ImageFilter.GaussianBlur(10)).point(lambda v: 255 if v > 120 else 0)
-    img.paste((255, 196, 40), (0, 0), blob)
+    img.paste(logo, (0, 0), blob)
     d = ImageDraw.Draw(img)
     f = ImageFont.truetype(D + "DejaVuSans-Bold.ttf", int(78 * k))
     t = "tchau"
     bb = d.textbbox((0, 0), t, font=f)
-    d.text((cx - (bb[2] - bb[0]) // 2 - bb[0], cy - (bb[3] - bb[1]) // 2 - bb[1]), t, font=f, fill=(255, 255, 255), stroke_width=3, stroke_fill=(214, 110, 10))
+    d.text((cx - (bb[2] - bb[0]) // 2 - bb[0], cy - (bb[3] - bb[1]) // 2 - bb[1]), t, font=f, fill=(255, 255, 255), stroke_width=3, stroke_fill=tuple(int(c * 0.8) for c in logo))
     d.ellipse((cx + 92 * k, cy - 78 * k, cx + 118 * k, cy - 52 * k), fill=(255, 255, 255))
 
 def morto(img):
@@ -48,6 +48,27 @@ def morto(img):
     rot = tmp.rotate(90, expand=True)
     img.paste(rot, (340 - rot.width // 2, 215 - rot.height // 2), rot)
 
-shell("tchau", (240, 128, 20), tchau)
-shell("morto", (106, 30, 148), morto)
+def telefobica(img):
+    # Paródia de uma antiga operadora: nome em azul, em itálico, com um traço embaixo.
+    f = ImageFont.truetype(D + "DejaVuSerif-BoldItalic.ttf", 52)
+    d = ImageDraw.Draw(img)
+    t = "Telefóbica"
+    cx, cy = 340, 200
+    bb = d.textbbox((0, 0), t, font=f)
+    x, y = cx - (bb[2] - bb[0]) // 2 - bb[0], cy - (bb[3] - bb[1]) // 2 - bb[1]
+    d.text((x, y), t, font=f, fill=(18, 40, 110))
+    d.line((x + 4, cy + 36, x + bb[2] - bb[0] - 4, cy + 36), fill=(18, 40, 110), width=4)
+    # Adesivo "DESATIVADO" (todos estão fora de serviço)
+    d.rectangle((cx - 90, cy + 70, cx + 90, cy + 104), fill=(235, 235, 225), outline=(170, 20, 20), width=3)
+    f2 = ImageFont.truetype(D + "DejaVuSans-Bold.ttf", 22)
+    bb = d.textbbox((0, 0), "DESATIVADO", font=f2)
+    d.text((cx - (bb[2] - bb[0]) // 2 - bb[0], cy + 87 - (bb[3] - bb[1]) // 2 - bb[1]), "DESATIVADO", font=f2, fill=(170, 20, 20))
+
+# tchau: concha ciano (às vezes roxa), logo laranja. morto: roxa, laranja ou verde, logo branco.
+shell("tchau_cyan", (40, 186, 214), tchau)
+shell("tchau_purple", (106, 30, 148), tchau)
+shell("morto_purple", (106, 30, 148), morto)
+shell("morto_orange", (240, 128, 20), morto)
+shell("morto_green", (60, 170, 60), morto)
+shell("telefobica_lime", (200, 222, 40), telefobica)
 print("ok")
