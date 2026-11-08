@@ -101,10 +101,11 @@ void fragment() {
 	add_child(tag)
 
 	version_label = _label("", 15, GREEN_DIM)
-	version_label.position = Vector2(560, 16)
-	version_label.size = Vector2(180, 24)
+	version_label.position = Vector2(500, 16)
+	version_label.size = Vector2(170, 24)
 	version_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(version_label)
+	add_child(_alpha_badge(Vector2(678, 14)))
 
 	gear = _button("⚙", 22)
 	gear.tooltip_text = "Configurações do launcher"
@@ -169,6 +170,21 @@ void fragment() {
 	http_dl.max_redirects = 10
 	http_dl.request_completed.connect(_on_download)
 	add_child(http_dl)
+
+
+## Etiqueta amarela "ALPHA" ao lado da versão (o jogo está em alfa).
+func _alpha_badge(pos: Vector2) -> Label:
+	var l := _label("ALPHA", 13, Color(0.1, 0.08, 0.02))
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(1.0, 0.8, 0.16)
+	sb.set_corner_radius_all(3)
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 1
+	sb.content_margin_bottom = 1
+	l.add_theme_stylebox_override("normal", sb)
+	l.position = pos
+	return l
 
 
 func _label(text: String, size: int, color: Color) -> Label:

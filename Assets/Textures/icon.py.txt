@@ -1,0 +1,70 @@
+"""Ícone do Dead Frequency e do launcher (v0.9.6), com a faixa amarela ALPHA.
+Uso: python3 Assets/Textures/icon.py.txt   (da raiz do repositório)"""
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+D = "/usr/share/fonts/truetype/dejavu/"
+S = 1024
+GREEN = (77, 255, 122)
+DIM = (34, 130, 64)
+
+def base(launcher=False):
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Fundo: quadrado arredondado escuro com degradê e linhas de CRT.
+    bg = Image.new("RGBA", (S, S))
+    bd = ImageDraw.Draw(bg)
+    for y in range(S):
+        k = y / S
+        bd.line((0, y, S, y), fill=(int(6 + 10 * k), int(22 - 8 * k), int(12 - 4 * k), 255))
+    for y in range(0, S, 12):
+        bd.line((0, y, S, y), fill=(0, 0, 0, 70), width=4)
+    mask = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((40, 40, S - 40, S - 40), 170, fill=255)
+    img.paste(bg, (0, 0), mask)
+    d.rounded_rectangle((40, 40, S - 40, S - 40), 170, outline=GREEN, width=34)
+    # Torre da rádio com ondas.
+    tx, ty = S // 2, 300
+    glow = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    g = ImageDraw.Draw(glow)
+    for i, r in enumerate((90, 160, 230)):
+        g.arc((tx - r, ty - r, tx + r, ty + r), 205, 335, fill=GREEN + (255,), width=30 - i * 4)
+    g.polygon([(tx - 46, ty + 230), (tx, ty - 10), (tx + 46, ty + 230)], outline=GREEN + (255,), width=18)
+    g.line((tx - 30, ty + 140, tx + 30, ty + 140), fill=GREEN + (255,), width=14)
+    g.ellipse((tx - 26, ty - 36, tx + 26, ty + 16), fill=(255, 80, 70, 255))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(14)))
+    img.alpha_composite(glow)
+    # "DF"
+    f = ImageFont.truetype(D + "DejaVuSans-Bold.ttf", 330)
+    t = "DF"
+    bb = d.textbbox((0, 0), t, font=f)
+    d.text(((S - (bb[2] - bb[0])) // 2 - bb[0], 560 - bb[1]), t, font=f, fill=GREEN)
+    if launcher:
+        # Seta de download no canto superior direito.
+        d.ellipse((S - 330, 90, S - 90, 330), fill=(255, 196, 40, 255), outline=(20, 20, 20, 255), width=10)
+        cx = S - 210
+        d.rectangle((cx - 26, 140, cx + 26, 230), fill=(20, 20, 20, 255))
+        d.polygon([(cx - 70, 215), (cx + 70, 215), (cx, 290)], fill=(20, 20, 20, 255))
+    # Faixa ALPHA amarela na diagonal (canto inferior direito).
+    band = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    bdw = ImageDraw.Draw(band)
+    bdw.polygon([(S - 520, S), (S, S - 520), (S, S - 330), (S - 330, S)], fill=(255, 205, 40, 255))
+    fa = ImageFont.truetype(D + "DejaVuSans-Bold.ttf", 92)
+    txt = Image.new("RGBA", (520, 130), (0, 0, 0, 0))
+    ImageDraw.Draw(txt).text((50, 10), "ALPHA", font=fa, fill=(25, 20, 10, 255))
+    txt = txt.rotate(45, expand=True, resample=Image.BICUBIC)
+    band.alpha_composite(txt, (S - 470, S - 470))
+    band.putalpha(Image.composite(band.getchannel("A"), Image.new("L", (S, S), 0), mask))
+    img.alpha_composite(band)
+    return img
+
+for name, launcher in (("game", False), ("launcher", True)):
+    im = base(launcher)
+    small = im.resize((256, 256), Image.LANCZOS)
+    if name == "game":
+        small.save("icon.png")
+        im.save("icon.ico", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+        im.resize((128, 128), Image.LANCZOS).save("site/assets/icon.png")
+        im.resize((512, 512), Image.LANCZOS).save("site/assets/icon-512.png")
+    else:
+        small.save("launcher/app/icon.png")
+        im.save("launcher/app/icon.ico", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+print("ok")

@@ -57,7 +57,7 @@ public partial class InventoryScreen : ModalScreen
         left.AddChild(viewportContainer);
         var viewport = new SubViewport { OwnWorld3D = true, TransparentBg = true, Size = new Vector2I(280, 300), RenderTargetUpdateMode = SubViewport.UpdateMode.WhenVisible };
         viewportContainer.AddChild(viewport);
-        _preview = CharacterModel.Create(new Color(0.2f, 0.25f, 0.22f), new Color(0.12f, 0.13f, 0.18f), new Color(0.76f, 0.58f, 0.44f), UiStyle.Phosphor);
+        _preview = CharacterLook.Local.Build(); // aparência escolhida no menu Personagem (v0.9.6)
         viewport.AddChild(_preview);
         viewport.AddChild(new Camera3D { Position = new Vector3(0f, 1.15f, -2.6f), RotationDegrees = new Vector3(-4f, 180f, 0f), Fov = 45f, Current = true });
         viewport.AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-35f, 150f, 0f), LightEnergy = 1.4f });

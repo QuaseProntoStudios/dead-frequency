@@ -88,6 +88,19 @@ public static class UiStyle
         return box;
     }
 
+    /// <summary>Etiqueta amarela "ALPHA" ao lado do número da versão (o jogo está em alfa).</summary>
+    public static Label AlphaBadge(int fontSize = 13)
+    {
+        var l = new Label { Text = "ALPHA", VerticalAlignment = VerticalAlignment.Center };
+        l.AddThemeFontSizeOverride("font_size", fontSize);
+        l.AddThemeColorOverride("font_color", new Color(0.1f, 0.08f, 0.02f));
+        var sb = new StyleBoxFlat { BgColor = new Color(1f, 0.8f, 0.16f), ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 1, ContentMarginBottom = 1 };
+        sb.SetCornerRadiusAll(3);
+        l.AddThemeStyleboxOverride("normal", sb);
+        l.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        return l;
+    }
+
     public static Label MakeLabel(string text, int fontSize = 20, HorizontalAlignment align = HorizontalAlignment.Center, Color? color = null)
     {
         var label = new Label

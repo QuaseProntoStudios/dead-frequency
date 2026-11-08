@@ -513,9 +513,7 @@ public partial class CityGenerator
         if (model)
         {
             car.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.85f, 1.1f, 3.9f) }, Position = new Vector3(0f, 0.65f, 0f) });
-            // Giroflex aceso por cima da barra de luz do modelo.
-            AddBox(car, new Vector3(-0.3f, 1.33f, 0.2f), new Vector3(0.5f, 0.1f, 0.22f), red, false);
-            AddBox(car, new Vector3(0.3f, 1.33f, 0.2f), new Vector3(0.5f, 0.1f, 0.22f), blue, false);
+            // O modelo já tem a barra de luz (giroflex): só as luzes piscando (sem desenhar outra por cima).
         }
         else
         {

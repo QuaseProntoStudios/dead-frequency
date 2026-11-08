@@ -222,6 +222,89 @@ public static class CarModels
     }
 
     private static StandardMaterial3D _glassDouble;
+    private static SphereMesh _fender;
+
+    /// <summary>Interpolação suave (Hermite) por pontos de controle.</summary>
+    private static float Smooth(float[] xs, float[] ys, float x)
+    {
+        if (x <= xs[0])
+            return ys[0];
+        for (int i = 1; i < xs.Length; i++)
+        {
+            if (x <= xs[i])
+            {
+                float t = (x - xs[i - 1]) / (xs[i] - xs[i - 1]);
+                t = t * t * (3f - 2f * t);
+                return Mathf.Lerp(ys[i - 1], ys[i], t);
+            }
+        }
+        return ys[^1];
+    }
+
+    /// <summary>
+    /// Malha "torneada" ao longo de Z: em cada z a seção é uma superelipse (meia-largura, centro e meia-altura).
+    /// th0..th1 escolhe o pedaço da volta (0 = lado direito, π/2 = topo); scale afasta a casca (vidros por fora).
+    /// </summary>
+    private static void Loft(Node3D parent, float z0, float z1, System.Func<float, (float hw, float yc, float hh)> section, float n,
+        float th0, float th1, float scale, Material material, int segZ = 18, int segT = 28, bool caps = false)
+    {
+        var st = new SurfaceTool();
+        st.Begin(Mesh.PrimitiveType.Triangles);
+        int tCount = Mathf.Max(3, Mathf.CeilToInt(segT * (th1 - th0) / Mathf.Tau) + 1);
+        Vector3 P(float z, float th)
+        {
+            (float hw, float yc, float hh) = section(z);
+            float c = Mathf.Cos(th), sn = Mathf.Sin(th);
+            float x = hw * scale * Mathf.Sign(c) * Mathf.Pow(Mathf.Abs(c), 2f / n);
+            float y = yc + hh * scale * Mathf.Sign(sn) * Mathf.Pow(Mathf.Abs(sn), 2f / n);
+            return new Vector3(x, y, z);
+        }
+        for (int i = 0; i < segZ; i++)
+        {
+            float za = Mathf.Lerp(z0, z1, (float)i / segZ), zb = Mathf.Lerp(z0, z1, (float)(i + 1) / segZ);
+            for (int k = 0; k < tCount; k++)
+            {
+                float ta = Mathf.Lerp(th0, th1, (float)k / tCount), tb = Mathf.Lerp(th0, th1, (float)(k + 1) / tCount);
+                Vector3 a = P(za, ta), b = P(zb, ta), c = P(zb, tb), d = P(za, tb);
+                Vector3 nrm = (b - a).Cross(d - a).Normalized();
+                foreach (Vector3 v in new[] { a, b, c, a, c, d })
+                {
+                    st.SetNormal(-nrm);
+                    st.AddVertex(v);
+                }
+            }
+        }
+        if (caps)
+        {
+            foreach (float z in new[] { z0, z1 })
+            {
+                (float _, float yc, float _) = section(z);
+                var center = new Vector3(0f, yc, z);
+                for (int k = 0; k < tCount; k++)
+                {
+                    float ta = Mathf.Lerp(th0, th1, (float)k / tCount), tb = Mathf.Lerp(th0, th1, (float)(k + 1) / tCount);
+                    Vector3 nz = new(0f, 0f, z < 0 ? -1f : 1f);
+                    foreach (Vector3 v in new[] { center, P(z, ta), P(z, tb) })
+                    {
+                        st.SetNormal(nz);
+                        st.AddVertex(v);
+                    }
+                }
+            }
+        }
+        st.Index();
+        Mesh mesh = st.Commit();
+        Material mat = material;
+        if (material is StandardMaterial3D std && std.CullMode != BaseMaterial3D.CullModeEnum.Disabled)
+        {
+            // A orientação dos triângulos varia com o pedaço da volta: desenha dos dois lados.
+            mat = _loftMats.TryGetValue(std, out StandardMaterial3D dbl) ? dbl : (_loftMats[std] = (StandardMaterial3D)std.Duplicate());
+            ((StandardMaterial3D)mat).CullMode = BaseMaterial3D.CullModeEnum.Disabled;
+        }
+        parent.AddChild(new MeshInstance3D { Mesh = mesh, MaterialOverride = mat });
+    }
+
+    private static readonly System.Collections.Generic.Dictionary<StandardMaterial3D, StandardMaterial3D> _loftMats = new();
 
     /// <summary>Monta o carro como filho de parent. Retorna o tamanho (largura, altura, comprimento) para colisão.</summary>
     public static Vector3 Build(Node3D parent, CarType type, Color color)
@@ -296,36 +379,51 @@ public static class CarModels
                         Wheel(parent, new Vector3(x, 0.32f, z), 0.32f, 0.2f);
                 return new Vector3(w, 2.05f, l);
             }
-            case CarType.Fusca: // "Fuska" (Folksvagem): tudo arredondado
+            case CarType.Fusca: // "Fuska" (Folksvagem): carroceria e cabine "torneadas" (malha própria)
             {
                 const float w = 1.55f, l = 4.05f;
-                var sphere = new SphereMesh { Radius = 0.5f, Height = 1f, RadialSegments = 14, Rings = 8 };
-                void Blob(Vector3 pos, Vector3 scale, Material m) => parent.AddChild(new MeshInstance3D { Mesh = sphere, Position = pos, Scale = scale, MaterialOverride = m });
-                Box(parent, new Vector3(0f, 0.42f, 0.05f), new Vector3(w - 0.25f, 0.34f, l - 0.5f), paint); // assoalho
-                Blob(new Vector3(0f, 0.72f, 0.05f), new Vector3(w - 0.1f, 0.9f, l - 0.1f), paint);       // carroceria
-                Blob(new Vector3(0f, 1.0f, 0.2f), new Vector3(w - 0.22f, 0.88f, 2.2f), paint);            // capota
-                // Janelas: placas de vidro rentes à capota (laterais, para-brisa e o vidrinho de trás).
+                // Carroceria: seção superelíptica que afina na frente (capô) e atrás (motor).
+                (float hw, float yc, float hh) Body(float z)
+                {
+                    float t = (z + 2.0f) / 4.0f; // 0 = frente, 1 = traseira
+                    float top = Smooth(new[] { 0f, 0.1f, 0.3f, 0.7f, 0.9f, 1f }, new[] { 0.6f, 0.8f, 0.94f, 0.96f, 0.82f, 0.62f }, t);
+                    float half = Smooth(new[] { 0f, 0.12f, 0.5f, 0.88f, 1f }, new[] { 0.5f, 0.66f, 0.74f, 0.68f, 0.56f }, t);
+                    const float bottom = 0.3f;
+                    return (half, (top + bottom) * 0.5f, (top - bottom) * 0.5f);
+                }
+                Loft(parent, -2.0f, 2.0f, Body, 3.2f, 0f, Mathf.Tau, 1f, paint, caps: true);
+                // Cabine: meia-cúpula sobre a linha de cintura (0,9 m); para-brisa inclinado e traseira caída.
+                const float belt = 0.9f;
+                (float hw, float yc, float hh) Cabin(float z)
+                {
+                    float t = (z + 0.85f) / 2.15f; // de -0,85 a 1,3
+                    float roof = Smooth(new[] { 0f, 0.28f, 0.4f, 0.68f, 1f }, new[] { 0.93f, 1.38f, 1.46f, 1.44f, 0.95f }, t);
+                    float half = Smooth(new[] { 0f, 0.3f, 0.7f, 1f }, new[] { 0.6f, 0.64f, 0.64f, 0.58f }, t);
+                    return (half, belt, Mathf.Max(0.02f, roof - belt));
+                }
+                Loft(parent, -0.85f, 1.3f, Cabin, 2.6f, 0f, Mathf.Pi, 1f, paint);
+                // Vidros colados na própria cabine (um pouquinho por fora): para-brisa, traseiro e laterais.
+                Loft(parent, -0.8f, -0.28f, Cabin, 2.6f, 0.42f, Mathf.Pi - 0.42f, 1.012f, _glassDouble);
+                Loft(parent, 0.78f, 1.22f, Cabin, 2.6f, 0.5f, Mathf.Pi - 0.5f, 1.012f, _glassDouble);
+                foreach ((float a0, float a1) in new[] { (0.06f, 0.6f), (Mathf.Pi - 0.6f, Mathf.Pi - 0.06f) })
+                {
+                    Loft(parent, -0.16f, 0.3f, Cabin, 2.6f, a0, a1, 1.012f, _glassDouble);   // janela da porta
+                    Loft(parent, 0.42f, 0.74f, Cabin, 2.6f, a0, a1, 1.012f, _glassDouble);   // vidrinho de trás
+                }
                 foreach (float side in new[] { -1f, 1f })
                 {
-                    Box(parent, new Vector3(side * 0.6f, 1.17f, -0.1f), new Vector3(0.05f, 0.28f, 0.62f), _glassDouble);
-                    Box(parent, new Vector3(side * 0.58f, 1.17f, 0.62f), new Vector3(0.05f, 0.24f, 0.5f), _glassDouble);
+                    // Para-lamas redondos, faróis em cima dos da frente, lanternas e estribo.
+                    parent.AddChild(new MeshInstance3D { Mesh = _fender ??= new SphereMesh { Radius = 0.5f, Height = 1f, RadialSegments = 14, Rings = 8 }, Position = new Vector3(side * 0.62f, 0.5f, -1.2f), Scale = new Vector3(0.36f, 0.5f, 0.9f), MaterialOverride = paint });
+                    parent.AddChild(new MeshInstance3D { Mesh = _fender, Position = new Vector3(side * 0.62f, 0.5f, 1.25f), Scale = new Vector3(0.36f, 0.5f, 0.9f), MaterialOverride = paint });
+                    parent.AddChild(new MeshInstance3D { Mesh = _wheel, Position = new Vector3(side * 0.6f, 0.72f, -1.62f), Scale = new Vector3(0.17f, 0.05f, 0.17f), Rotation = new Vector3(Mathf.Pi * 0.5f, 0f, 0f), MaterialOverride = _head });
+                    Box(parent, new Vector3(side * 0.52f, 0.66f, 1.94f), new Vector3(0.1f, 0.14f, 0.04f), _tail);
+                    Box(parent, new Vector3(side * 0.76f, 0.26f, 0.02f), new Vector3(0.12f, 0.04f, 1.45f), _rubber); // estribo
                 }
-                Box(parent, new Vector3(0f, 1.17f, -0.72f), new Vector3(0.95f, 0.36f, 0.05f), _glassDouble, -0.75f);
-                Box(parent, new Vector3(0f, 1.15f, 1.12f), new Vector3(0.7f, 0.26f, 0.05f), _glassDouble, 0.85f);
-                foreach (float side in new[] { -1f, 1f })
-                {
-                    // Para-lamas redondos e faróis em cima dos da frente.
-                    Blob(new Vector3(side * 0.62f, 0.5f, -1.15f), new Vector3(0.42f, 0.55f, 0.95f), paint);
-                    Blob(new Vector3(side * 0.62f, 0.5f, 1.2f), new Vector3(0.42f, 0.55f, 0.95f), paint);
-                    parent.AddChild(new MeshInstance3D { Mesh = _wheel, Position = new Vector3(side * 0.62f, 0.72f, -1.6f), Scale = new Vector3(0.2f, 0.06f, 0.2f), Rotation = new Vector3(Mathf.Pi * 0.5f, 0f, 0f), MaterialOverride = _head });
-                    Box(parent, new Vector3(side * 0.52f, 0.68f, 1.97f), new Vector3(0.12f, 0.16f, 0.04f), _tail);
-                    Box(parent, new Vector3(side * 0.78f, 0.25f, 0f), new Vector3(0.1f, 0.05f, 1.5f), _rubber); // estribo
-                }
-                Box(parent, new Vector3(0f, 0.32f, -2.0f), new Vector3(w + 0.05f, 0.08f, 0.08f), _chrome); // para-choque cromado
+                Box(parent, new Vector3(0f, 0.32f, -2.02f), new Vector3(w + 0.05f, 0.08f, 0.08f), _chrome); // para-choques cromados
                 Box(parent, new Vector3(0f, 0.32f, 2.02f), new Vector3(w + 0.05f, 0.08f, 0.08f), _chrome);
-                Box(parent, new Vector3(0f, 0.42f, 2.05f), new Vector3(0.4f, 0.11f, 0.02f), _plate);
+                Box(parent, new Vector3(0f, 0.44f, 2.04f), new Vector3(0.4f, 0.11f, 0.02f), _plate);
                 for (int i = 0; i < 4; i++)
-                    Box(parent, new Vector3(0f, 0.76f + i * 0.04f, 1.95f), new Vector3(0.4f, 0.015f, 0.03f), _grille); // grade do motor atrás
+                    Box(parent, new Vector3(0f, 0.72f + i * 0.04f, 1.9f), new Vector3(0.38f, 0.015f, 0.04f), _grille); // grade do motor
                 Badges(parent, "folksvagem", "FUSKA", l, 0.72f, 0.95f, 0.16f);
                 foreach (float x in new[] { -0.66f, 0.66f })
                     foreach (float z in new[] { -1.2f, 1.25f })

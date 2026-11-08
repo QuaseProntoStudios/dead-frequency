@@ -199,3 +199,7 @@ h3 { font-size: 26px; }
 .legal ul { padding-left: 18px; }
 .legal li { margin: 6px 0; }
 .legal li::marker { color: var(--ph-dim); }
+
+/* etiqueta ALPHA (v0.9.6) */
+.alpha { display: inline-block; background: #ffcc29; color: #1a1406; font: 700 11px/1 var(--mono); letter-spacing: 1px; padding: 3px 6px; border-radius: 3px; vertical-align: middle; text-shadow: none; }
+.brand .alpha { font-size: 10px; }

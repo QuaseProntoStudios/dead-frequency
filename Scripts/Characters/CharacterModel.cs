@@ -201,6 +201,7 @@ public partial class CharacterModel : Node3D
                 case "Walk" or "Walking": _walk = a; break;
                 case "Run" or "Running": _run = a; break;
                 case "Working" or "PickUp": _work = a; break;
+                case "SitIdle": _sit = a; break;
                 default: continue;
             }
             _anim.GetAnimation(a).LoopMode = Animation.LoopModeEnum.Linear;
@@ -219,6 +220,26 @@ public partial class CharacterModel : Node3D
         _anim.Play(name, blend);
     }
 
+    /// <summary>Lista de equipamentos montados (para trocar de boneco sem perder).</summary>
+    public string EquipmentKey => _equipmentKey;
+
+    private bool _seated;
+    private string _sit;
+
+    /// <summary>Sentado num banco (motorista/carona): pose de sentado ou, sem ela, o corpo afunda no banco.</summary>
+    public void SetSeated(bool seated)
+    {
+        if (_seated == seated)
+            return;
+        _seated = seated;
+        if (GetNodeOrNull<Node3D>("Body") is Node3D body)
+            body.Position = new Vector3(0f, seated && _sit == null ? -0.45f : (seated ? 0.05f : 0f), seated ? 0.1f : 0f);
+        if (seated && _sit != null)
+            Play(_sit, 0.2f);
+        else if (!seated)
+            Play(_idle, 0.2f);
+    }
+
     /// <summary>Animação de trabalho (comerciante, repositor...). Volta ao normal no próximo Animate com velocidade.</summary>
     public void PlayWork() => Play(_work ?? _idle, 0.3f);
 
@@ -233,6 +254,8 @@ public partial class CharacterModel : Node3D
             return;
         }
         if (_anim == null)
+            return;
+        if (_seated)
             return;
         if (speed < 0.25f)
         {

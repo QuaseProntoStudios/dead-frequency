@@ -18,6 +18,9 @@ public partial class RemotePlayer : Node3D
     private float _targetPitch;
     private bool _hasState;
     private bool _driving;
+    private int _seat; // 0 a pé, 1 motorista, 2 carona
+    private string _look = "";
+    private Color _color;
 
     public void Setup(int id, string name, Color color)
     {
@@ -28,6 +31,7 @@ public partial class RemotePlayer : Node3D
         SetMeta("map_color", color);
         SetMeta("map_kind", "player");
 
+        _color = color;
         _model = CharacterModel.Create(color.Darkened(0.55f), new Color(0.12f, 0.13f, 0.18f), new Color(0.76f, 0.58f, 0.44f), color);
         AddChild(_model);
 
@@ -45,12 +49,23 @@ public partial class RemotePlayer : Node3D
         AddChild(_nameLabel);
     }
 
-    public void ApplyState(Vector3 position, float yaw, float pitch, bool driving, string equipment)
+    public void ApplyState(Vector3 position, float yaw, float pitch, int seat, string equipment, string look = "")
     {
         _targetPosition = position;
         _targetYaw = yaw;
         _targetPitch = pitch;
-        _driving = driving;
+        _seat = seat;
+        _driving = seat == 1;
+        if (!string.IsNullOrEmpty(look) && look != _look && CharacterLook.TryDecode(look, out CharacterLook l))
+        {
+            // O jogador escolheu a aparência (v0.9.6): troca o boneco.
+            _look = look;
+            string eq = _model?.EquipmentKey ?? "";
+            _model?.QueueFree();
+            _model = l.Build();
+            AddChild(_model);
+            _model.SetEquipment(eq);
+        }
         _model.SetEquipment(equipment);
         if (!_hasState)
         {
@@ -75,8 +90,8 @@ public partial class RemotePlayer : Node3D
         moved.Y = 0f;
         _lastPosition = GlobalPosition;
         float speed = dt > 0f ? moved.Length() / dt : 0f;
-        _model.Animate(dt, _driving ? 0f : speed);
-        // Sentado na van: o corpo fica escondido dentro da cabine, só o nome aparece.
-        _model.Visible = !_driving;
+        // Sentado (motorista ou carona): aparece no banco, sem andar (v0.9.6 — antes sumia).
+        _model.SetSeated(_seat != 0);
+        _model.Animate(dt, _seat != 0 ? 0f : speed);
     }
 }

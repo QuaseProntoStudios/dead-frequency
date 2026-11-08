@@ -84,12 +84,57 @@ public partial class VanController : VehicleBody3D
     public RadioPlayer Radio { get; private set; }
     /// <summary>Batida (variação brusca de velocidade em m/s). O taxista usa para o passageiro reclamar.</summary>
     public event System.Action<float> Crashed;
+    /// <summary>Banco do carona (v0.9.6): ao lado do motorista (garupa, na moto) e onde ele desce.</summary>
+    public Marker3D PassengerSeat { get; private set; }
+    public Marker3D PassengerExit { get; private set; }
+
+    /// <summary>Cria o banco do carona espelhando o do motorista; a van ganha também a porta da esquerda.</summary>
+    private void SetupPassengerSeat()
+    {
+        if (GetNodeOrNull<Marker3D>("SeatMarker") is not Marker3D driver)
+            return;
+        var exit = GetNodeOrNull<Marker3D>("ExitMarker");
+        bool moto = Kind == "moto";
+        PassengerSeat = new Marker3D
+        {
+            Name = "PassengerSeat",
+            Position = moto ? driver.Position + new Vector3(0f, 0.08f, -0.42f) : new Vector3(-driver.Position.X, driver.Position.Y, driver.Position.Z),
+            Rotation = driver.Rotation,
+        };
+        AddChild(PassengerSeat);
+        Vector3 ex = exit?.Position ?? driver.Position + new Vector3(1.4f, 0f, 0f);
+        PassengerExit = new Marker3D
+        {
+            Name = "PassengerExit",
+            Position = moto ? ex + new Vector3(0f, 0f, -0.6f) : new Vector3(-ex.X, ex.Y, ex.Z),
+            Rotation = new Vector3(0f, (exit?.Rotation.Y ?? 0f) + (moto ? 0f : Mathf.Pi), 0f),
+        };
+        AddChild(PassengerExit);
+        if (Kind == "van" && GetNodeOrNull<Area3D>("DriverDoor") is Area3D door)
+        {
+            var left = new DriverSeatInteractable
+            {
+                Name = "PassengerDoor",
+                Van = this,
+                SeatMarker = PassengerSeat,
+                ExitMarker = PassengerExit,
+                Passenger = true,
+                CollisionLayer = 4,
+                CollisionMask = 0,
+                Monitoring = false,
+                Position = new Vector3(-door.Position.X, door.Position.Y, door.Position.Z),
+            };
+            left.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(0.5f, 1.4f, 1.2f) } });
+            AddChild(left);
+        }
+    }
 
     public override void _Ready()
     {
         AddToGroup(PedestrianSignal.TrafficGroup);
         AddToGroup(GroupName);
         _steeringWheel = GetNodeOrNull<Node3D>("Cabin/SteeringWheel");
+        Callable.From(SetupPassengerSeat).CallDeferred(); // depois do VehicleFactory montar os marcadores
         _headlights = GetNodeOrNull<Node3D>("Headlights");
         if (_headlights != null)
             _headlights.Visible = false;

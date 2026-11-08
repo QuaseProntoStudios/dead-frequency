@@ -16,6 +16,8 @@ public partial class MainMenu : Control
     private VBoxContainer _menu;
     private OptionsPanel _options;
     private PanelContainer _optionsPanel;
+    private PanelContainer _characterPanel;
+    private CharacterPanel _character;
     private PanelContainer _multiplayerPanel;
     private MultiplayerPanel _multiplayer;
     private Button _startButton;
@@ -76,6 +78,10 @@ public partial class MainMenu : Control
         multiplayer.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         _menu.AddChild(multiplayer);
 
+        Button character = UiStyle.MakeButton("Personagem", ShowCharacter);
+        character.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _menu.AddChild(character);
+
         Button options = UiStyle.MakeButton("Opções", ShowOptions);
         options.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         _menu.AddChild(options);
@@ -97,6 +103,12 @@ public partial class MainMenu : Control
         _optionsPanel.AddChild(_options);
         _options.BackRequested += ShowMenu;
         stack.AddChild(_optionsPanel);
+
+        _characterPanel = new PanelContainer { Visible = false };
+        _character = new CharacterPanel();
+        _characterPanel.AddChild(_character);
+        _character.BackRequested += ShowMenu;
+        stack.AddChild(_characterPanel);
 
         _multiplayerPanel = new PanelContainer { Visible = false };
         _multiplayer = new MultiplayerPanel();
@@ -134,9 +146,14 @@ public partial class MainMenu : Control
         stack.AddChild(_infoPanel);
 
         string save = SaveManager.Summary();
-        Label footer = UiStyle.MakeLabel($"v{GameVersion.Current} · protótipo" + (save.Length > 0 ? "   ·   " + save : ""), 14, HorizontalAlignment.Left, UiStyle.PhosphorDim);
-        AddChild(footer);
-        footer.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomLeft, LayoutPresetMode.Minsize, 16);
+        var footerRow = new HBoxContainer();
+        footerRow.AddThemeConstantOverride("separation", 8);
+        footerRow.AddChild(UiStyle.MakeLabel($"v{GameVersion.Current}", 14, HorizontalAlignment.Left, UiStyle.PhosphorDim));
+        footerRow.AddChild(UiStyle.AlphaBadge());
+        if (save.Length > 0)
+            footerRow.AddChild(UiStyle.MakeLabel("·   " + save, 14, HorizontalAlignment.Left, UiStyle.PhosphorDim));
+        AddChild(footerRow);
+        footerRow.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomLeft, LayoutPresetMode.Minsize, 16);
 
         // Aviso de versão nova no GitHub (canto inferior direito).
         _updateBox = new HBoxContainer { Visible = false };
@@ -273,6 +290,15 @@ public partial class MainMenu : Control
         _options.FocusFirst();
     }
 
+    private void ShowCharacter()
+    {
+        _menu.Visible = false;
+        _header.Visible = false;
+        _title.AddThemeFontSizeOverride("font_size", 40);
+        _characterPanel.Visible = true;
+        _character.FocusFirst();
+    }
+
     private void ShowMultiplayer()
     {
         _menu.Visible = false;
@@ -286,6 +312,7 @@ public partial class MainMenu : Control
     private void ShowMenu()
     {
         _multiplayerPanel.Visible = false;
+        _characterPanel.Visible = false;
         _optionsPanel.Visible = false;
         _infoPanel.Visible = false;
         _levelPanel.Visible = false;
