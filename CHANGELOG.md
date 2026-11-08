@@ -2,6 +2,20 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.9.5 — Calçada viva  (08/11/2026)
+
+- Fôlego: correr cansa (barra no HUD). Esgotou, só volta a correr com um quarto do fôlego.
+- Leseira da madrugada: entre meia-noite e 5h o sono vem, a tela escurece nas bordas e você anda mais devagar.
+- Comidas e bebidas: Guaraná Pinguim (fôlego de volta), Café Marreta (corta o sono por 4 min), Marmitex Tia da Quentinha (fôlego cheio, mas 10 s de lerdeza pós-almoço) e Espetinho do Duvidoso.
+- Chinelos Legítimas no novo slot de pés: 12% mais rápido com o ploc-ploc nos passos. Correndo na lama do sítio a tira pode arrebentar; o Prego conserta.
+- Caramelos de rua pela cidade. Dê um espetinho e ele vira seu companheiro por 3 minutos, latindo e espantando os pernilongos do sítio à noite.
+- Diálogos de calçada: pedestres, comerciantes e caixas falam com você quando passa perto (e discutem se o que você carrega é biscoito ou bolacha).
+- Taxista: passageiros exigentes. O executivo quer a 96.6 ligada, sem passar de 60 km/h e sem batida; o apressado paga bônus se chegar rápido.
+- O botijão de gás vaza se for arremessado ou cair forte: chiado, gás saindo e a entrega valendo menos.
+- Churrasquinho do Duvidoso perto do depósito: depois das 18h acende a chapa, solta fumaça e junta gente. Vende espetinho, guaraná, café e marmitex.
+- Opção para desligar a busca por atualizações (Opções → Jogo) e licença GPL-3.0 nos créditos.
+- Online: atualize o servidor (npm run deploy) para comprar os itens novos no modo online.
+
 ## v0.9.4 — Gente de verdade  (08/11/2026)
 
 - Jogadores, pedestres, comerciantes e passageiros agora são personagens animados (homens e mulheres da Quaternius) que andam, correm e ficam parados de verdade, cada um com roupa, pele e cabelo próprios.

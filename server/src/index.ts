@@ -70,6 +70,13 @@ const SHOP_PRICES: Record<string, number> = {
   repairkit: 150,
   tape: 50,
   energy: 60,
+  // v0.9.5
+  guarana: 15,
+  cafe: 25,
+  marmitex: 35,
+  espetinho: 12,
+  chinelos: 80,
+  prego: 10,
 };
 
 const GAME_OVER_RESTART_MS = 8000;

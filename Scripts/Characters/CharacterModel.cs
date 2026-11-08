@@ -31,6 +31,12 @@ public partial class CharacterModel : Node3D
     private readonly Dictionary<string, Node3D> _equipment = new();
     private string _equipmentKey = "";
     private float _headPitch;
+
+    /// <summary>Fala com o jogador quando ele passa perto (pedestres, comerciantes).</summary>
+    public bool Chatty { get; set; }
+    /// <summary>Frases próprias (ex.: o comerciante oferecendo produtos); vazio = frases da calçada.</summary>
+    public string[] Lines { get; set; }
+    private float _talkCheck, _talkCooldown;
     private bool _mountsReady;
 
     // Modelo animado
@@ -255,11 +261,32 @@ public partial class CharacterModel : Node3D
 
     public override void _Process(double delta)
     {
+        if (Chatty)
+            UpdateTalk((float)delta);
         if (!_boxModel && (_equipment.Count > 0 || _leftFoot != null || !_mountsReady))
         {
             _mountsReady = true;
             UpdateMounts();
         }
+    }
+
+    private void UpdateTalk(float dt)
+    {
+        _talkCooldown -= dt;
+        _talkCheck -= dt;
+        if (_talkCheck > 0f || _talkCooldown > 0f || !Visible)
+            return;
+        _talkCheck = 0.4f;
+        PlayerController player = ProfessionManager.Instance?.Player;
+        if (player == null || !IsInstanceValid(player) || player.State != PlayerState.Walking)
+            return;
+        if (player.GlobalPosition.DistanceSquaredTo(GlobalPosition) > 3.6f * 3.6f || !SidewalkTalk.CanTalkNow())
+            return;
+        _talkCooldown = (float)GD.RandRange(18.0, 35.0);
+        if (GD.Randf() > 0.7f)
+            return; // às vezes a pessoa só passa calada
+        string line = Lines != null && Lines.Length > 0 && GD.Randf() < 0.6f ? Lines[GD.Randi() % (uint)Lines.Length] : SidewalkTalk.LineFor(player);
+        SidewalkTalk.Say(this, line, 2.05f * Scale.Y);
     }
 
     /// <summary>Leva os pontos de encaixe para onde os ossos estão neste quadro.</summary>

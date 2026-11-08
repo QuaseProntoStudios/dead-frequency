@@ -12,6 +12,8 @@ public partial class GameHud : CanvasLayer
     [Export] public DeliveryManager Delivery { get; set; }
 
     private ColorRect _crosshair;
+    private ColorRect _staminaBack, _staminaFill, _drowsy;
+    private ShaderMaterial _drowsyMat;
     private Label _prompt;
     private PanelContainer _cargoPanel;
     private Label _cargoName;
@@ -41,6 +43,19 @@ public partial class GameHud : CanvasLayer
         var root = new Control { Theme = UiStyle.Theme, MouseFilter = Control.MouseFilterEnum.Ignore };
         root.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         AddChild(root);
+
+        // Leseira da madrugada: bordas da tela escurecendo (v0.9.5).
+        _drowsyMat = new ShaderMaterial { Shader = new Shader { Code = "shader_type canvas_item;\nuniform float amount = 0.0;\nvoid fragment() {\n  float d = distance(UV, vec2(0.5));\n  COLOR = vec4(0.0, 0.0, 0.02, smoothstep(0.2, 0.75, d) * amount);\n}" } };
+        _drowsy = new ColorRect { Material = _drowsyMat, MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        _drowsy.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        root.AddChild(_drowsy);
+
+        // Fôlego (aparece quando não está cheio).
+        _staminaBack = new ColorRect { Color = new Color(0f, 0f, 0f, 0.55f), MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
+        Place(_staminaBack, 0.5f, 1f, 0.5f, 1f, -122, -58, 122, -50);
+        root.AddChild(_staminaBack);
+        _staminaFill = new ColorRect { Color = UiStyle.Phosphor, MouseFilter = Control.MouseFilterEnum.Ignore };
+        _staminaBack.AddChild(_staminaFill);
 
         // Mira
         _crosshair = new ColorRect { Color = new Color(1f, 1f, 1f, 0.7f), MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -308,7 +323,31 @@ public partial class GameHud : CanvasLayer
         _debug.OffsetTop = radar ? 250 : 12;
         _debug.OffsetBottom = _debug.OffsetTop + 320;
 
+        // Fôlego e leseira.
+        float st = Player.Stamina / PlayerController.MaxStamina;
+        _staminaBack.Visible = st < 0.995f && Player.State == PlayerState.Walking;
+        _staminaFill.Size = new Vector2(240f * st, 4f);
+        _staminaFill.Position = new Vector2(2f, 2f);
+        _staminaFill.Color = Player.Exhausted ? UiStyle.Warning : st < 0.3f ? new Color(1f, 0.7f, 0.2f) : UiStyle.Phosphor;
+        float drowsy = Mathf.Clamp((Player.Drowsiness - 35f) / 65f, 0f, 1f);
+        _drowsy.Visible = drowsy > 0.01f;
+        _drowsyMat.SetShaderParameter("amount", drowsy * (0.85f + Mathf.Sin(Time.GetTicksMsec() / 900f) * 0.15f));
+
         var parts = new System.Collections.Generic.List<string>();
+        if (Player.Exhausted)
+            parts.Add("SEM FÔLEGO");
+        if (Player.Drowsiness > 50f)
+            parts.Add("LESEIRA (tome um café)");
+        if (Player.SlowLeft > 0f)
+            parts.Add($"PÓS-ALMOÇO {Player.SlowLeft:0}s");
+        if (Player.CoffeeLeft > 0f)
+            parts.Add($"CAFÉ {Player.CoffeeLeft / 60f:0}:{Player.CoffeeLeft % 60f:00}");
+        if (Player.StaminaBoostLeft > 0f)
+            parts.Add($"GUARANÁ {Player.StaminaBoostLeft:0}s");
+        if (inv?.IsEquipped(ItemCatalog.SlippersBroken) == true)
+            parts.Add("CHINELO ARREBENTADO (use um prego)");
+        if (FarmAnimal.Companion != null)
+            parts.Add("CARAMELO TE SEGUINDO");
         if (Player.SpeedBoostLeft > 0f)
             parts.Add($"ENERGÉTICO {Player.SpeedBoostLeft:0}s");
         if (inv?.IsEquipped(ItemCatalog.NightVision) == true)

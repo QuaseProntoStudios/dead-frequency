@@ -26,6 +26,7 @@ public partial class PlayerInventory : Node
     public int Wallet { get; private set; }
     public int Capacity => IsEquipped(ItemCatalog.Backpack) ? BackpackCapacity : BaseCapacity;
     public bool IsFull => _items.Count >= Capacity;
+    public int ItemCount => _items.Count;
 
     private readonly List<string> _items = new();
     private readonly Dictionary<ItemSlot, string> _equipped = new();
@@ -123,11 +124,36 @@ public partial class PlayerInventory : Node
             ItemCatalog.RepairKit => RepairHeld(player, 0.4f),
             ItemCatalog.DuctTape => RepairHeld(player, 0.2f),
             ItemCatalog.EnergyDrink => player.ApplySpeedBoost(60f) ? "Energia! Correndo mais rápido por 60 s." : "",
+            ItemCatalog.Guarana => player.DrinkGuarana(),
+            ItemCatalog.Coffee => player.DrinkCoffee(),
+            ItemCatalog.Marmitex => player.EatMarmitex(),
+            ItemCatalog.Skewer => player.UseSkewer(),
+            ItemCatalog.Nail => FixSlippers(),
             _ => "",
         };
         if (!string.IsNullOrEmpty(result))
             RemoveAt(index);
         return result;
+    }
+
+    /// <summary>Prego: troca o chinelo arrebentado (calçado) pelo inteiro.</summary>
+    private string FixSlippers()
+    {
+        if (!_equipped.TryGetValue(ItemSlot.Feet, out string feet) || feet != ItemCatalog.SlippersBroken)
+            return "";
+        _equipped[ItemSlot.Feet] = ItemCatalog.Slippers;
+        NotifyAndSave();
+        return "Tira do chinelo pregada. Ploc-ploc de novo!";
+    }
+
+    /// <summary>A tira arrebentou: o chinelo calçado vira o arrebentado.</summary>
+    public bool BreakSlippers()
+    {
+        if (!_equipped.TryGetValue(ItemSlot.Feet, out string feet) || feet != ItemCatalog.Slippers)
+            return false;
+        _equipped[ItemSlot.Feet] = ItemCatalog.SlippersBroken;
+        NotifyAndSave();
+        return true;
     }
 
     private static string RepairHeld(PlayerController player, float amount)

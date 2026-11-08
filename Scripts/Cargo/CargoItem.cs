@@ -219,6 +219,72 @@ public partial class CargoItem : RigidBody3D, IInteractable
 
         ApplyDamage(damage);
         _damageCooldownLeft = DamageCooldown;
+
+        // Botijão do Gás do Zé (v0.9.5): pancada forte (arremesso, queda da caçamba) faz vazar.
+        if (Data.CargoId == "botijao" && impactSpeed > 6f && Integrity > 0f)
+            StartLeak();
+    }
+
+    // ---------------- Vazamento do botijão ----------------
+
+    private double _leakLeft;
+    private AudioStreamPlayer3D _leakSound;
+    private CpuParticles3D _leakGas;
+
+    private void StartLeak()
+    {
+        bool first = _leakLeft <= 0;
+        _leakLeft = 6.0;
+        ApplyDamage(0.15f);
+        if (_leakSound == null)
+        {
+            _leakSound = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 4f, MaxDistance = 25f, Position = new Vector3(0f, 0.35f, 0f) };
+            if (ResourceLoader.Exists("res://Audio/SFX/gas_vazando.wav"))
+                _leakSound.Stream = GD.Load<AudioStream>("res://Audio/SFX/gas_vazando.wav");
+            AddChild(_leakSound);
+            _leakSound.Finished += () => { if (_leakLeft > 0) _leakSound.Play(); };
+            _leakGas = new CpuParticles3D
+            {
+                Position = new Vector3(0f, 0.4f, 0f),
+                Amount = 30,
+                Lifetime = 1.2,
+                Mesh = new QuadMesh { Size = new Vector2(0.15f, 0.15f) },
+                Direction = Vector3.Up,
+                Spread = 35f,
+                InitialVelocityMin = 1.5f,
+                InitialVelocityMax = 2.5f,
+                Gravity = Vector3.Zero,
+                ScaleAmountMin = 1f,
+                ScaleAmountMax = 3f,
+                MaterialOverride = new StandardMaterial3D
+                {
+                    AlbedoColor = new Color(0.92f, 0.95f, 1f, 0.35f),
+                    Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+                    ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+                    BillboardMode = BaseMaterial3D.BillboardModeEnum.Particles,
+                },
+            };
+            AddChild(_leakGas);
+        }
+        _leakGas.Emitting = true;
+        if (_leakSound.Stream != null && !_leakSound.Playing)
+            _leakSound.Play();
+        if (first)
+            GameHud.Toast(this, "TSSSSS! O botijão está vazando gás — a entrega vai valer menos!", UiStyle.Warning, 3.5);
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_leakLeft <= 0)
+            return;
+        _leakLeft -= delta;
+        if (!IsRemote)
+            ApplyDamage(0.025f * (float)delta);
+        if (_leakLeft <= 0)
+        {
+            _leakGas.Emitting = false;
+            _leakSound.Stop();
+        }
     }
 
     private void PlayImpactSound(float impactSpeed)

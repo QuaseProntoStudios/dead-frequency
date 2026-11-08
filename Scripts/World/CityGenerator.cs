@@ -122,6 +122,7 @@ public partial class CityGenerator : Node3D
         BuildPhoneBooths();
         BuildHydrants();
         BuildStreetProps();
+        BuildStrayDogs();
         BuildParkedCars();
         float outside = Radius * Period + Period * 0.5f + RoadWidth * 0.5f + 6f; // além da última rua
         BuildRadioTower(new Vector3(-outside, 0f, -outside));
@@ -409,6 +410,31 @@ public partial class CityGenerator : Node3D
         mesh.SetInstanceShaderParameter("wall_color", wall);
         mesh.SetInstanceShaderParameter("light_seed", seed);
         mesh.SetInstanceShaderParameter("lit_ratio", litRatio);
+    }
+
+    /// <summary>Caramelos de rua (v0.9.5) nas esquinas: dê um espetinho e um deles segue você.</summary>
+    private void BuildStrayDogs()
+    {
+        var root = new Node3D { Name = "Caramelos" };
+        _staticRoot.AddChild(root);
+        float corner = BlockSize * 0.5f - 1.3f;
+        int placed = 0;
+        for (int bx = -Radius; bx <= Radius && placed < 8; bx++)
+        {
+            for (int bz = -Radius; bz <= Radius && placed < 8; bz++)
+            {
+                Vector3 c = BlockCenter(bx, bz);
+                int h = AssetProps.Hash(c, 21);
+                if (h % 5 != 0)
+                    continue;
+                float sx = h % 2 == 0 ? 1f : -1f, sz = (h / 2) % 2 == 0 ? 1f : -1f;
+                var pos = c + new Vector3(sx * corner, CurbHeight, sz * corner);
+                root.AddChild(FarmAnimal.Create("ShibaInu.gltf", 0.9f, pos, h % 628 / 100f, 1.2f));
+                placed++;
+            }
+        }
+        // Um sempre perto do depósito, do lado da barraca do Zé.
+        root.AddChild(FarmAnimal.Create("ShibaInu.gltf", 0.9f, new Vector3(-4.5f, CurbHeight, 31.4f), 0.4f, 1.2f));
     }
 
     private void BuildPark(Node3D block, Vector3 center, float inner)

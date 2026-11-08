@@ -276,6 +276,8 @@ public partial class PlayerController : CharacterBody3D
 
         if (State == PlayerState.Walking && !_inTransition)
             ProcessMovement(dt);
+        else
+            UpdateNeeds(dt, false);
 
         if (SpeedBoostLeft > 0f)
             SpeedBoostLeft = Mathf.Max(0f, SpeedBoostLeft - dt);
@@ -354,10 +356,13 @@ public partial class PlayerController : CharacterBody3D
         direction.Y = 0f;
         direction = direction.Normalized();
 
-        float speed = Input.IsActionPressed("sprint") ? SprintSpeed : WalkSpeed;
+        bool moving = direction.LengthSquared() > 0.01f;
+        bool sprinting = InputEnabled && Input.IsActionPressed("sprint") && moving && CanSprint && IsOnFloor();
+        float speed = sprinting ? SprintSpeed : WalkSpeed;
         if (SpeedBoostLeft > 0f)
             speed *= 1.35f;
-        speed *= GetCarrySpeedMultiplier();
+        speed *= GetCarrySpeedMultiplier() * NeedsSpeedMultiplier();
+        UpdateNeeds(dt, sprinting);
         Vector3 targetVelocity = direction * speed;
 
         float accel = IsOnFloor() ? GroundAcceleration : AirAcceleration;
@@ -382,7 +387,7 @@ public partial class PlayerController : CharacterBody3D
             _stepAccumulator = StepDistance * 0.7f; // o próximo passo sai logo ao voltar a andar
             return;
         }
-        bool sprinting = Input.IsActionPressed("sprint") && InputEnabled;
+        bool sprinting = Input.IsActionPressed("sprint") && InputEnabled && !Exhausted;
         float distance = sprinting ? SprintStepDistance : StepDistance;
         _stepAccumulator += horizontalSpeed * dt;
         if (_stepAccumulator < distance)
@@ -393,7 +398,7 @@ public partial class PlayerController : CharacterBody3D
         if (index == _lastStep && FootstepSounds.Length > 1)
             index = (index + 1) % FootstepSounds.Length;
         _lastStep = index;
-        _footsteps.Stream = FootstepSounds[index];
+        _footsteps.Stream = SlipperStep(sprinting) ?? FootstepSounds[index];
         _footsteps.PitchScale = (float)GD.RandRange(0.94, 1.06);
         _footsteps.VolumeDb = (sprinting ? -9f : -13f) + (float)GD.RandRange(-1.5, 1.5);
         _footsteps.Play();

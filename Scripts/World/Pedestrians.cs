@@ -80,6 +80,7 @@ public partial class Pedestrians : Node3D
                     Shirts[rng.RandiRange(0, Shirts.Length - 1)].Darkened(0.5f),
                     Skins[rng.RandiRange(0, Skins.Length - 1)]),
             };
+            walker.Model.Chatty = true;
             walker.Model.Scale = Vector3.One * rng.RandfRange(0.9f, 1.08f);
             walker.CurbDistance = City.BlockSize * 0.5f - walker.Half;
             walker.Obstacles = _obstacles.TryGetValue(new Vector2I(bx, bz), out List<Vector3> obs) ? obs : new List<Vector3>();

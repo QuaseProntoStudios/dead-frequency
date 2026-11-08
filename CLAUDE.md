@@ -52,6 +52,10 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
       gerada em código), FarmAnimal (bichos animados), NatureKit (árvores/mato via MultiMesh), prédios da fazenda,
       viaturas. Orelhões por operadora/cor (PhoneBooth.Pick) e Telefóbica desativada. Debug F3 completo.
       Pasta de assets do usuário: C:\Users\teuzin\Documents\Projetos Godot\Assets Download (zips; perguntar antes de pedir novos).
+   ✅ v0.9.5 Calçada viva: PlayerController.Needs.cs (fôlego, leseira, comidas, chinelo), slot Feet, itens novos
+      (SHOP_PRICES no servidor), FarmAnimal caramelo companheiro (NearestDog/FollowPlayer), Mosquitoes no sítio,
+      SidewalkTalk (balões de fala, CharacterModel.Chatty), TaxiJob com humores, vazamento do botijão (CargoItem),
+      StreetVendor.Churrasco. Planejamento v0.9.6/v0.9.7 no ROADMAP.md.
 3. Painel diegético: DashboardButton, ElectricalSystem, EngineSystem, fusíveis
 4. CargoBayManager + SaveManager (.tzn)
 5. Shaders PS1 + monitor CRT

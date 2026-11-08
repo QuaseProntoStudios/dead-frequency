@@ -66,7 +66,7 @@ public partial class InventoryScreen : ModalScreen
             Environment = new Environment { BackgroundMode = Environment.BGMode.ClearColor, AmbientLightSource = Environment.AmbientSource.Color, AmbientLightColor = new Color(0.5f, 0.6f, 0.55f), AmbientLightEnergy = 0.8f },
         });
 
-        foreach (ItemSlot slot in new[] { ItemSlot.Head, ItemSlot.Hands, ItemSlot.Back, ItemSlot.Wrist })
+        foreach (ItemSlot slot in new[] { ItemSlot.Head, ItemSlot.Hands, ItemSlot.Back, ItemSlot.Wrist, ItemSlot.Feet })
         {
             ItemSlot captured = slot;
             Button button = UiStyle.MakeButton("", () => OnSlotPressed(captured), 280);
