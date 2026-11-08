@@ -324,33 +324,43 @@ export class Registry extends DurableObject<Env> {
   async attemptDebugAuth(clientId: string, passwordValid: boolean): Promise<DebugAuthAttemptResult> {
     const now = Date.now();
     const key = `debug-auth:${clientId}`;
-    let record = await this.ctx.storage.get<DebugAuthRecord>(key);
 
-    if (record && now < record.lockedUntil) {
-      return { allowed: false, lockedUntil: record.lockedUntil, attemptsRemaining: 0 };
-    }
+    // Uma transação evita que duas conexões consumam a mesma tentativa simultaneamente.
+    const result = await this.ctx.storage.transaction(async (txn) => {
+      let record = await txn.get<DebugAuthRecord>(key);
 
-    if (!record || now >= record.expiresAt || now - record.windowStartedAt >= DEBUG_AUTH_WINDOW_MS) {
-      record = { attempts: 0, windowStartedAt: now, lockedUntil: 0, expiresAt: now + DEBUG_AUTH_WINDOW_MS };
-    }
+      if (record && now < record.lockedUntil) {
+        return { allowed: false, lockedUntil: record.lockedUntil, attemptsRemaining: 0, nextExpiry: record.expiresAt };
+      }
 
-    if (passwordValid) {
-      await this.ctx.storage.delete(key);
-      return { allowed: true, lockedUntil: 0, attemptsRemaining: DEBUG_AUTH_MAX_ATTEMPTS };
-    }
+      if (!record || now >= record.expiresAt || now - record.windowStartedAt >= DEBUG_AUTH_WINDOW_MS) {
+        record = { attempts: 0, windowStartedAt: now, lockedUntil: 0, expiresAt: now + DEBUG_AUTH_WINDOW_MS };
+      }
 
-    record.attempts++;
-    if (record.attempts >= DEBUG_AUTH_MAX_ATTEMPTS) {
-      record.lockedUntil = now + DEBUG_AUTH_LOCK_MS;
-      record.expiresAt = record.lockedUntil;
-    }
-    await this.ctx.storage.put(key, record);
-    await this.ctx.storage.setAlarm(now + DEBUG_AUTH_WINDOW_MS);
+      if (passwordValid) {
+        await txn.delete(key);
+        return { allowed: true, lockedUntil: 0, attemptsRemaining: DEBUG_AUTH_MAX_ATTEMPTS, nextExpiry: 0 };
+      }
 
+      record.attempts++;
+      if (record.attempts >= DEBUG_AUTH_MAX_ATTEMPTS) {
+        record.lockedUntil = now + DEBUG_AUTH_LOCK_MS;
+        record.expiresAt = record.lockedUntil;
+      }
+      await txn.put(key, record);
+      return {
+        allowed: false,
+        lockedUntil: record.lockedUntil,
+        attemptsRemaining: Math.max(0, DEBUG_AUTH_MAX_ATTEMPTS - record.attempts),
+        nextExpiry: record.expiresAt,
+      };
+    });
+
+    if (result.nextExpiry > 0) await this.ctx.storage.setAlarm(result.nextExpiry);
     return {
-      allowed: false,
-      lockedUntil: record.lockedUntil,
-      attemptsRemaining: Math.max(0, DEBUG_AUTH_MAX_ATTEMPTS - record.attempts),
+      allowed: result.allowed,
+      lockedUntil: result.lockedUntil,
+      attemptsRemaining: result.attemptsRemaining,
     };
   }
 
