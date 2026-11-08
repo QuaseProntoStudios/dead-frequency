@@ -43,7 +43,8 @@ public partial class NetClient : Node
 
     public event Action<bool, string> DebugAuthResult;
 
-    public bool IsDebugAuthorized { get; private set; }
+    private ulong _debugAuthExpiresAt;
+    public bool IsDebugAuthorized => _debugAuthExpiresAt > Time.GetTicksMsec();
 
     public ConnectionStatus Status { get; private set; } = ConnectionStatus.Offline;
     public bool IsOnline => Status == ConnectionStatus.Online;
@@ -301,7 +302,7 @@ public partial class NetClient : Node
                                 ? messageElement.GetString() ?? ""
                                 : "";
 
-                        IsDebugAuthorized = success;
+                        _debugAuthExpiresAt = success ? Time.GetTicksMsec() + 30UL * 60UL * 1000UL : 0;
                         DebugAuthResult?.Invoke(success, message);
                         break;
                     }
@@ -399,7 +400,7 @@ public partial class NetClient : Node
 
     private void ResetSession()
     {
-        IsDebugAuthorized = false;
+        _debugAuthExpiresAt = 0;
         _socket = null;
         _lastState = WebSocketPeer.State.Closed;
         Status = ConnectionStatus.Offline;
