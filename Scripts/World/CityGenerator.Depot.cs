@@ -424,6 +424,9 @@ public partial class CityGenerator
         AddBox(depot, new Vector3(x1 - 0.3f, 0.7f, z0 + 0.45f), new Vector3(0.55f, 1.4f, 0.6f), _metalGrey);
         for (int i = 0; i < 4; i++)
             AddBox(depot, new Vector3(x1 - 0.59f, 0.25f + i * 0.33f, z0 + 0.45f), new Vector3(0.02f, 0.03f, 0.2f), _darkMetal, false);
+        Poster(depot, new Vector3(7.3f, 1.6f, z0 + 0.09f), 0f);
+        // Rádio em cima do arquivo, sempre na 96.6 (E desliga).
+        BuildRadioProp(depot, new Vector3(x1 - 0.32f, 1.4f, z0 + 0.45f), -Mathf.Pi * 0.5f, true, -7f);
         AddBox(depot, new Vector3(x0 + 0.4f, 0.5f, z0 + 0.4f), new Vector3(0.35f, 1.0f, 0.35f), _signWhite);
         AddCylinder(depot, new Vector3(x0 + 0.4f, 1.2f, z0 + 0.4f), 0.15f, 0.4f, _rackBlue).Transparency = 0.3f;
         AddBox(depot, new Vector3(x1 - 0.02f, 1.7f, -9.0f), new Vector3(0.02f, 0.8f, 1.2f), _cardboard, false);
@@ -435,6 +438,10 @@ public partial class CityGenerator
             Modulate = new Color(0.12f, 0.1f, 0.08f),
             OutlineSize = 0,
             HorizontalAlignment = HorizontalAlignment.Left,
+            // Label3D só usa a largura com quebra de linha ligada; sem isso o texto alinhado à esquerda
+            // começa no centro do quadro e sai para a direita.
+            Width = 1.1f / 0.0028f,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
             Position = new Vector3(x1 - 0.04f, 1.72f, -9.0f),
             Rotation = new Vector3(0f, -Mathf.Pi * 0.5f, 0f),
         });

@@ -32,6 +32,35 @@ public partial class DayNightController : Node
     private static readonly Color DuskTop = new(0.16f, 0.14f, 0.3f), DuskHorizon = new(0.9f, 0.45f, 0.22f);
     private static readonly Color NightTop = new(0.012f, 0.016f, 0.035f), NightHorizon = new(0.07f, 0.07f, 0.09f);
 
+    public static DayNightController Instance { get; private set; }
+
+    public override void _EnterTree() => Instance = this;
+
+    public override void _ExitTree()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    /// <summary>Dormir: adianta o relógio (só no solo com o ciclo ligado). Retorna false se não deu.</summary>
+    public bool SkipHours(double hours)
+    {
+        if (NetClient.Instance?.IsOnline == true || (GameSettings.Instance?.TimeMode ?? 0) != 0)
+            return false;
+        _soloHours += hours;
+        return true;
+    }
+
+    /// <summary>Hora (0..24) para acordar: o jogo começa de novo às 18h, no início do turno.</summary>
+    public void SetSoloHour(float hour)
+    {
+        double day = System.Math.Floor(_soloHours / 24.0) * 24.0;
+        double target = day + hour;
+        if (target <= _soloHours)
+            target += 24.0;
+        _soloHours = target;
+    }
+
     public override void _Ready()
     {
         _soloHours = SoloStartHour;

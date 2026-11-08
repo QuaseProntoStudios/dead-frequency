@@ -33,7 +33,7 @@ export interface Env {
 /** Momento em que esta instância do Worker atendeu a primeira requisição (Date.now() no escopo global vale 0). */
 let SERVER_STARTED = 0;
 
-const PROTOCOL_VERSION = 3;
+const PROTOCOL_VERSION = 4;
 const MAX_PLAYERS = 8;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
 const CODE_LENGTH = 5;
@@ -70,6 +70,21 @@ const SHOP_PRICES: Record<string, number> = {
 };
 
 const GAME_OVER_RESTART_MS = 8000;
+
+/**
+ * Profissões (v0.9) — mesmas de Scripts/Core/Professions.cs e LocalServer.Professions.
+ * pay = valor por unidade; maxUnits = unidades por pagamento; cooldownMs = intervalo mínimo entre pagamentos.
+ * Taxista: o cliente manda o valor da corrida, limitado a [pay, maxAmount].
+ */
+const PROFESSIONS: Record<string, { pay: number; maxUnits: number; maxAmount?: number; cooldownMs: number; levels: string[] }> = {
+  entregador: { pay: 0, maxUnits: 0, cooldownMs: 0, levels: ["city", "farm"] },
+  taxista: { pay: 30, maxUnits: 1, maxAmount: 400, cooldownMs: 8000, levels: ["city", "farm"] },
+  gari: { pay: 25, maxUnits: 3, cooldownMs: 1500, levels: ["city", "farm"] },
+  repositor: { pay: 30, maxUnits: 1, cooldownMs: 2500, levels: ["city"] },
+  frentista: { pay: 45, maxUnits: 1, cooldownMs: 5000, levels: ["city"] },
+  locutor: { pay: 20, maxUnits: 1, cooldownMs: 9000, levels: ["city"] },
+};
+const PROFESSION_ORDER = ["entregador", "taxista", "gari", "repositor", "frentista", "locutor"];
 
 const PLAYER_COLORS = ["#8cff9e", "#ffb347", "#6ec6ff", "#ff6b6b", "#d58cff", "#fff27a", "#7affea", "#ff9ad5"];
 
@@ -119,16 +134,18 @@ export default {
 
     if (url.pathname === "/api/rooms" && request.method === "POST") {
       let level = "city";
+      let autoProfession = false;
       try {
-        const body = (await request.json()) as { level?: unknown };
+        const body = (await request.json()) as { level?: unknown; autoProfession?: unknown };
         if (typeof body.level === "string" && LEVELS.includes(body.level)) level = body.level;
+        autoProfession = body.autoProfession === true;
       } catch {
         // corpo vazio ou inválido: cidade
       }
       for (let attempt = 0; attempt < 6; attempt++) {
         const code = randomCode();
         const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-        const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code, level }) });
+        const res = await stub.fetch("https://room/init", { method: "POST", body: JSON.stringify({ code, level, autoProfession }) });
         if (res.status === 200) return json({ code });
         if (res.status !== 409) return json({ error: "Falha ao criar sala" }, 500);
       }
@@ -314,6 +331,8 @@ interface RoomState {
   hostId: number | null;
   owners: Record<string, number | null>; // objeto → id do jogador dono
   pendingShift: boolean;
+  /** O servidor escolhe a profissão de cada jogador (equilibrando as vagas). */
+  autoProfession?: boolean;
   /** Todas as caixas do turno quebraram: a sala recomeça do turno 1. */
   gameOver?: boolean;
   emptySince: number | null;
@@ -324,6 +343,7 @@ interface Attachment {
   name: string;
   color: string;
   joined: boolean;
+  prof?: string;
 }
 
 interface PlayerSnapshot {
@@ -349,6 +369,8 @@ export class GameRoom extends DurableObject<Env> {
   /** Último estado de cada jogador/objeto (só em memória; reconstruído pelos próprios clientes). */
   private players = new Map<number, PlayerSnapshot>();
   private objects = new Map<string, ObjectSnapshot>();
+  /** Último pagamento de profissão de cada jogador (limite de frequência). */
+  private lastEarn = new Map<number, number>();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -394,6 +416,7 @@ export class GameRoom extends DurableObject<Env> {
       id: a.id,
       name: a.name,
       color: a.color,
+      prof: a.prof ?? "entregador",
       host: a.id === room.hostId,
       state: this.players.get(a.id) ?? null,
     }));
@@ -443,10 +466,11 @@ export class GameRoom extends DurableObject<Env> {
 
     if (url.pathname === "/init") {
       if (this.room) return json({ error: "exists" }, 409);
-      const { code, level } = (await request.json()) as { code: string; level?: string };
+      const { code, level, autoProfession } = (await request.json()) as { code: string; level?: string; autoProfession?: boolean };
       this.room = {
         code,
         level: level && LEVELS.includes(level) ? level : "city",
+        autoProfession: autoProfession === true,
         seed: crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000,
         createdAt: Date.now(),
         shift: 0,
@@ -528,6 +552,10 @@ export class GameRoom extends DurableObject<Env> {
         return this.onLost(me, String(msg.cargoId ?? ""));
       case "buy":
         return this.onBuy(ws, me, String(msg.item ?? ""), Number(msg.req) || 0);
+      case "earn":
+        return this.onEarn(ws, me, msg);
+      case "prof":
+        return this.onProf(ws, me, String(msg.prof ?? ""));
       case "chat": {
         const chat = String(msg.msg ?? "").slice(0, 120).trim();
         if (chat) this.broadcast({ t: "chat", id: me.id, name: me.name, msg: chat });
@@ -556,6 +584,7 @@ export class GameRoom extends DurableObject<Env> {
     }
     if (me.joined) return;
     me.joined = true;
+    me.prof = room.autoProfession ? this.assignProfession(me.id) : this.validProfession(String(msg.prof ?? ""));
     ws.serializeAttachment(me);
 
     if (room.hostId === null || !this.connected().some((s) => attachmentOf(s).id === room.hostId)) {
@@ -566,7 +595,7 @@ export class GameRoom extends DurableObject<Env> {
     const others = this.connected()
       .map(attachmentOf)
       .filter((a) => a.joined && a.id !== me.id)
-      .map((a) => ({ id: a.id, name: a.name, color: a.color, state: this.players.get(a.id) ?? null }));
+      .map((a) => ({ id: a.id, name: a.name, color: a.color, prof: a.prof ?? "entregador", state: this.players.get(a.id) ?? null }));
 
     ws.send(
       JSON.stringify({
@@ -577,6 +606,8 @@ export class GameRoom extends DurableObject<Env> {
         code: room.code,
         seed: room.seed,
         level: room.level ?? "city",
+        prof: me.prof,
+        autoProfession: room.autoProfession === true,
         host: room.hostId,
         players: others,
         shift: room.shift,
@@ -586,7 +617,7 @@ export class GameRoom extends DurableObject<Env> {
         objects: Array.from(this.objects.values()),
       }),
     );
-    this.broadcast({ t: "join", player: { id: me.id, name: me.name, color: me.color } }, ws);
+    this.broadcast({ t: "join", player: { id: me.id, name: me.name, color: me.color, prof: me.prof } }, ws);
     this.report("join");
   }
 
@@ -678,6 +709,74 @@ export class GameRoom extends DurableObject<Env> {
     this.report("update");
   }
 
+  // ---------------- Profissões ----------------
+
+  private validProfession(prof: string): string {
+    const level = this.room?.level ?? "city";
+    const def = PROFESSIONS[prof];
+    return def && def.levels.includes(level) ? prof : "entregador";
+  }
+
+  /** Escolhe a profissão com menos gente (empate: a primeira da lista, começando por entregador). */
+  private assignProfession(excludeId: number): string {
+    const level = this.room?.level ?? "city";
+    const counts = new Map<string, number>();
+    for (const a of this.connected().map(attachmentOf)) {
+      if (!a.joined || a.id === excludeId || !a.prof) continue;
+      counts.set(a.prof, (counts.get(a.prof) ?? 0) + 1);
+    }
+    let best = "entregador";
+    let bestCount = Infinity;
+    for (const p of PROFESSION_ORDER) {
+      if (!PROFESSIONS[p].levels.includes(level)) continue;
+      const c = counts.get(p) ?? 0;
+      if (c < bestCount) { best = p; bestCount = c; }
+    }
+    return best;
+  }
+
+  private async onProf(ws: WebSocket, me: Attachment, prof: string): Promise<void> {
+    if (!me.joined) return;
+    if (this.room!.autoProfession) {
+      ws.send(JSON.stringify({ t: "prof", id: me.id, prof: me.prof ?? "entregador", locked: true }));
+      return;
+    }
+    me.prof = this.validProfession(prof);
+    ws.serializeAttachment(me);
+    this.broadcast({ t: "prof", id: me.id, prof: me.prof });
+  }
+
+  /** Pagamento de tarefa de profissão: confere profissão, valor e intervalo mínimo. */
+  private async onEarn(ws: WebSocket, me: Attachment, msg: any): Promise<void> {
+    const room = this.room!;
+    const job = String(msg.job ?? "");
+    const def = PROFESSIONS[job];
+    const now = Date.now();
+    const last = this.lastEarn.get(me.id) ?? 0;
+    if (!me.joined || !def || def.maxUnits === 0 || me.prof !== job || now - last < def.cooldownMs) {
+      ws.send(JSON.stringify({ t: "earnFail", job }));
+      return;
+    }
+    let payment: number;
+    if (def.maxAmount) {
+      const amount = Math.round(Number(msg.amount));
+      payment = Number.isFinite(amount) ? Math.max(def.pay, Math.min(def.maxAmount, amount)) : def.pay;
+    } else {
+      const units = Math.floor(Number(msg.units));
+      payment = def.pay * (Number.isFinite(units) ? Math.max(1, Math.min(def.maxUnits, units)) : 1);
+    }
+    this.lastEarn.set(me.id, now);
+    room.money += payment;
+    await this.save();
+    const what = String(msg.what ?? "").slice(0, 60);
+    this.broadcast({ t: "earned", by: me.id, name: me.name, job, payment, money: room.money, what });
+    this.report("delivered", payment);
+  }
+
+  private entregadores(): number {
+    return this.connected().map(attachmentOf).filter((a) => a.joined && (a.prof ?? "entregador") === "entregador").length;
+  }
+
   private async onLost(me: Attachment, cargoId: string): Promise<void> {
     const room = this.room!;
     const job = room.jobs.find((j) => j.id === cargoId);
@@ -694,6 +793,7 @@ export class GameRoom extends DurableObject<Env> {
     if (!room) return;
     const me = attachmentOf(ws);
     this.players.delete(me.id);
+    this.lastEarn.delete(me.id);
 
     // Libera a van se ele dirigia; caixas ficam sem dono até alguém pegar.
     let changed = false;
@@ -729,8 +829,8 @@ export class GameRoom extends DurableObject<Env> {
     const room = this.room!;
     room.shift += 1;
     room.pendingShift = false;
-    const players = Math.max(1, this.connected().length);
-    const count = Math.min(6, 2 + players);
+    // Só os entregadores contam para o tamanho do turno (os outros têm as tarefas da profissão).
+    const count = Math.min(6, 2 + Math.max(1, this.entregadores()));
     const random = crypto.getRandomValues(new Uint32Array(count * 2));
 
     for (const job of room.jobs) delete room.owners[job.id];
@@ -751,7 +851,7 @@ export class GameRoom extends DurableObject<Env> {
     if (room.pendingShift || room.jobs.some((j) => j.status === "pending")) return;
     room.pendingShift = true;
 
-    if (!room.jobs.some((j) => j.status === "delivered")) {
+    if (!room.jobs.some((j) => j.status === "delivered") && this.entregadores() > 0) {
       // Nenhuma entrega: game over. Zera o dinheiro e recomeça do turno 1.
       room.gameOver = true;
       room.money = 0;

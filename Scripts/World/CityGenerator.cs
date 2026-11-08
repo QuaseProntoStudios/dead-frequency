@@ -239,6 +239,10 @@ public partial class CityGenerator : Node3D
 
     private Vector3 BlockCenter(int bx, int bz) => new(bx * Period, 0f, bz * Period);
 
+    /// <summary>Nome da rua vertical (x = k·Period + Period/2) e da avenida horizontal (z = ...), para o minimapa.</summary>
+    public string StreetNameX(int k) => StreetX(k);
+    public string StreetNameZ(int k) => StreetZ(k);
+
     private string StreetX(int index) => StreetNamesX[Mathf.PosMod(index, StreetNamesX.Length)];
     private string StreetZ(int index) => StreetNamesZ[Mathf.PosMod(index, StreetNamesZ.Length)];
 

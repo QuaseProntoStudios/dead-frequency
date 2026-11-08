@@ -1,0 +1,155 @@
+// Scripts/Jobs/RepositorJob.cs
+// Repositor: no Supermercado Atacadinho, pegue uma caixa de produtos no estoque (fundo da loja)
+// e reponha uma prateleira marcada como VAZIA. R$ 30 por prateleira.
+using System.Collections.Generic;
+using Godot;
+
+namespace DeadFrequency;
+
+public partial class RepositorJob : JobBase
+{
+    private static readonly Color Blue = new(0.4f, 0.75f, 1f);
+    private const int EmptyAtOnce = 4;
+
+    private bool _carrying;
+    private readonly List<int> _empty = new();
+    private readonly Dictionary<int, Node3D> _emptyNodes = new();
+    private readonly Dictionary<int, Node3D> _restocked = new();
+    private Node3D _stock;
+    private Node3D _boxInHand;
+    private double _refill;
+
+    public override void _Ready()
+    {
+        if (City.MarketShelfSlots.Count == 0)
+        {
+            GameHud.Toast(this, "Esta fase não tem supermercado.", UiStyle.Warning);
+            return;
+        }
+        // Estoque: palete com caixas no fundo da loja.
+        _stock = JobMarkers.Create(this, City.MarketStockPoint, Blue, "ESTOQUE", 0f, 0.8f);
+        var cardboard = new StandardMaterial3D { AlbedoColor = new Color(0.62f, 0.45f, 0.26f) };
+        for (int i = 0; i < 6; i++)
+            _stock.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.55f, 0.4f, 0.45f) }, MaterialOverride = cardboard, Position = new Vector3((i % 3 - 1) * 0.58f, 0.32f + i / 3 * 0.42f, 0f) });
+        ActionArea.Create(_stock, new Vector3(0f, 0.6f, 0f), new Vector3(1.9f, 1.2f, 1f),
+            _ => _carrying ? "Você já está com uma caixa" : "[E] Pegar caixa de produtos",
+            _ => TakeBox(),
+            p => !_carrying && !p.IsHolding);
+        EmptySomeShelves();
+    }
+
+    public override void _ExitTree()
+    {
+        foreach (Node3D n in _emptyNodes.Values)
+            if (IsInstanceValid(n))
+                n.QueueFree();
+        foreach (Node3D n in _restocked.Values)
+            if (IsInstanceValid(n))
+                n.QueueFree();
+        if (_boxInHand != null && IsInstanceValid(_boxInHand))
+            _boxInHand.QueueFree();
+    }
+
+    private void TakeBox()
+    {
+        _carrying = true;
+        // Caixa visível na frente da câmera.
+        Camera3D cam = Player?.Camera;
+        if (cam != null)
+        {
+            _boxInHand = new MeshInstance3D
+            {
+                Mesh = new BoxMesh { Size = new Vector3(0.45f, 0.3f, 0.35f) },
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.62f, 0.45f, 0.26f) },
+                Position = new Vector3(0.25f, -0.35f, -0.6f),
+            };
+            cam.AddChild(_boxInHand);
+        }
+        GameHud.Toast(this, "Leve a caixa até uma prateleira VAZIA (azul)", Blue, 3.0);
+    }
+
+    private void EmptySomeShelves()
+    {
+        var slots = City.MarketShelfSlots;
+        int guard = 0;
+        while (_empty.Count < EmptyAtOnce && guard++ < 50)
+        {
+            int i = Rng.RandiRange(0, slots.Count - 1);
+            if (_empty.Contains(i))
+                continue;
+            if (_restocked.TryGetValue(i, out Node3D old))
+            {
+                if (IsInstanceValid(old))
+                    old.QueueFree();
+                _restocked.Remove(i);
+            }
+            _empty.Add(i);
+            (Vector3 pos, float rot) = slots[i];
+            Node3D marker = JobMarkers.Create(this, pos, Blue, "VAZIO", 0f, 0.35f);
+            marker.Rotation = new Vector3(0f, rot, 0f);
+            marker.AddChild(new MeshInstance3D
+            {
+                Mesh = new BoxMesh { Size = new Vector3(1.6f, 0.36f, 0.42f) },
+                MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color(0.3f, 0.6f, 1f, 0.35f), Transparency = BaseMaterial3D.TransparencyEnum.Alpha, EmissionEnabled = true, Emission = new Color(0.3f, 0.6f, 1f), EmissionEnergyMultiplier = 0.8f },
+                Position = new Vector3(0f, 0.2f, 0f),
+            });
+            int captured = i;
+            ActionArea.Create(marker, new Vector3(0f, 0.2f, 0f), new Vector3(1.6f, 0.5f, 0.6f),
+                _ => _carrying ? "[E] Repor a prateleira" : "Prateleira vazia (pegue uma caixa no estoque)",
+                _ => Restock(captured),
+                _ => _carrying);
+            _emptyNodes[i] = marker;
+        }
+    }
+
+    private void Restock(int slot)
+    {
+        if (!_carrying || !_empty.Contains(slot))
+            return;
+        _carrying = false;
+        if (_boxInHand != null && IsInstanceValid(_boxInHand))
+            _boxInHand.QueueFree();
+        _boxInHand = null;
+        _empty.Remove(slot);
+        if (_emptyNodes.TryGetValue(slot, out Node3D marker) && IsInstanceValid(marker))
+            marker.QueueFree();
+        _emptyNodes.Remove(slot);
+
+        // Produtos novos na prateleira.
+        (Vector3 pos, float rot) = City.MarketShelfSlots[slot];
+        var row = new Node3D { Rotation = new Vector3(0f, rot, 0f) };
+        AddChild(row);
+        row.GlobalPosition = pos;
+        for (int k = 0; k < 7; k++)
+        {
+            var mat = new StandardMaterial3D { AlbedoColor = Color.FromHsv(Rng.Randf(), 0.7f, 0.85f) };
+            float h = Rng.RandfRange(0.18f, 0.32f);
+            row.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(0.17f, h, 0.22f) }, MaterialOverride = mat, Position = new Vector3(-0.66f + k * 0.22f, h * 0.5f + 0.02f, 0f) });
+        }
+        _restocked[slot] = row;
+        M.Earn(1, "Prateleira reposta");
+        if (_empty.Count == 0)
+            _refill = 4.0;
+        else if (_empty.Count < 2)
+            _refill = 8.0;
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_refill > 0)
+        {
+            _refill -= delta;
+            if (_refill <= 0)
+                EmptySomeShelves();
+        }
+    }
+
+    public override string PanelText()
+    {
+        if (City.MarketShelfSlots.Count == 0)
+            return "Sem supermercado nesta fase.";
+        float d = PlayerPos.DistanceTo(City.MarketStockPoint);
+        string task = _carrying ? "► Leve a caixa até uma prateleira VAZIA (azul)" : "· Pegue uma caixa no ESTOQUE, no fundo da loja";
+        return $"{task}\n· Prateleiras vazias: {_empty.Count}\n· Atacadinho a {d:0} m";
+    }
+}

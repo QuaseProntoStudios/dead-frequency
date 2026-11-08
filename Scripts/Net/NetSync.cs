@@ -108,8 +108,26 @@ public partial class NetSync : Node
             ApplyObject(obj);
     }
 
+    /// <summary>
+    /// A fase foi descarregada mas o evento ainda chegou (ex.: troca de cena no meio de um frame):
+    /// solta os eventos e ignora. Antes isso enchia o console de ObjectDisposedException.
+    /// </summary>
+    private bool Stale()
+    {
+        if (IsInstanceValid(this) && IsInstanceValid(Van) && IsInstanceValid(Player) && IsInstanceValid(Delivery))
+            return false;
+        if (Net != null)
+        {
+            Net.MessageReceived -= OnMessage;
+            Net.Disconnected -= OnDisconnected;
+        }
+        return true;
+    }
+
     private void OnMessage(JsonElement m)
     {
+        if (Stale())
+            return;
         switch (m.GetProperty("t").GetString())
         {
             case "join":
@@ -287,6 +305,8 @@ public partial class NetSync : Node
 
     private void OnDisconnected(string message)
     {
+        if (Stale())
+            return;
         _active = false;
         SetPhysicsProcess(false);
         GetTree().Paused = false;

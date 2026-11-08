@@ -33,6 +33,17 @@ public partial class CityGenerator
 
     public void RegisterObstacle(Vector3 position) => SidewalkObstacles.Add(position);
 
+    // ---- pontos usados pelas profissões (v0.9)
+    /// <summary>Caçambas de lixo (gari).</summary>
+    public List<Vector3> DumpsterSpots { get; } = new();
+    /// <summary>Vaga entre as bombas de cada posto e a marca (frentista).</summary>
+    public List<(Vector3 Position, string Brand)> GasSpots { get; } = new();
+    /// <summary>Prateleiras do supermercado: posição da prateleira e rotação (repositor).</summary>
+    public List<(Vector3 Position, float RotY)> MarketShelfSlots { get; } = new();
+    public Vector3 MarketStockPoint { get; private set; }
+    /// <summary>Mesa de som da rádio (locutor). Zero = fase sem rádio.</summary>
+    public Vector3 RadioConsolePoint { get; private set; }
+
     /// <summary>Lista embaralhada de anúncios, diferente a cada vez que o jogo abre.</summary>
     public static List<string> RunAds()
     {
@@ -90,6 +101,21 @@ public partial class CityGenerator
     /// <summary>Chamado pelo BuildBlock. true = o quarteirão virou um serviço especial.</summary>
     private bool TryBuildServiceBlock(Node3D block, Vector3 center, int bx, int bz)
     {
+        if (bx == RadioStationBlock.X && bz == RadioStationBlock.Y)
+        {
+            BuildRadioStation(block, center);
+            return true;
+        }
+        if (bx == MarketBlock.X && bz == MarketBlock.Y)
+        {
+            BuildSupermarket(block, center);
+            return true;
+        }
+        if (bx == ApartmentBlock.X && bz == ApartmentBlock.Y)
+        {
+            BuildApartmentBuilding(block, center);
+            return true;
+        }
         if (bx == WaterTowerBlock.X && bz == WaterTowerBlock.Y)
         {
             BuildWaterTowerPlaza(block, center);
@@ -149,6 +175,7 @@ public partial class CityGenerator
             });
         }
 
+        GasSpots.Add((st.Position + new Vector3(0f, 0f, 5f), brand));
         // Ilhas de bombas.
         foreach (float x in new[] { -3f, 3f })
         {
@@ -176,6 +203,7 @@ public partial class CityGenerator
         AddBox(st, shop + new Vector3(0f, 3.2f, 4.14f), new Vector3(9.4f, 1.48f, 0.2f), _doorDark, false);
         TexQuad(st, $"res://Assets/Textures/Stores/sign_conv_{brand}.png", shop + new Vector3(0f, 3.2f, 4.25f), new Vector2(9.2f, 1.3f));
 
+        Poster(st, shop + new Vector3(6.52f, 1.6f, 1.5f), Mathf.Pi * 0.5f);
         // Totem de preços na esquina da avenida.
         var totem = new Vector3(13.5f, 0f, 14f);
         AddBox(st, totem + new Vector3(0f, 1.6f, 0f), new Vector3(0.4f, 3.2f, 0.4f), _darkMetal);
@@ -313,7 +341,8 @@ public partial class CityGenerator
             foreach (float t in new[] { -62f, 58f })
             {
                 Vector3 pos = o * dist + along * t;
-                BuildBillboard(pos, -o, ads[n % ads.Count]);
+                // O primeiro outdoor é sempre o do teuzin0dev (twitch e github).
+                BuildBillboard(pos, -o, n == 0 ? TeuzinAd : ads[n % ads.Count]);
                 n++;
             }
         }

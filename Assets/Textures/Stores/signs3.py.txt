@@ -1,0 +1,121 @@
+"""Dead Frequency v0.9 — rádio, supermercado por dentro, banners de promoção, prédio e anúncios do autor.
+Uso: python3 signs3.py.txt <pasta Assets/Textures/Stores>"""
+import sys, math, os
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+OUT = sys.argv[1]
+HERE = os.path.dirname(os.path.abspath(__file__))
+exec(open(os.path.join(HERE, "signs.py.txt"), encoding="utf-8").read().split("# ---------- ícones")[0])
+ADS = OUT + "/../Ads"; MK = OUT + "/../Market"; HOME = OUT + "/../Home"
+for p in (ADS, MK, HOME): os.makedirs(p, exist_ok=True)
+WHITE = (255, 255, 255); YEL = (255, 214, 30)
+
+def ic_waves(c):
+    def f(d):
+        d.rectangle((70, 60, 80, 128), fill=c); d.polygon([(60, 128), (90, 128), (75, 96)], fill=c)
+        for r in (18, 34, 50): d.arc((75 - r, 50 - r, 75 + r, 50 + r), 200, 340, fill=c, width=6)
+    return f
+def ic_cart(c):
+    def f(d):
+        d.line((20, 40, 40, 40, 56, 100, 116, 100), fill=c, width=7)
+        d.polygon([(42, 52), (126, 52), (114, 88), (52, 88)], fill=c)
+        d.ellipse((54, 106, 72, 124), fill=c); d.ellipse((100, 106, 118, 124), fill=c)
+    return f
+def ic_building(c):
+    def f(d):
+        d.rectangle((40, 20, 110, 128), fill=c)
+        for y in range(30, 118, 18):
+            for x in (50, 70, 90): d.rectangle((x, y, x + 10, y + 10), fill=(255, 230, 120))
+    return f
+
+sign("radio966", (12, 12, 14), "RÁDIO FREQUÊNCIA 96.6 FM", D + "DejaVuSansCondensed-Bold.ttf", (120, 255, 140), "a única que toca no apagão", (200, 255, 210), ic_waves((120, 255, 140)), border=(120, 255, 140))
+sign("atacadinho", (200, 20, 30), "SUPERMERCADO ATACADINHO", D + "DejaVuSansCondensed-Bold.ttf", YEL, "preço de atacado, fila de varejo", WHITE, ic_cart(YEL), outline=(120, 0, 0))
+sign("ed_sintonia", (70, 60, 50), "EDIFÍCIO SINTONIA", D + "DejaVuSerif-Bold.ttf", (240, 220, 170), "residencial · apartamentos dos entregadores", (220, 200, 160), ic_building((240, 220, 170)), border=(200, 170, 110))
+
+# Placas das seções do mercado (penduradas no teto): 512x128
+SECTIONS = [("HORTIFRUTI", (40, 140, 40)), ("PADARIA", (190, 120, 40)), ("LIMPEZA", (30, 110, 190)), ("BEBIDAS", (170, 30, 40)),
+            ("FRIOS", (40, 160, 190)), ("MERCEARIA", (200, 150, 20)), ("HIGIENE", (150, 60, 160)), ("CAIXAS", (30, 30, 30))]
+for name, col in SECTIONS:
+    img = Image.new("RGB", (512, 128), col); d = ImageDraw.Draw(img)
+    d.rectangle((6, 6, 505, 121), outline=WHITE, width=6)
+    f, b = fit(d, name, D + "DejaVuSansCondensed-Bold.ttf", 460, 80)
+    d.text(((512 - (b[2] - b[0])) // 2 - b[0], (128 - (b[3] - b[1])) // 2 - b[1]), name, font=f, fill=WHITE)
+    img.filter(ImageFilter.SMOOTH).save(f"{MK}/section_{name.lower()}.png")
+
+# Banners de promoção (porta e vitrine do mercado): 512x768
+def promo(name, bg, product, desc, price, painter):
+    img = Image.new("RGB", (512, 768), bg); d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, 511, 110), fill=YEL)
+    f, b = fit(d, "OFERTA!", D + "DejaVuSans-Bold.ttf", 440, 86)
+    d.text(((512 - (b[2] - b[0])) // 2 - b[0], 12 - b[1]), "OFERTA!", font=f, fill=(200, 20, 30))
+    painter(d)
+    f, b = fit(d, product, D + "DejaVuSansCondensed-Bold.ttf", 470, 64)
+    d.text(((512 - (b[2] - b[0])) // 2 - b[0], 470 - b[1]), product, font=f, fill=WHITE)
+    f, b = fit(d, desc, D + "DejaVuSansCondensed.ttf", 470, 34)
+    d.text(((512 - (b[2] - b[0])) // 2 - b[0], 545 - b[1]), desc, font=f, fill=(255, 240, 200))
+    d.ellipse((96, 590, 416, 750), fill=YEL)
+    f, b = fit(d, price, D + "DejaVuSans-Bold.ttf", 280, 90)
+    d.text(((512 - (b[2] - b[0])) // 2 - b[0], 670 - (b[3] - b[1]) // 2 - b[1]), price, font=f, fill=(200, 20, 30))
+    img.filter(ImageFilter.SMOOTH).save(f"{MK}/promo_{name}.png")
+
+def p_coffee(d):
+    d.rounded_rectangle((156, 150, 356, 440), radius=20, fill=(90, 50, 20)); d.rectangle((156, 250, 356, 330), fill=(230, 200, 140))
+    d.text((176, 268), "TROPEÇO", font=font(D + "DejaVuSans-Bold.ttf", 34), fill=(90, 50, 20))
+def p_rice(d):
+    d.polygon([(150, 160), (362, 160), (380, 440), (132, 440)], fill=(250, 250, 240)); d.rectangle((150, 260, 362, 340), fill=(30, 120, 60))
+    d.text((170, 278), "5 kg", font=font(D + "DejaVuSans-Bold.ttf", 44), fill=WHITE)
+def p_soda(d):
+    d.rounded_rectangle((206, 140, 306, 440), radius=30, fill=(30, 140, 50)); d.rectangle((226, 120, 286, 150), fill=(200, 30, 30))
+    d.rectangle((206, 260, 306, 330), fill=(200, 30, 30))
+def p_soap(d):
+    d.rectangle((146, 180, 366, 440), fill=(30, 90, 200)); d.ellipse((186, 220, 326, 360), fill=WHITE)
+    d.text((200, 262), "OMOO", font=font(D + "DejaVuSans-Bold.ttf", 44), fill=(30, 90, 200))
+def p_milk(d):
+    d.polygon([(186, 200), (256, 140), (326, 200)], fill=(230, 230, 230)); d.rectangle((186, 200, 326, 440), fill=(250, 250, 250))
+    for (x, y) in ((206, 260), (276, 320), (226, 380)): d.ellipse((x, y, x + 36, y + 26), fill=(20, 20, 20))
+def p_bread(d):
+    for i in range(3): d.ellipse((120 + i * 30, 220 + i * 50, 390 + i * 10, 330 + i * 50), fill=(200, 140, 60), outline=(120, 70, 30), width=4)
+
+promo("cafe", (110, 60, 20), "CAFÉ TROPEÇO 500g", "acorda até defunto", "R$ 9,99", p_coffee)
+promo("arroz", (20, 100, 50), "ARROZ SOLTINHO", "não gruda, nem a fila", "R$ 21,90", p_rice)
+promo("refri", (180, 20, 30), "GUARANAZINHO 2L", "bem geladinho no corredor 4", "R$ 6,49", p_soda)
+promo("sabao", (20, 60, 150), "SABÃO OMOO 1kg", "tira até mancha de óleo da van", "R$ 12,90", p_soap)
+promo("leite", (30, 110, 170), "LEITE VAQUINHA 1L", "da fazenda do rancho fundo", "R$ 4,79", p_milk)
+promo("pao", (150, 90, 30), "PÃO FRANCÊS kg", "saindo agora (mentira, às 5h)", "R$ 14,90", p_bread)
+
+# Rótulos de produtos para as prateleiras: tiras 256x64 com várias embalagens coloridas
+import random
+rnd = random.Random(966)
+for name, cols in (("mercearia", [(200, 150, 20), (200, 30, 30), (30, 120, 60), (240, 240, 230)]),
+                   ("limpeza", [(30, 90, 200), (250, 250, 250), (60, 180, 220), (230, 60, 120)]),
+                   ("bebidas", [(30, 140, 50), (180, 20, 30), (20, 20, 20), (240, 160, 20)]),
+                   ("higiene", [(150, 60, 160), (250, 250, 250), (230, 120, 170), (60, 150, 220)])):
+    img = Image.new("RGB", (512, 128), (40, 40, 40)); d = ImageDraw.Draw(img)
+    x = 2
+    while x < 510:
+        w = rnd.randint(28, 52); h = rnd.randint(70, 124); c = rnd.choice(cols)
+        d.rectangle((x, 128 - h, x + w - 3, 127), fill=c)
+        d.rectangle((x + 3, 128 - h * 0.6, x + w - 6, 128 - h * 0.35), fill=rnd.choice(cols))
+        x += w
+    img.save(f"{MK}/shelf_{name}.png")
+
+# Anúncios do autor
+img = Image.new("RGB", (600, 800), (255, 250, 240)); d = ImageDraw.Draw(img)
+d.rounded_rectangle((70, 90, 530, 420), radius=60, fill=(255, 120, 60)); d.polygon([(160, 410), (240, 410), (150, 500)], fill=(255, 120, 60))
+for i, y in enumerate((170, 240, 310)): d.rounded_rectangle((130, y, 470 - i * 70, y + 34), radius=16, fill=WHITE)
+f, b = fit(d, "recadin.com.br", D + "DejaVuSans-Bold.ttf", 540, 90)
+d.text(((600 - (b[2] - b[0])) // 2 - b[0], 560 - b[1]), "recadin.com.br", font=f, fill=(40, 40, 40))
+f, b = fit(d, "acesse: recadin.com.br", D + "DejaVuSansCondensed.ttf", 500, 40)
+d.text(((600 - (b[2] - b[0])) // 2 - b[0], 690 - b[1]), "acesse: recadin.com.br", font=f, fill=(255, 120, 60))
+d.rectangle((0, 0, 599, 799), outline=(40, 40, 40), width=8)
+img.filter(ImageFilter.SMOOTH).save(f"{ADS}/ad_recadin.png")
+
+img = Image.new("RGB", (1200, 400), (60, 20, 110)); d = ImageDraw.Draw(img)
+for i in range(0, 1200, 40): d.line((i, 400, i + 200, 0), fill=(75, 30, 135), width=14)
+f, b = fit(d, "siga twitch.tv/teuzin0dev", D + "DejaVuSans-Bold.ttf", 1100, 120)
+d.text(((1200 - (b[2] - b[0])) // 2 - b[0] + 5, 70 - b[1] + 5), "siga twitch.tv/teuzin0dev", font=f, fill=(0, 0, 0))
+d.text(((1200 - (b[2] - b[0])) // 2 - b[0], 70 - b[1]), "siga twitch.tv/teuzin0dev", font=f, fill=WHITE)
+f, b = fit(d, "github.com/dieguesmosken", D + "DejaVuSansMono-Bold.ttf", 900, 70)
+d.text(((1200 - (b[2] - b[0])) // 2 - b[0], 250 - b[1]), "github.com/dieguesmosken", font=f, fill=(190, 255, 200))
+d.rectangle((0, 0, 1199, 399), outline=(240, 240, 240), width=10)
+img.filter(ImageFilter.SMOOTH).save(f"{ADS}/ad_teuzin.png")
+print("ok")

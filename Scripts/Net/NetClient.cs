@@ -14,11 +14,12 @@ public class NetPlayerInfo
     public int Id;
     public string Name = "";
     public Color Color = Colors.White;
+    public string Profession = Professions.Entregador;
 }
 
 public partial class NetClient : Node
 {
-    public const int ProtocolVersion = 3;
+    public const int ProtocolVersion = 4;
     /// <summary>Servidor oficial do projeto (Cloudflare). Não aparece na tela; é o padrão.</summary>
     public const string OfficialServer = "https://dead-frequency.teuzin0dev.workers.dev";
 
@@ -54,6 +55,8 @@ public partial class NetClient : Node
     /// <summary>Fase da sala ("city", "farm"...), vinda do servidor.</summary>
     public string Level { get; private set; } = "city";
     public int HostId { get; private set; }
+    /// <summary>A sala sorteia as profissões (configuração de quem criou).</summary>
+    public bool AutoProfession { get; private set; }
     public bool IsHost => IsOnline && HostId == MyId;
     /// <summary>JSON bruto do welcome, relido pelo NetSync quando a fase carrega.</summary>
     public string WelcomeJson { get; private set; } = "";
@@ -88,7 +91,7 @@ public partial class NetClient : Node
 
     // ---------------- API pública ----------------
 
-    public void CreateRoom(string serverUrl, string playerName, string level = "city")
+    public void CreateRoom(string serverUrl, string playerName, string level = "city", bool autoProfession = false)
     {
         if (Status != ConnectionStatus.Offline)
             Leave();
@@ -98,7 +101,7 @@ public partial class NetClient : Node
         Status = ConnectionStatus.Connecting;
         StatusMessage?.Invoke("Criando sala...");
 
-        Error err = _http.Request($"{HttpBase(ServerUrl)}/api/rooms", new[] { "Content-Type: application/json" }, HttpClient.Method.Post, JsonSerializer.Serialize(new { level }));
+        Error err = _http.Request($"{HttpBase(ServerUrl)}/api/rooms", new[] { "Content-Type: application/json" }, HttpClient.Method.Post, JsonSerializer.Serialize(new { level, autoProfession }));
         if (err != Error.Ok)
             Fail($"Não foi possível contatar o servidor ({err}).");
     }
@@ -165,7 +168,7 @@ public partial class NetClient : Node
         if (state == WebSocketPeer.State.Open)
         {
             if (_lastState != WebSocketPeer.State.Open)
-                Send(new { t = "hello", version = ProtocolVersion, name = PlayerName });
+                Send(new { t = "hello", version = ProtocolVersion, name = PlayerName, prof = Professions.Current });
 
             while (_socket.GetAvailablePacketCount() > 0)
                 HandleText(_socket.GetPacket().GetStringFromUtf8());
@@ -254,6 +257,10 @@ public partial class NetClient : Node
         // Servidores antigos não mandam a fase: cidade.
         Level = msg.TryGetProperty("level", out JsonElement levelEl) && levelEl.ValueKind == JsonValueKind.String ? levelEl.GetString() : "city";
         HostId = msg.GetProperty("host").GetInt32();
+        AutoProfession = msg.TryGetProperty("autoProfession", out JsonElement autoEl) && autoEl.ValueKind == JsonValueKind.True;
+        if (msg.TryGetProperty("prof", out JsonElement profEl) && profEl.ValueKind == JsonValueKind.String)
+            Professions.Current = profEl.GetString();
+        Professions.CurrentLevel = Level;
         WelcomeJson = raw;
 
         _players.Clear();
@@ -272,6 +279,7 @@ public partial class NetClient : Node
             Id = p.GetProperty("id").GetInt32(),
             Name = p.GetProperty("name").GetString() ?? "?",
             Color = ParseColor(p.GetProperty("color").GetString()),
+            Profession = p.TryGetProperty("prof", out JsonElement prof) && prof.ValueKind == JsonValueKind.String ? prof.GetString() : Professions.Entregador,
         };
         _players[info.Id] = info;
     }

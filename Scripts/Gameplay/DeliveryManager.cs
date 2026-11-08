@@ -100,7 +100,47 @@ public partial class DeliveryManager : Node3D
 
         NetworkMode = NetClient.Instance?.IsOnline == true;
         if (!NetworkMode)
-            Callable.From(() => StartLocalShift(useExistingCargo: true)).CallDeferred();
+        {
+            // Continua do último save (turno e total de entregas).
+            SaveData save = SaveManager.Load();
+            if (save != null)
+            {
+                Shift = Mathf.Max(1, save.Shift);
+                TotalDelivered = save.TotalDelivered;
+            }
+        }
+        // As profissões (v0.9) entram junto com a fase.
+        Callable.From(() =>
+        {
+            if (IsInsideTree() && ProfessionManager.Instance == null)
+                GetParent().AddChild(new ProfessionManager { Name = "Professions", City = City, Player = Player, Delivery = this });
+        }).CallDeferred();
+    }
+
+    /// <summary>
+    /// Só o entregador tem turnos de caixas. Nas outras profissões (solo) não há pedidos nem game over;
+    /// no online os pedidos continuam (o servidor manda), mas os feixes ficam escondidos.
+    /// </summary>
+    public bool EntregadorMode { get; private set; } = true;
+    private bool _localShiftStarted;
+
+    public void SetProfessionMode(bool entregador)
+    {
+        EntregadorMode = entregador;
+        foreach (DeliveryJob job in _jobs)
+            if (job.Marker != null && IsInstanceValid(job.Marker))
+                job.Marker.Visible = entregador;
+        if (!NetworkMode && entregador && !_localShiftStarted)
+        {
+            _localShiftStarted = true;
+            StartLocalShift(useExistingCargo: true);
+        }
+        else if (!NetworkMode && !entregador && _localShiftStarted)
+        {
+            // Saiu do turno de entregas: as caixas ficam no lugar, sem pedido (nem game over).
+            _localShiftStarted = false;
+            ClearJobs(freeCargo: false);
+        }
     }
 
     public override void _Process(double delta)
@@ -132,6 +172,11 @@ public partial class DeliveryManager : Node3D
 
     private void StartLocalShift(bool useExistingCargo)
     {
+        if (!EntregadorMode)
+        {
+            _localShiftStarted = false;
+            return;
+        }
         ClearJobs(freeCargo: false);
         ShiftDelivered = 0;
         ShiftEarnings = 0;
@@ -339,6 +384,7 @@ public partial class DeliveryManager : Node3D
             return;
 
         BuildMarker(job);
+        job.Marker.Visible = EntregadorMode;
         cargo.CargoDestroyed += () => OnJobCargoDestroyed(job);
         _jobs.Add(job);
     }

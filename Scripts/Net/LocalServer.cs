@@ -56,7 +56,22 @@ public partial class LocalServer : Node
         public Dictionary<string, object> Snapshot;
         public string Held;
         public int Seat;
+        public string Prof = Professions.Entregador;
+        public double LastEarn = -1e9;
     }
+
+    /// <summary>Mesmos valores de PROFESSIONS em server/src/index.ts (pay, maxUnits, maxAmount, cooldown em s).</summary>
+    private static readonly Dictionary<string, (int Pay, int MaxUnits, int MaxAmount, double Cooldown, string[] Levels)> ProfessionRules = new()
+    {
+        [Professions.Entregador] = (0, 0, 0, 0, new[] { "city", "farm" }),
+        [Professions.Taxista] = (30, 1, 400, 8, new[] { "city", "farm" }),
+        [Professions.Gari] = (25, 3, 0, 1.5, new[] { "city", "farm" }),
+        [Professions.Repositor] = (30, 1, 0, 2.5, new[] { "city" }),
+        [Professions.Frentista] = (45, 1, 0, 5, new[] { "city" }),
+        [Professions.Locutor] = (20, 1, 0, 9, new[] { "city" }),
+    };
+    private static readonly string[] ProfessionOrder = { Professions.Entregador, Professions.Taxista, Professions.Gari, Professions.Repositor, Professions.Frentista, Professions.Locutor };
+    private bool _autoProfession;
 
     private TcpServer _tcp;
     private readonly List<Peer> _peers = new();
@@ -99,8 +114,9 @@ public partial class LocalServer : Node
 
     // ---------------- Liga / desliga ----------------
 
-    public Error Start(string level, int port = DefaultPort)
+    public Error Start(string level, int port = DefaultPort, bool autoProfession = false)
     {
+        _autoProfession = autoProfession;
         Stop();
         _tcp = new TcpServer();
         Error err = _tcp.Listen((ushort)port, "*");
@@ -238,6 +254,8 @@ public partial class LocalServer : Node
                 case "deliver": OnDeliver(me, Str(msg, "cargoId"), Num(msg, "integ")); break;
                 case "lost": OnLost(me, Str(msg, "cargoId")); break;
                 case "buy": OnBuy(me, Str(msg, "item"), (int)Num(msg, "req")); break;
+                case "earn": OnEarn(me, msg); break;
+                case "prof": OnProf(me, Str(msg, "prof")); break;
                 case "chat":
                 {
                     string chat = Str(msg, "msg");
@@ -267,12 +285,13 @@ public partial class LocalServer : Node
         if (name.Length > 0)
             me.Name = name;
         me.Joined = true;
+        me.Prof = _autoProfession ? AssignProfession(me) : ValidProfession(Str(msg, "prof"));
 
         if (_hostId == null || !_peers.Any(p => p.Joined && p.Id == _hostId))
             _hostId = me.Id;
 
         var others = _peers.Where(p => p.Joined && p != me)
-            .Select(p => new Dictionary<string, object> { ["id"] = p.Id, ["name"] = p.Name, ["color"] = p.Color, ["state"] = p.Snapshot })
+            .Select(p => new Dictionary<string, object> { ["id"] = p.Id, ["name"] = p.Name, ["color"] = p.Color, ["prof"] = p.Prof, ["state"] = p.Snapshot })
             .ToList();
         Send(me, new Dictionary<string, object>
         {
@@ -283,6 +302,8 @@ public partial class LocalServer : Node
             ["code"] = Code,
             ["seed"] = _seed,
             ["level"] = _level,
+            ["prof"] = me.Prof,
+            ["autoProfession"] = _autoProfession,
             ["host"] = _hostId,
             ["players"] = others,
             ["shift"] = _shift,
@@ -291,7 +312,7 @@ public partial class LocalServer : Node
             ["owners"] = _owners,
             ["objects"] = _objects.Values.ToList(),
         });
-        Broadcast(new { t = "join", player = new { id = me.Id, name = me.Name, color = me.Color } }, me);
+        Broadcast(new { t = "join", player = new { id = me.Id, name = me.Name, color = me.Color, prof = me.Prof } }, me);
     }
 
     private void OnTick(Peer me, JsonElement msg)
@@ -397,6 +418,61 @@ public partial class LocalServer : Node
         Broadcast(new { t = "money", money = _money, by = me.Id, name = me.Name, item, req });
     }
 
+    // ---------------- Profissões ----------------
+
+    private string ValidProfession(string prof) =>
+        prof != null && ProfessionRules.TryGetValue(prof, out var r) && r.Levels.Contains(_level) ? prof : Professions.Entregador;
+
+    private string AssignProfession(Peer me)
+    {
+        string best = Professions.Entregador;
+        int bestCount = int.MaxValue;
+        foreach (string p in ProfessionOrder)
+        {
+            if (!ProfessionRules[p].Levels.Contains(_level))
+                continue;
+            int c = _peers.Count(x => x.Joined && x != me && x.Prof == p);
+            if (c < bestCount)
+            {
+                best = p;
+                bestCount = c;
+            }
+        }
+        return best;
+    }
+
+    private void OnProf(Peer me, string prof)
+    {
+        if (!me.Joined)
+            return;
+        if (_autoProfession)
+        {
+            Send(me, new { t = "prof", id = me.Id, prof = me.Prof, locked = true });
+            return;
+        }
+        me.Prof = ValidProfession(prof);
+        Broadcast(new { t = "prof", id = me.Id, prof = me.Prof });
+    }
+
+    private void OnEarn(Peer me, JsonElement msg)
+    {
+        string job = Str(msg, "job");
+        double now = Time.GetTicksMsec() / 1000.0;
+        if (!me.Joined || job == null || !ProfessionRules.TryGetValue(job, out var rule) || rule.MaxUnits == 0 || me.Prof != job || now - me.LastEarn < rule.Cooldown)
+        {
+            Send(me, new { t = "earnFail", job });
+            return;
+        }
+        int payment = rule.MaxAmount > 0
+            ? Math.Clamp((int)Math.Round(Num(msg, "amount")), rule.Pay, rule.MaxAmount)
+            : rule.Pay * Math.Clamp((int)Num(msg, "units"), 1, rule.MaxUnits);
+        me.LastEarn = now;
+        _money += payment;
+        Broadcast(new { t = "earned", by = me.Id, name = me.Name, job, payment, money = _money, what = Clip(Str(msg, "what") ?? "", 60) });
+    }
+
+    private int Entregadores() => _peers.Count(p => p.Joined && p.Prof == Professions.Entregador);
+
     private void RemovePeer(Peer me)
     {
         if (me.Closed)
@@ -428,8 +504,7 @@ public partial class LocalServer : Node
     {
         _shift += 1;
         _pendingShift = false;
-        int players = Math.Max(1, _peers.Count(p => p.Joined));
-        int count = Math.Min(6, 2 + players);
+        int count = Math.Min(6, 2 + Math.Max(1, Entregadores()));
         foreach (Job old in _jobs)
         {
             _owners.Remove(old.Id);
@@ -451,7 +526,7 @@ public partial class LocalServer : Node
         if (_pendingShift || _jobs.Any(j => j.Status == "pending"))
             return;
         _pendingShift = true;
-        if (!_jobs.Any(j => j.Status == "delivered"))
+        if (!_jobs.Any(j => j.Status == "delivered") && Entregadores() > 0)
         {
             _gameOver = true;
             _money = 0;

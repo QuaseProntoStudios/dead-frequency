@@ -7,12 +7,29 @@ namespace DeadFrequency;
 
 public static class GameVersion
 {
-    public const string Current = "0.8.0";
+    public const string Current = "0.9.0";
 
     public readonly record struct Release(string Version, string Date, string Title, string[] Changes);
 
     public static readonly Release[] Changelog =
     {
+        new("0.9.0", "07/11/2026", "Cidade simulada", new[]
+        {
+            "Profissões! Escolha ao começar (ou deixe a sala online sortear): Entregador, Taxista, Gari, Repositor, Frentista e Locutor da 96.6, cada uma com as suas tarefas e pagamento.",
+            "Taxista: pegue passageiros com a van e deixe no destino (corrida pela distância). Gari: recolha os sacos de lixo das calçadas e jogue nas caçambas.",
+            "Repositor: reponha as prateleiras do Supermercado Atacadinho. Frentista: abasteça os carros que chegam no posto. Locutor: leia os comerciais no ar.",
+            "Rádio Frequência 96.6 FM: estação com estúdio por dentro e torre de transmissão de 62 m. Cinco músicas originais, sem direitos autorais, tocando ao mesmo tempo para todo mundo.",
+            "Rádio na caminhonete (tecla R), no escritório da empresa, no mercado, no saguão e no seu apartamento.",
+            "Caminhonete nova: estilo Bongo dos anos 90, cabine avançada, carroceria de madeira e o rádio aceso no painel.",
+            "Supermercado Atacadinho com interior: corredores, placas de seção, hortifrúti, padaria, frios, caixas com atendentes (E = comprar) e banners de oferta na porta.",
+            "Edifício Sintonia: cada jogador ganha um apartamento. Dá para dormir e salvar o jogo, ver TV (jornal, clipe da 96.6, tempo) e passar o tempo de boas.",
+            "Save do jogo na cama (user://save.tzn): profissão, turno, entregas e ganhos. O menu mostra o último save.",
+            "Nomes das ruas no minimapa (cidade e rancho).",
+            "Launcher: um programinha que baixa o jogo e instala as atualizações do GitHub sozinho. O menu também avisa quando sai versão nova.",
+            "Outdoor \"siga twitch.tv/teuzin0dev · github.com/dieguesmosken\" e cartazes do recadin.com.br pela cidade.",
+            "Correções: erro em série (ObjectDisposedException) ao jogar online depois de voltar ao menu; textos do quadro de avisos e do PC do escritório deslocados para a direita.",
+            "Online: protocolo 4 (atualize o servidor com npm run deploy).",
+        }),
         new("0.8.0", "07/11/2026", "Cidade comercial", new[]
         {
             "Bancos (Caixote Econômica, Etaú, Bravesco, Santo Ander), lotéricas, padarias e supermercados paródia, cada um com letreiro próprio.",
@@ -115,17 +132,24 @@ public static class GameVersion
             "Kenney · www.kenney.nl — Starter Kit Racing (github.com/KenneyNL/Starter-Kit-Racing)",
             "   caminhões, moto, pneu cantando e batida — licença CC0 (domínio público)",
             "KayKit · Kay Lousberg (www.kaylousberg.com) — City Builder Bits, Furniture Bits, Halloween Bits e Restaurant Bits",
-            "   mobília do escritório, bancos, caçambas, caixa d'água, cemitério, abóboras, caixote de tomates e panela — licença CC0",
+            "   mobília do escritório e dos apartamentos, bancos, caçambas, caixa d'água, cemitério, abóboras, caixotes do hortifrúti e panela — licença CC0",
             "Operadoras \"tchau\" e \"morto\": paródias, sem relação com empresas reais.",
         }),
         new("Áudio original", new[]
         {
             "Músicas do menu, da noite e do dia, ambiente da cidade e efeitos de interface:",
             "   sintetizados por código (Python + NumPy), ver Audio/synth*.py.txt",
+            "Rádio Frequência 96.6: \"Frequência Morta\" (Os Sintonizados), \"Bossa da Madrugada\" (Trio Estática),",
+            "   \"Asfalto Molhado\" (Lo-Fi do Viaduto), \"Forró do Entregador\" (Zé da Van e Banda) e \"Neon na Rodovia\" (Cartucho 16)",
+            "   — bandas fictícias; músicas originais geradas por código (Audio/synth_radio.py.txt), livres de direitos autorais",
         }),
         new("Paródias", new[]
         {
             "Os nomes de lojas são paródias e não têm relação com marcas reais.",
+        }),
+        new("Apoie o projeto", new[]
+        {
+            "twitch.tv/teuzin0dev · github.com/dieguesmosken · recadin.com.br",
         }),
         new("Obrigado por jogar", new[]
         {

@@ -242,6 +242,17 @@ public partial class GameHud : CanvasLayer
 
         NetClient net = NetClient.Instance;
         string room = net != null && net.IsOnline ? $"SALA {net.RoomCode} · {net.PlayerCount} online · " : "";
+        ProfessionManager pm = ProfessionManager.Instance;
+        if (pm != null && pm.Current != Professions.Entregador)
+        {
+            _jobTitle.Text = room + pm.PanelTitle();
+            _jobTitle.AddThemeColorOverride("font_color", Professions.Get(pm.Current).Color);
+            _jobBody.Text = pm.PanelText();
+            _money.Text = $"$ {Delivery.Money}";
+            return;
+        }
+        _jobTitle.RemoveThemeColorOverride("font_color");
+        _jobTitle.AddThemeColorOverride("font_color", UiStyle.PhosphorDim);
         _jobTitle.Text = $"{room}TURNO {Delivery.Shift} · {Delivery.ShiftDelivered}/{Delivery.ShiftTotal}";
         _money.Text = $"$ {Delivery.Money}";
 
@@ -299,6 +310,21 @@ public partial class GameHud : CanvasLayer
     {
         if (from?.GetTree()?.GetFirstNodeInGroup(GroupName) is GameHud hud)
             hud.ShowToast(text, color, seconds);
+    }
+
+    /// <summary>Tela escurece e volta (dormir, elevador).</summary>
+    public static void FadeBlack(Node from, double seconds = 1.0)
+    {
+        if (from?.GetTree()?.GetFirstNodeInGroup(GroupName) is not GameHud hud)
+            return;
+        var rect = new ColorRect { Color = new Color(0f, 0f, 0f, 0f), MouseFilter = Control.MouseFilterEnum.Ignore };
+        rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        hud.AddChild(rect);
+        Tween tw = rect.CreateTween();
+        tw.TweenProperty(rect, "color:a", 1.0, seconds * 0.4);
+        tw.TweenInterval(seconds * 0.2);
+        tw.TweenProperty(rect, "color:a", 0.0, seconds * 0.4);
+        tw.TweenCallback(Callable.From(rect.QueueFree));
     }
 
     public void ShowToast(string text, Color? color = null, double seconds = 3.0)

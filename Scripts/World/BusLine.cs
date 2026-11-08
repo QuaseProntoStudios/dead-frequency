@@ -139,6 +139,8 @@ public partial class BusLine : Node3D
         CarModels.Box(stop, new Vector3(0f, 0.48f, 0.35f), new Vector3(2.6f, 0.08f, 0.4f), wood);
         CarModels.Box(stop, new Vector3(0f, 0.24f, 0.35f), new Vector3(2.4f, 0.48f, 0.06f), metal);
 
+        // Cartaz do recadin.com.br no vidro do abrigo.
+        CityGenerator.Poster(stop, new Vector3(1.0f, 1.35f, 0.565f), Mathf.Pi);
         // Placa do ponto.
         var pole = new Vector3(2.4f, 0f, -0.4f);
         CarModels.Box(stop, pole + new Vector3(0f, 1.4f, 0f), new Vector3(0.07f, 2.8f, 0.07f), metal);

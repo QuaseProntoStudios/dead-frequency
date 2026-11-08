@@ -9,13 +9,13 @@ const assert = (cond, label) => {
   console.log("ok -", label);
 };
 
-function connect(code, name) {
+function connect(code, name, prof = "entregador") {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`${wsBase}/api/rooms/${code}/ws?name=${encodeURIComponent(name)}`);
     const inbox = [];
     ws.on("message", (data) => inbox.push(JSON.parse(data.toString())));
     ws.on("open", () => {
-      ws.send(JSON.stringify({ t: "hello", version: 3 }));
+      ws.send(JSON.stringify({ t: "hello", version: 4, prof }));
       resolve({ ws, inbox, send: (m) => ws.send(JSON.stringify(m)), find: (t) => inbox.find((m) => m.t === t), all: (t) => inbox.filter((m) => m.t === t) });
     });
     ws.on("error", reject);
@@ -76,7 +76,7 @@ a.send({ t: "deliver", cargoId: job.id, integ: 0.5 });
 await sleep(300);
 const delivered = b.all("delivered");
 assert(delivered.length === 1 && delivered[0].by === welcomeA.you, "só o dono entrega");
-assert(delivered[0].payment === Math.round([150, 300, 120, 180, 220, 90, 160][job.type] * 0.5), "pagamento proporcional à integridade");
+assert(delivered[0].payment === Math.round([150, 300, 120, 180, 220, 90, 160, 140, 260, 280, 200, 110, 170][job.type] * 0.5), "pagamento proporcional à integridade");
 
 for (const j of welcomeA.jobs.slice(1)) {
   a.send({ t: "claim", id: j.id });
@@ -123,6 +123,46 @@ assert(over && over.money === 0, "todas as caixas perdidas = game over e dinheir
 await sleep(8800);
 const restart = b.all("shift").at(-1);
 assert(restart.shift === 1 && restart.money === 0, "sala recomeça no turno 1 depois do game over");
+
+// ---------------- profissões (v0.9) ----------------
+{
+  const { code: pc } = await (await fetch(base + "/api/rooms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ autoProfession: true }) })).json();
+  const p1 = await connect(pc, "Um", "gari");
+  await sleep(250);
+  const p2 = await connect(pc, "Dois", "gari");
+  await sleep(250);
+  const w1 = p1.find("welcome"), w2 = p2.find("welcome");
+  assert(w1.autoProfession === true && w1.prof === "entregador" && w2.prof === "taxista", "sala automática equilibra as profissões");
+  assert(w2.players[0].prof === "entregador", "welcome mostra a profissão dos outros");
+  p2.send({ t: "prof", prof: "gari" });
+  await sleep(200);
+  assert(p2.all("prof").at(-1)?.prof === "taxista", "sala automática não deixa trocar");
+  p1.send({ t: "earn", job: "taxista", amount: 300 });
+  await sleep(150);
+  assert(p1.find("earnFail"), "não recebe por profissão que não é a sua");
+  p2.send({ t: "earn", job: "taxista", amount: 99999, what: "corrida" });
+  await sleep(150);
+  const e1 = p1.all("earned").at(-1);
+  assert(e1 && e1.payment === 400 && e1.by === w2.you, "corrida limitada ao máximo e avisada para a sala");
+  p2.send({ t: "earn", job: "taxista", amount: 100 });
+  await sleep(150);
+  assert(p2.all("earnFail").length === 1, "intervalo mínimo entre pagamentos");
+  p1.ws.close(); p2.ws.close();
+
+  const { code: fc } = await (await fetch(base + "/api/rooms", { method: "POST" })).json();
+  const g = await connect(fc, "Gari", "gari");
+  const r = await connect(fc, "Repo", "locutor");
+  await sleep(300);
+  assert(g.find("welcome").prof === "gari" && r.find("welcome").prof === "locutor", "sala livre respeita a escolha");
+  assert(g.find("welcome").jobs.length === 3, "turno conta só os entregadores");
+  g.send({ t: "earn", job: "gari", units: 9 });
+  await sleep(150);
+  assert(g.all("earned").at(-1)?.payment === 75, "gari: no máximo 3 sacos por pagamento");
+  r.send({ t: "prof", prof: "repositor" });
+  await sleep(150);
+  assert(g.all("prof").some((m) => m.prof === "repositor" && m.id === r.find("welcome").you), "troca de profissão avisada");
+  g.ws.close(); r.ws.close();
+}
 
 // ---------------- admin ----------------
 const token = process.env.ADMIN_TOKEN ?? "teste-local";

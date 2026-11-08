@@ -21,6 +21,8 @@ public partial class MainMenu : Control
     private Button _startButton;
     private PanelContainer _infoPanel;
     private VBoxContainer _levelPanel;
+    private VBoxContainer _profPanel;
+    private HBoxContainer _updateBox;
     private InfoPanel _info;
     private double _glitchTimer;
 
@@ -54,8 +56,8 @@ public partial class MainMenu : Control
 
         _title = UiStyle.MakeLabel("DEAD FREQUENCY", 72);
         stack.AddChild(_title);
-        stack.AddChild(UiStyle.MakeLabel("entregas na zona morta · 1996", 20, color: UiStyle.PhosphorDim));
-        stack.AddChild(UiStyle.MakeLabel("pegue as caixas no depósito e siga o feixe verde", 16, color: UiStyle.PhosphorDim));
+        stack.AddChild(UiStyle.MakeLabel("cidade simulada na zona morta · 1996", 20, color: UiStyle.PhosphorDim));
+        stack.AddChild(UiStyle.MakeLabel("escolha sua profissão, sintonize a 96.6 e boa sorte", 16, color: UiStyle.PhosphorDim));
         stack.AddChild(new Control { CustomMinimumSize = new Vector2(0, 30) });
 
         _menu = new VBoxContainer();
@@ -105,8 +107,8 @@ public partial class MainMenu : Control
         _levelPanel.AddChild(UiStyle.MakeLabel("ESCOLHA A FASE", 30));
         foreach (GameLevels.Level level in GameLevels.All)
         {
-            string scene = level.Scene;
-            Button b = UiStyle.MakeButton(level.Name, () => StartGame(scene), 420, UiSound.Start);
+            GameLevels.Level lv = level;
+            Button b = UiStyle.MakeButton(level.Name, () => ShowProfessions(lv), 420, UiSound.Start);
             b.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
             _levelPanel.AddChild(b);
             _levelPanel.AddChild(UiStyle.MakeLabel(level.Subtitle, 15, color: UiStyle.PhosphorDim));
@@ -116,15 +118,36 @@ public partial class MainMenu : Control
         _levelPanel.AddChild(levelBack);
         stack.AddChild(_levelPanel);
 
+        // Escolha de profissão (solo), depois da fase.
+        _profPanel = new VBoxContainer { Visible = false };
+        _profPanel.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(_profPanel);
+
         _infoPanel = new PanelContainer { Visible = false };
         _info = new InfoPanel();
         _infoPanel.AddChild(_info);
         _info.BackRequested += ShowMenu;
         stack.AddChild(_infoPanel);
 
-        Label footer = UiStyle.MakeLabel($"v{GameVersion.Current} · protótipo", 14, HorizontalAlignment.Left, UiStyle.PhosphorDim);
+        string save = SaveManager.Summary();
+        Label footer = UiStyle.MakeLabel($"v{GameVersion.Current} · protótipo" + (save.Length > 0 ? "   ·   " + save : ""), 14, HorizontalAlignment.Left, UiStyle.PhosphorDim);
         AddChild(footer);
         footer.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomLeft, LayoutPresetMode.Minsize, 16);
+
+        // Aviso de versão nova no GitHub (canto inferior direito).
+        _updateBox = new HBoxContainer { Visible = false };
+        _updateBox.AddThemeConstantOverride("separation", 10);
+        AddChild(_updateBox);
+        _updateBox.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomRight, LayoutPresetMode.Minsize, 16);
+        _updateBox.GrowHorizontal = GrowDirection.Begin;
+        UpdateChecker.Check(this, (tag, url) =>
+        {
+            if (!IsInstanceValid(this))
+                return;
+            _updateBox.AddChild(UiStyle.MakeLabel($"Nova versão {tag} disponível!", 16, color: UiStyle.Warning));
+            _updateBox.AddChild(UiStyle.MakeButton("Baixar", () => OS.ShellOpen(url), 140));
+            _updateBox.Visible = true;
+        });
 
         AddChild(UiStyle.MakeScanlines());
 
@@ -177,14 +200,60 @@ public partial class MainMenu : Control
     private void ShowLevels()
     {
         _menu.Visible = false;
+        _profPanel.Visible = false;
         _levelPanel.Visible = true;
         (_levelPanel.GetChild(1) as Button)?.GrabFocus();
+    }
+
+    private void ShowProfessions(GameLevels.Level level)
+    {
+        _levelPanel.Visible = false;
+        _profPanel.Visible = true;
+        foreach (Node c in _profPanel.GetChildren())
+            c.QueueFree();
+        _profPanel.AddChild(UiStyle.MakeLabel("ESCOLHA A PROFISSÃO", 30));
+        _profPanel.AddChild(UiStyle.MakeLabel(level.Name, 16, color: UiStyle.PhosphorDim));
+        Button first = null;
+        string last = GameSettings.Instance?.Profession ?? Professions.Entregador;
+        foreach (Professions.Def def in Professions.All)
+        {
+            if (!Professions.AvailableIn(def.Id, level.Id))
+                continue;
+            string id = def.Id;
+            string scene = level.Scene;
+            Button b = UiStyle.MakeButton((id == last ? "► " : "") + def.Name, () =>
+            {
+                Professions.Current = id;
+                Professions.CurrentLevel = level.Id;
+                if (GameSettings.Instance != null)
+                {
+                    GameSettings.Instance.Profession = id;
+                    GameSettings.Instance.Save();
+                }
+                StartGame(scene);
+            }, 420, UiSound.Start);
+            b.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            b.AddThemeColorOverride("font_color", def.Color);
+            _profPanel.AddChild(b);
+            Label desc = UiStyle.MakeLabel(def.Task, 14, color: UiStyle.PhosphorDim);
+            desc.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            desc.CustomMinimumSize = new Vector2(620, 0);
+            _profPanel.AddChild(desc);
+            if (first == null || id == last)
+                first = b;
+        }
+        _profPanel.AddChild(UiStyle.MakeLabel("Dá para trocar depois no menu de pausa.", 14, color: UiStyle.PhosphorDim));
+        Button back = UiStyle.MakeButton("Voltar", ShowLevels, sound: UiSound.Back);
+        back.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _profPanel.AddChild(back);
+        first?.GrabFocus();
     }
 
     private void StartGame(string scene)
     {
         // Pequena pausa para o som de início tocar antes de trocar de cena.
         _levelPanel.Visible = false;
+        _profPanel.Visible = false;
         GetTree().CreateTimer(0.35).Timeout += () => GetTree().ChangeSceneToFile(scene);
     }
 
@@ -208,6 +277,7 @@ public partial class MainMenu : Control
         _optionsPanel.Visible = false;
         _infoPanel.Visible = false;
         _levelPanel.Visible = false;
+        _profPanel.Visible = false;
         _menu.Visible = true;
         _startButton.GrabFocus();
     }

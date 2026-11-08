@@ -22,6 +22,8 @@ public partial class MultiplayerPanel : VBoxContainer
     private int _mode;
     private string _level = "city";
     private LineEdit _name;
+    private OptionButton _prof;
+    private CheckBox _autoProf;
     private LineEdit _server;
     private LineEdit _code;
     private Label _status;
@@ -51,6 +53,26 @@ public partial class MultiplayerPanel : VBoxContainer
 
         _name = AddField("Seu apelido", s?.PlayerName ?? "Entregador", "Entregador");
         _name.MaxLength = 16;
+
+        // Profissão (cidade simulada). Se a sala for automática, o servidor escolhe.
+        var profRow = new HBoxContainer();
+        profRow.AddThemeConstantOverride("separation", 12);
+        Label profLabel = UiStyle.MakeLabel("Profissão", 18, HorizontalAlignment.Left);
+        profLabel.CustomMinimumSize = new Vector2(170, 0);
+        _prof = new OptionButton { SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 40) };
+        for (int i = 0; i < Professions.All.Length; i++)
+        {
+            Professions.Def def = Professions.All[i];
+            _prof.AddItem(def.Levels.Length > 1 ? def.Name : def.Name + " (só na cidade)", i);
+            if (def.Id == (s?.Profession ?? Professions.Entregador))
+                _prof.Selected = i;
+        }
+        profRow.AddChild(profLabel);
+        profRow.AddChild(_prof);
+        AddChild(profRow);
+        _autoProf = new CheckBox { Text = "Ao criar sala: o servidor escolhe a profissão de cada um", ButtonPressed = s?.AutoProfession ?? false };
+        _autoProf.AddThemeFontSizeOverride("font_size", 15);
+        AddChild(_autoProf);
 
         // Onde jogar.
         var modeRow = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
@@ -221,7 +243,7 @@ public partial class MultiplayerPanel : VBoxContainer
         if (!SaveFields())
             return;
         LocalServer server = LocalServer.Ensure();
-        Error err = server.Start(_level);
+        Error err = server.Start(_level, LocalServer.DefaultPort, _autoProf.ButtonPressed);
         if (err != Error.Ok)
         {
             _status.Text = $"Não consegui abrir a porta {LocalServer.DefaultPort} ({err}). Feche outro jogo/servidor que esteja usando ela.";
@@ -341,8 +363,11 @@ public partial class MultiplayerPanel : VBoxContainer
             GameSettings.Instance.ServerMode = _mode;
             GameSettings.Instance.ServerUrl = _server.Text.Trim();
             GameSettings.Instance.PlayerName = PlayerName();
+            GameSettings.Instance.Profession = Professions.All[Mathf.Max(0, _prof.Selected)].Id;
+            GameSettings.Instance.AutoProfession = _autoProf.ButtonPressed;
             GameSettings.Instance.Save();
         }
+        Professions.Current = Professions.All[Mathf.Max(0, _prof.Selected)].Id;
         return true;
     }
 
@@ -351,7 +376,7 @@ public partial class MultiplayerPanel : VBoxContainer
         if (NetClient.Instance == null || !SaveFields())
             return;
         SetBusy(true);
-        NetClient.Instance.CreateRoom(CurrentServer(), PlayerName(), _level);
+        NetClient.Instance.CreateRoom(CurrentServer(), PlayerName(), _level, _autoProf.ButtonPressed);
     }
 
     private void OnJoinPressed()

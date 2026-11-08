@@ -23,6 +23,8 @@ public partial class AudioManager : Node
     public const string MusicBus = "Music";
     public const string SfxBus = "SFX";
     public const string UiBus = "UI";
+    /// <summary>Bus só da trilha (envia para Music). Abaixa quando o rádio da van está ligado.</summary>
+    public const string BgmBus = "Bgm";
 
     /// <summary>Volume base das faixas (os sliders das Opções controlam os buses).</summary>
     [Export] public float MusicVolumeDb { get; set; } = -9f;
@@ -62,8 +64,9 @@ public partial class AudioManager : Node
 
     public override void _Ready()
     {
-        _musicA = MakePlayer("MusicA", MusicBus);
-        _musicB = MakePlayer("MusicB", MusicBus);
+        EnsureBus(BgmBus, MusicBus);
+        _musicA = MakePlayer("MusicA", BgmBus);
+        _musicB = MakePlayer("MusicB", BgmBus);
         _ambience = MakePlayer("Ambience", SfxBus);
 
         for (int i = 0; i < 4; i++)
@@ -168,6 +171,27 @@ public partial class AudioManager : Node
         int bus = AudioServer.GetBusIndex(MusicBus);
         if (bus >= 0 && AudioServer.GetBusEffectCount(bus) > 0)
             AudioServer.SetBusEffectEnabled(bus, 0, muffled);
+    }
+
+    /// <summary>Abaixa a trilha (rádio ligado na van). Contador para vários rádios ao mesmo tempo.</summary>
+    public void SetMusicDucked(bool ducked)
+    {
+        int bus = AudioServer.GetBusIndex(BgmBus);
+        if (bus < 0)
+            return;
+        float from = AudioServer.GetBusVolumeDb(bus);
+        float to = ducked ? -24f : 0f;
+        CreateTween().TweenMethod(Callable.From<float>(v => AudioServer.SetBusVolumeDb(bus, v)), from, to, 0.8f);
+    }
+
+    private static void EnsureBus(string name, string sendTo)
+    {
+        if (AudioServer.GetBusIndex(name) >= 0)
+            return;
+        AudioServer.AddBus();
+        int index = AudioServer.BusCount - 1;
+        AudioServer.SetBusName(index, name);
+        AudioServer.SetBusSend(index, AudioServer.GetBusIndex(sendTo) >= 0 ? sendTo : "Master");
     }
 
     // ---------------- Utilitários ----------------

@@ -5,4 +5,9 @@
     <RootNamespace>DeadFrequency</RootNamespace>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- O launcher é outro programa (launcher/DeadFrequencyLauncher.csproj): não entra no jogo. -->
+    <Compile Remove="launcher/**" />
+    <None Remove="launcher/**" />
+  </ItemGroup>
 </Project>

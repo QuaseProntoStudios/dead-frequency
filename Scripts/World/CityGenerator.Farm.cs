@@ -25,6 +25,8 @@ public partial class CityGenerator
 
     /// <summary>Estradas para o minimapa (vazio na cidade, que usa a grade).</summary>
     public List<(Vector2 A, Vector2 B, float Width)> MapRoads { get; } = new();
+    /// <summary>Nome de cada estrada de MapRoads (mesma ordem).</summary>
+    public List<string> MapRoadNames { get; } = new();
     public bool IsFarm => Biome == WorldBiome.Farm;
 
     private static readonly string[] FarmNames =
@@ -179,6 +181,7 @@ public partial class CityGenerator
         var data = new float[320];
         int count = 0;
         MapRoads.Clear();
+        MapRoadNames.Clear();
         foreach (FarmRoad r in _farmRoads)
         {
             if (count >= 64)
@@ -191,6 +194,7 @@ public partial class CityGenerator
             data[k + 4] = r.Width;
             count++;
             MapRoads.Add((r.A, r.B, r.Width));
+            MapRoadNames.Add(r.Name);
         }
         mat.SetShaderParameter("road_data", data);
         mat.SetShaderParameter("road_count", count);

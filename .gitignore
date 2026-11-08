@@ -22,3 +22,4 @@ server/.dev.vars
 # Arquivos temporários de envio / lixo local
 _to_delete/
 *.zip
+_autotest/

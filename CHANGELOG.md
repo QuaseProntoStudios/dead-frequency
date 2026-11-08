@@ -2,6 +2,23 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.9.0 — Cidade simulada  (07/11/2026)
+
+- Profissões! Escolha ao começar (ou deixe a sala online sortear): Entregador, Taxista, Gari, Repositor, Frentista e Locutor da 96.6, cada uma com as suas tarefas e pagamento.
+- Taxista: pegue passageiros com a van e deixe no destino (corrida pela distância). Gari: recolha os sacos de lixo das calçadas e jogue nas caçambas.
+- Repositor: reponha as prateleiras do Supermercado Atacadinho. Frentista: abasteça os carros que chegam no posto. Locutor: leia os comerciais no ar.
+- Rádio Frequência 96.6 FM: estação com estúdio por dentro e torre de transmissão de 62 m. Cinco músicas originais, sem direitos autorais, tocando ao mesmo tempo para todo mundo.
+- Rádio na caminhonete (tecla R), no escritório da empresa, no mercado, no saguão e no seu apartamento.
+- Caminhonete nova: estilo Bongo dos anos 90, cabine avançada, carroceria de madeira e o rádio aceso no painel.
+- Supermercado Atacadinho com interior: corredores, placas de seção, hortifrúti, padaria, frios, caixas com atendentes (E = comprar) e banners de oferta na porta.
+- Edifício Sintonia: cada jogador ganha um apartamento. Dá para dormir e salvar o jogo, ver TV (jornal, clipe da 96.6, tempo) e passar o tempo de boas.
+- Save do jogo na cama (user://save.tzn): profissão, turno, entregas e ganhos. O menu mostra o último save.
+- Nomes das ruas no minimapa (cidade e rancho).
+- Launcher: um programinha que baixa o jogo e instala as atualizações do GitHub sozinho. O menu também avisa quando sai versão nova.
+- Outdoor "siga twitch.tv/teuzin0dev · github.com/dieguesmosken" e cartazes do recadin.com.br pela cidade.
+- Correções: erro em série (ObjectDisposedException) ao jogar online depois de voltar ao menu; textos do quadro de avisos e do PC do escritório deslocados para a direita.
+- Online: protocolo 4 (atualize o servidor com npm run deploy).
+
 ## v0.8.0 — Cidade comercial  (07/11/2026)
 
 - Bancos (Caixote Econômica, Etaú, Bravesco, Santo Ander), lotéricas, padarias e supermercados paródia, cada um com letreiro próprio.

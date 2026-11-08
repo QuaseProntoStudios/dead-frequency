@@ -31,6 +31,8 @@ public partial class PauseMenu : CanvasLayer
     private Label _roomCode;
     private Label _roomPlayers;
     private Label _feedback;
+    private Button _profButton;
+    private VBoxContainer _profList;
 
     public override void _Ready()
     {
@@ -67,6 +69,8 @@ public partial class PauseMenu : CanvasLayer
         _resumeButton = UiStyle.MakeButton("Continuar", Resume, sound: UiSound.Back);
         _mainList.AddChild(_resumeButton);
         _mainList.AddChild(UiStyle.MakeButton("Opções", ShowOptions));
+        _profButton = UiStyle.MakeButton("Trocar profissão", ShowProfessions);
+        _mainList.AddChild(_profButton);
         _restartButton = UiStyle.MakeButton("Reiniciar turno", Restart);
         _mainList.AddChild(_restartButton);
         _menuButton = UiStyle.MakeButton("Menu principal", GoToMainMenu);
@@ -75,7 +79,11 @@ public partial class PauseMenu : CanvasLayer
 
         _mainList.AddChild(new Control { CustomMinimumSize = new Vector2(0, 6) });
         _mainList.AddChild(UiStyle.MakeLabel("WASD andar · Shift correr · E usar · Clique arremessar · F lanterna · I inventário · N visão noturna", 14, color: UiStyle.PhosphorDim));
-        _mainList.AddChild(UiStyle.MakeLabel("Van: W/S acelerar · A/D virar · Espaço freio de mão · F3 debug", 14, color: UiStyle.PhosphorDim));
+        _mainList.AddChild(UiStyle.MakeLabel("Van: W/S acelerar · A/D virar · Espaço freio de mão · R rádio 96.6 · F3 debug", 14, color: UiStyle.PhosphorDim));
+
+        _profList = new VBoxContainer { Visible = false };
+        _profList.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(_profList);
 
         _options = new OptionsPanel { Visible = false };
         _options.BackRequested += ShowMainList;
@@ -192,8 +200,41 @@ public partial class PauseMenu : CanvasLayer
         AudioManager.Instance?.SetMuffled(false);
     }
 
+    private void ShowProfessions()
+    {
+        _mainList.Visible = false;
+        _profList.Visible = true;
+        foreach (Node c in _profList.GetChildren())
+            c.QueueFree();
+        _profList.AddChild(UiStyle.MakeLabel("TROCAR PROFISSÃO", 30));
+        Button first = null;
+        foreach (Professions.Def def in Professions.All)
+        {
+            if (!Professions.AvailableIn(def.Id, Professions.CurrentLevel))
+                continue;
+            string id = def.Id;
+            Button b = UiStyle.MakeButton((id == Professions.Current ? "► " : "") + def.Name, () =>
+            {
+                ProfessionManager.Instance?.SetProfession(id);
+                Resume();
+            });
+            b.AddThemeColorOverride("font_color", def.Color);
+            _profList.AddChild(b);
+            first ??= b;
+        }
+        _profList.AddChild(UiStyle.MakeButton("Voltar", ShowMainList, sound: UiSound.Back));
+        first?.GrabFocus();
+    }
+
     private void ShowMainList()
     {
+        _profList.Visible = false;
+        if (_profButton != null)
+        {
+            bool locked = Online && NetClient.Instance.AutoProfession;
+            _profButton.Disabled = locked;
+            _profButton.Text = locked ? "Profissão: a sala escolhe" : $"Trocar profissão ({Professions.Get(Professions.Current).Name})";
+        }
         _options.Visible = false;
         _mainList.Visible = true;
         _resumeButton.GrabFocus();

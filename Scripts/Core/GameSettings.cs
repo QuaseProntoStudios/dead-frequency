@@ -35,6 +35,10 @@ public partial class GameSettings : Node
     /// <summary>Endereço do "meu servidor" (só usado no modo 1).</summary>
     public string ServerUrl { get; set; } = "";
     public string PlayerName { get; set; } = "Entregador";
+    /// <summary>Última profissão escolhida (Professions.*).</summary>
+    public string Profession { get; set; } = "entregador";
+    /// <summary>Ao criar sala: o servidor escolhe a profissão de cada um (equilibra as vagas).</summary>
+    public bool AutoProfession { get; set; }
 
     public override void _EnterTree()
     {
@@ -102,6 +106,8 @@ public partial class GameSettings : Node
         cfg.SetValue("network", "server_mode", ServerMode);
         cfg.SetValue("network", "server_url", ServerUrl);
         cfg.SetValue("network", "player_name", PlayerName);
+        cfg.SetValue("game", "profession", Profession);
+        cfg.SetValue("network", "auto_profession", AutoProfession);
 
         Error err = cfg.Save(FilePath);
         if (err != Error.Ok)
@@ -128,6 +134,8 @@ public partial class GameSettings : Node
         MusicVolume = cfg.GetValue("audio", "music_volume", MusicVolume).AsSingle();
         SfxVolume = cfg.GetValue("audio", "sfx_volume", SfxVolume).AsSingle();
         ServerUrl = cfg.GetValue("network", "server_url", ServerUrl).AsString();
+        Profession = cfg.GetValue("game", "profession", Profession).AsString();
+        AutoProfession = cfg.GetValue("network", "auto_profession", AutoProfession).AsBool();
         // Versões antigas guardavam o endereço oficial no campo: vira o modo "oficial".
         if (NetClient.NormalizeServer(ServerUrl) == NetClient.NormalizeServer(NetClient.OfficialServer))
             ServerUrl = "";

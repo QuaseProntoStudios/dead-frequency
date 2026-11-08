@@ -283,6 +283,17 @@ public partial class PlayerController : CharacterBody3D
     private float _knockbackLeft;
 
     /// <summary>Joga o jogador longe (atropelamento). Larga o que estiver na mão.</summary>
+    /// <summary>Elevador/porta do apartamento: move o jogador na hora, virado para yaw (rad).</summary>
+    public void Teleport(Vector3 position, float yaw)
+    {
+        if (State != PlayerState.Walking)
+            return;
+        GlobalPosition = position;
+        Velocity = Vector3.Zero;
+        Rotation = new Vector3(0f, yaw, 0f);
+        ResetPhysicsInterpolation();
+    }
+
     public void Knockback(Vector3 impulse)
     {
         if (State != PlayerState.Walking)

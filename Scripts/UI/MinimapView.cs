@@ -137,6 +137,11 @@ public partial class MinimapView : Control
             var dirt = new Color(0.36f, 0.3f, 0.2f);
             foreach ((Vector2 a, Vector2 b, float w) in City.MapRoads)
                 DrawLine(ToMap(new Vector3(a.X, 0f, a.Y)), ToMap(new Vector3(b.X, 0f, b.Y)), dirt, Mathf.Max(2f, w * PixelsPerMeter));
+            for (int i = 0; i < City.MapRoads.Count && i < City.MapRoadNames.Count; i++)
+            {
+                (Vector2 a, Vector2 b, _) = City.MapRoads[i];
+                StreetLabel(new Vector3(a.X, 0f, a.Y), new Vector3(b.X, 0f, b.Y), City.MapRoadNames[i]);
+            }
             return;
         }
         float period = City.Period;
@@ -149,5 +154,45 @@ public partial class MinimapView : Control
             DrawLine(ToMap(new Vector3(road, 0, -extent)), ToMap(new Vector3(road, 0, extent)), color, width);
             DrawLine(ToMap(new Vector3(-extent, 0, road)), ToMap(new Vector3(extent, 0, road)), color, width);
         }
+        // Nomes das ruas por cima (só as que aparecem perto de você).
+        for (int k = -City.Radius - 1; k <= City.Radius; k++)
+        {
+            float road = k * period + period * 0.5f;
+            StreetLabel(new Vector3(road, 0, -extent), new Vector3(road, 0, extent), City.StreetNameX(k));
+            StreetLabel(new Vector3(-extent, 0, road), new Vector3(extent, 0, road), City.StreetNameZ(k));
+        }
+    }
+
+    /// <summary>Escreve o nome da rua ao longo dela, num ponto à frente do jogador, sem ficar de cabeça para baixo.</summary>
+    private void StreetLabel(Vector3 a, Vector3 b, string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return;
+        var me = new Vector3(_origin.X, 0f, _origin.Y);
+        Vector3 ab = b - a;
+        float t = Mathf.Clamp((me - a).Dot(ab) / Mathf.Max(ab.LengthSquared(), 0.001f), 0f, 1f);
+        Vector3 closest = a + ab * t;
+        if (closest.DistanceTo(me) > 90f)
+            return;
+        // Um pouco adiante na rua para não ficar embaixo da setinha do jogador.
+        Vector3 dir = ab.Normalized();
+        Vector3 spot = closest + dir * 28f;
+        if ((spot - a).Dot(dir) > ab.Length() || (spot - a).Dot(dir) < 0f)
+            spot = closest - dir * 28f;
+        Vector2 p0 = ToMap(spot);
+        Vector2 p1 = ToMap(spot + dir);
+        float angle = (p1 - p0).Angle();
+        if (angle > Mathf.Pi * 0.5f || angle < -Mathf.Pi * 0.5f)
+            angle += Mathf.Pi; // sempre legível da esquerda para a direita
+        Vector2 c = Size * 0.5f;
+        if ((p0 - c).Length() > Mathf.Min(Size.X, Size.Y) * 0.5f - 12f)
+            return;
+        Font font = ThemeDB.FallbackFont;
+        const int size = 10;
+        float w = font.GetStringSize(name, HorizontalAlignment.Left, -1, size).X;
+        DrawSetTransform(p0, angle, Vector2.One);
+        DrawString(font, new Vector2(-w * 0.5f + 1f, 4f), name, HorizontalAlignment.Left, -1, size, new Color(0f, 0f, 0f, 0.8f));
+        DrawString(font, new Vector2(-w * 0.5f, 3f), name, HorizontalAlignment.Left, -1, size, new Color(0.75f, 0.95f, 0.8f));
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
     }
 }

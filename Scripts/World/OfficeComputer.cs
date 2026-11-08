@@ -67,7 +67,7 @@ public partial class OfficeComputer : Area3D, IInteractable
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             Width = 800f,
-            AutowrapMode = TextServer.AutowrapMode.Off,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart, // a largura só vale com quebra ligada (senão sai deslocado)
             Shaded = false,
             DoubleSided = false,
             FixedSize = false,

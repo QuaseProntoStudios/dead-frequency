@@ -71,6 +71,8 @@ public partial class VanController : VehicleBody3D
     private double _crashCooldown;
     private AudioStreamPlayer3D _skid;
     private AudioStream _impactKenney;
+    /// <summary>Rádio do painel: R liga/desliga (sintonizado na 96.6).</summary>
+    public RadioPlayer Radio { get; private set; }
 
     public override void _Ready()
     {
@@ -116,7 +118,30 @@ public partial class VanController : VehicleBody3D
             AddChild(_skid);
         }
 
+        Radio = new RadioPlayer { Name = "Radio", On = false, VolumeDb = -4f, UnitSize = 3f, MaxDistance = 18f, Position = new Vector3(0f, 1.25f, 1.75f) };
+        AddChild(Radio);
+
         VanDetails.Build(this);
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!HasDriver || !Driver.InputEnabled || IsRemote)
+            return;
+        if (@event.IsActionPressed("radio"))
+        {
+            Radio.Toggle();
+            AudioManager.Instance?.SetMusicDucked(Radio.On);
+            if (GetNodeOrNull<Label3D>("RadioDisplay") is Label3D display)
+                display.Visible = Radio.On;
+            GameHud.Toast(this, Radio.On ? "📻 " + Radio.NowPlaying : "Rádio desligado", UiStyle.Phosphor, 4.0);
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed("radio_next") && Radio.On)
+        {
+            GameHud.Toast(this, "📻 " + Radio.NowPlaying + "  (só tem a 96.6 por aqui)", UiStyle.Phosphor, 4.0);
+            GetViewport().SetInputAsHandled();
+        }
     }
 
     /// <summary>Pneu cantando quando a van escorrega de lado (curva rápida ou freio de mão).</summary>
@@ -168,9 +193,11 @@ public partial class VanController : VehicleBody3D
     public void SetRemoteDriver(bool driving)
     {
         HasRemoteDriver = driving;
-        if (_headlights != null)
+        if (!IsInstanceValid(this))
+            return;
+        if (_headlights != null && IsInstanceValid(_headlights))
             _headlights.Visible = driving || HasDriver;
-        if (driving && _engine?.Stream != null && !_engine.Playing)
+        if (driving && _engine != null && IsInstanceValid(_engine) && _engine.Stream != null && !_engine.Playing)
             _engine.Play();
     }
 
@@ -200,6 +227,8 @@ public partial class VanController : VehicleBody3D
     public void SetDriver(PlayerController driver)
     {
         Driver = driver;
+        if (Radio != null)
+            AudioManager.Instance?.SetMusicDucked(driver != null && Radio.On);
         if (driver != null && _engine?.Stream != null && !_engine.Playing)
             _engine.Play();
         if (_headlights != null)

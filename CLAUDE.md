@@ -42,6 +42,10 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
       ShopScreen + StreetVendor (barracas), radar/minimapa, visão noturna (N), luvas, mochila, consumíveis.
       Preços = SHOP_PRICES no servidor. Game over quando todas as caixas do turno quebram.
    ✅ Cidade: CarModels (4 tipos), placas PARE/faixa, BusLine (ônibus + pontos, posição pelo relógio), Pedestrians.
+   ✅ v0.9 Cidade simulada: profissões (Scripts/Jobs: ProfessionManager + JobBase; regras = PROFESSIONS no servidor
+      e LocalServer.ProfessionRules), Rádio 96.6 (Scripts/Audio/RadioStation/RadioPlayer, Audio/Radio/*.ogg),
+      mercado com interior, Edifício Sintonia (apartamentos 60 m abaixo, teleporte), SaveManager (user://save.tzn),
+      caminhonete estilo Bongo (VanDetails), launcher (launcher/, publicado pelo CI). Protocolo 4.
 3. Painel diegético: DashboardButton, ElectricalSystem, EngineSystem, fusíveis
 4. CargoBayManager + SaveManager (.tzn)
 5. Shaders PS1 + monitor CRT
