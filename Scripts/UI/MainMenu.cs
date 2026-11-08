@@ -144,14 +144,17 @@ public partial class MainMenu : Control
         AddChild(_updateBox);
         _updateBox.SetAnchorsAndOffsetsPreset(LayoutPreset.BottomRight, LayoutPresetMode.Minsize, 16);
         _updateBox.GrowHorizontal = GrowDirection.Begin;
-        UpdateChecker.Check(this, (tag, url) =>
+        if (GameSettings.Instance?.CheckUpdates != false)
         {
-            if (!IsInstanceValid(this))
-                return;
-            _updateBox.AddChild(UiStyle.MakeLabel($"Nova versão {tag} disponível!", 16, color: UiStyle.Warning));
-            _updateBox.AddChild(UiStyle.MakeButton("Baixar", () => OS.ShellOpen(url), 140));
-            _updateBox.Visible = true;
-        });
+            UpdateChecker.Check(this, (tag, url) =>
+            {
+                if (!IsInstanceValid(this))
+                    return;
+                _updateBox.AddChild(UiStyle.MakeLabel($"Nova versão {tag} disponível!", 16, color: UiStyle.Warning));
+                _updateBox.AddChild(UiStyle.MakeButton("Baixar", () => OS.ShellOpen(url), 140));
+                _updateBox.Visible = true;
+            });
+        }
 
         AddChild(UiStyle.MakeScanlines());
 

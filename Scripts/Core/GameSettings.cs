@@ -54,6 +54,8 @@ public partial class GameSettings : Node
     public float RadioVolume { get; set; } = 1f;
     public bool MuteOnFocusLoss { get; set; } = true;
     public bool PauseOnFocusLoss { get; set; } = true;
+    /// <summary>Perguntar ao GitHub se há versão nova ao abrir o menu.</summary>
+    public bool CheckUpdates { get; set; } = true;
     public float VehicleSensitivity { get; set; } = 1f;
     public bool HeadBob { get; set; } = true;
     public bool ShowFps { get; set; }
@@ -252,6 +254,7 @@ public partial class GameSettings : Node
         cfg.SetValue("audio", "radio_volume", RadioVolume);
         cfg.SetValue("audio", "mute_on_focus_loss", MuteOnFocusLoss);
         cfg.SetValue("game", "pause_on_focus_loss", PauseOnFocusLoss);
+        cfg.SetValue("game", "check_updates", CheckUpdates);
         cfg.SetValue("controls", "vehicle_sensitivity", VehicleSensitivity);
         cfg.SetValue("controls", "head_bob", HeadBob);
         cfg.SetValue("interface", "show_fps", ShowFps);
@@ -315,6 +318,7 @@ public partial class GameSettings : Node
         RadioVolume = cfg.GetValue("audio", "radio_volume", RadioVolume).AsSingle();
         MuteOnFocusLoss = cfg.GetValue("audio", "mute_on_focus_loss", MuteOnFocusLoss).AsBool();
         PauseOnFocusLoss = cfg.GetValue("game", "pause_on_focus_loss", PauseOnFocusLoss).AsBool();
+        CheckUpdates = cfg.GetValue("game", "check_updates", CheckUpdates).AsBool();
         VehicleSensitivity = cfg.GetValue("controls", "vehicle_sensitivity", VehicleSensitivity).AsSingle();
         HeadBob = cfg.GetValue("controls", "head_bob", HeadBob).AsBool();
         ShowFps = cfg.GetValue("interface", "show_fps", ShowFps).AsBool();
@@ -344,7 +348,7 @@ public partial class GameSettings : Node
         MouseSensitivity = d.MouseSensitivity; InvertY = d.InvertY; Fov = d.Fov;
         MasterVolume = d.MasterVolume; MusicVolume = d.MusicVolume; SfxVolume = d.SfxVolume; UiVolume = d.UiVolume; RadioVolume = d.RadioVolume;
         WindowMode = d.WindowMode; RenderScale = d.RenderScale; MaxFps = d.MaxFps; Quality = d.Quality; AntiAliasing = d.AntiAliasing;
-        Brightness = d.Brightness; Contrast = d.Contrast; VSync = d.VSync; MuteOnFocusLoss = d.MuteOnFocusLoss; PauseOnFocusLoss = d.PauseOnFocusLoss;
+        Brightness = d.Brightness; Contrast = d.Contrast; VSync = d.VSync; MuteOnFocusLoss = d.MuteOnFocusLoss; PauseOnFocusLoss = d.PauseOnFocusLoss; CheckUpdates = d.CheckUpdates;
         VehicleSensitivity = d.VehicleSensitivity; HeadBob = d.HeadBob; ShowFps = d.ShowFps; UiScale = d.UiScale; Scanlines = d.Scanlines;
         ShowCrosshair = d.ShowCrosshair; ShowKeyHints = d.ShowKeyHints; ShowCompass = d.ShowCompass; ToastDuration = d.ToastDuration;
         SpeedUnit = d.SpeedUnit; Clock24h = d.Clock24h; TimeMode = d.TimeMode; DayLengthMinutes = d.DayLengthMinutes;

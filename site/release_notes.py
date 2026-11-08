@@ -36,6 +36,10 @@ out += [
     f"| Launcher Linux (`chmod +x` e abrir) | [DeadFrequencyLauncher-linux]({DL}DeadFrequencyLauncher-linux) |",
     f"| Jogo completo Windows (extraia e abra `DeadFrequency.exe`) | [DeadFrequency-v{ver}-windows.zip]({DL}DeadFrequency-v{ver}-windows.zip) |",
     f"| Jogo completo Linux (extraia e rode `./DeadFrequency.x86_64`) | [DeadFrequency-v{ver}-linux.zip]({DL}DeadFrequency-v{ver}-linux.zip) |",
+    "", "### Verificar o download", "",
+    f"- Confira o SHA-256 com o [SHA256SUMS.txt]({DL}SHA256SUMS.txt) (no Windows: `certutil -hashfile ARQUIVO SHA256`).",
+    "- A partir da v0.9.5, os arquivos têm atestado de build do GitHub (prova que saíram do GitHub Actions deste repositório): "
+    "`gh attestation verify ARQUIVO --repo dieguesmosken/dead-frequency`.",
     "", f"🌐 Site: {SITE} · 📜 [Histórico completo]({SITE}#novidades) · 💚 [Apoie o projeto (Pix)]({SITE}#apoie)",
 ]
 print("\n".join(out))

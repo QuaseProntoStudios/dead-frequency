@@ -24,6 +24,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release list --limit 50 --json tagName --jq '.[].tagName' | while read -r tag; do
+            # Releases antigos sem SHA256SUMS: baixa os arquivos, calcula e anexa.
+            if ! gh release view "$tag" --json assets --jq '.assets[].name' | grep -qx SHA256SUMS.txt; then
+              rm -rf sums && mkdir sums
+              gh release download "$tag" --dir sums --pattern 'DeadFrequency*'
+              (cd sums && sha256sum * > ../SHA256SUMS.txt)
+              gh release upload "$tag" SHA256SUMS.txt --clobber && echo "SHA256SUMS anexado em $tag"
+            fi
             if python3 site/release_notes.py "${tag#v}" main > notes.md 2>/dev/null; then
               gh release edit "$tag" --notes-file notes.md && echo "ok $tag"
             else

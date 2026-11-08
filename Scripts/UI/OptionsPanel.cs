@@ -223,6 +223,7 @@ public partial class OptionsPanel : VBoxContainer
         Slider(p, "Duração do dia", 6, 60, 1, s.DayLengthMinutes, v => s.DayLengthMinutes = (float)v, v => $"{v:0} min", "Minutos reais para 24 horas no jogo.");
         Section(p, "PARTIDA");
         Toggle(p, "Pausar ao trocar de janela", s.PauseOnFocusLoss, b => s.PauseOnFocusLoss = b, "Só no solo; no online o mundo continua.");
+        Toggle(p, "Procurar atualizações ao abrir", s.CheckUpdates, b => s.CheckUpdates = b, "Pergunta ao GitHub se saiu versão nova (nenhum dado seu é enviado).");
         SaveData save = SaveManager.Load();
         p.AddChild(Hint(save == null ? "Ainda não há save: durma na cama do seu apartamento (Edifício Sintonia) para salvar."
             : $"Último save: {save.SavedAt} · {Professions.Get(save.Profession).Name} · turno {save.Shift} · {save.TotalDelivered} entregas · {save.PlayMinutes:0} min jogados"));

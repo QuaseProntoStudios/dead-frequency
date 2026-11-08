@@ -94,6 +94,14 @@
         </div>
       </article>
     </div>
+    <div class="verify">
+      <b>Verificar o download</b>
+      <p class="small">Cada versão vem com um <a id="sha-link" href="https://github.com/dieguesmosken/dead-frequency/releases/latest/download/SHA256SUMS.txt">SHA256SUMS.txt</a>.
+        No Windows, compare com: <code>certutil -hashfile DeadFrequencyLauncher-windows.exe SHA256</code>.
+        Os arquivos também têm <b>atestado de build</b> do GitHub (prova que saíram do GitHub Actions deste repositório, sem mexida no meio do caminho):
+        <code>gh attestation verify ARQUIVO --repo dieguesmosken/dead-frequency</code>.
+        Veja a <a href="#assinatura">política de assinatura de código</a>.</p>
+    </div>
     <p class="small dim">O Windows pode avisar que o arquivo é "desconhecido" (o jogo não tem assinatura paga): clique em <i>Mais informações → Executar assim mesmo</i>.
       Todas as versões: <a href="https://github.com/dieguesmosken/dead-frequency/releases">GitHub Releases</a> · código aberto em <a href="https://github.com/dieguesmosken/dead-frequency">github.com/dieguesmosken/dead-frequency</a>.</p>
   </section>
@@ -172,6 +180,30 @@
       </figure>
     </div>
   </section>
+  <!-- ======================== PRIVACIDADE E ASSINATURA -->
+  <section id="privacidade" class="block legal">
+    <h2><span>08</span> Privacidade</h2>
+    <ul>
+      <li><b>Jogando sozinho</b> o jogo não envia nada sobre você. Ao abrir, ele só pergunta ao GitHub qual é a última versão (dá para desligar em <i>Opções → Jogo → Procurar atualizações ao abrir</i>).</li>
+      <li><b>Online</b> (só quando você entra numa sala): o jogo manda ao servidor escolhido o nome que você digitou, a cor, a profissão e o estado da partida (posição, caixas, veículos). O servidor oficial guarda só o resumo das salas abertas (código, nome do anfitrião e número de jogadores, apagado quando a sala fecha) e totais anônimos, como entregas e recorde de jogadores. Nada é vendido nem usado para propaganda. O servidor roda na Cloudflare, que pode registrar o endereço IP das conexões, como qualquer site.</li>
+      <li><b>Hospedar no meu PC</b> usa o Cloudflare Tunnel (<code>cloudflared</code>) para criar um link público temporário enquanto a partida está aberta.</li>
+      <li><b>Launcher:</b> consulta e baixa as versões no GitHub. A atualização automática é opcional (ele pergunta na primeira vez).</li>
+      <li><b>Este site</b> não usa cookies nem rastreamento. Ele carrega fontes do Google Fonts, a última versão pela API do GitHub e as estatísticas públicas do servidor.</li>
+      <li><b>Desinstalar:</b> apague a pasta onde o jogo foi instalado (a escolhida no launcher). As opções e o save ficam em <code>%APPDATA%\Godot\app_userdata\Dead Frequency</code> (Windows) ou <code>~/.local/share/godot/app_userdata/Dead Frequency</code> (Linux); apague essa pasta para remover tudo.</li>
+    </ul>
+    <p class="small dim">Dúvidas: <a href="mailto:contato@badwolf3d.com.br">contato@badwolf3d.com.br</a>.</p>
+  </section>
+
+  <section id="assinatura" class="block legal">
+    <h2><span>09</span> Política de assinatura de código</h2>
+    <p>Os arquivos do jogo e do launcher são compilados pelo <a href="https://github.com/dieguesmosken/dead-frequency/actions">GitHub Actions</a> direto do código público deste repositório, com <code>SHA256SUMS.txt</code> e atestado de build em cada versão.
+      <span id="signpath-credit">A assinatura de código para Windows está em processo de solicitação ao programa gratuito para código aberto da SignPath Foundation.</span></p>
+    <ul>
+      <li><b>Autores e revisores:</b> <a href="https://github.com/dieguesmosken">Matheus (dieguesmosken)</a>. Contribuições de outras pessoas (inclusive código gerado com ajuda de IA) só entram depois da revisão dele.</li>
+      <li><b>Aprovador das assinaturas:</b> <a href="https://github.com/dieguesmosken">Matheus (dieguesmosken)</a>. Cada versão assinada é aprovada manualmente.</li>
+      <li>Commits do mantenedor são assinados (selo <i>Verified</i> no GitHub).</li>
+    </ul>
+  </section>
 </main>
 
 <footer class="foot">
@@ -179,6 +211,7 @@
     <b>DEAD FREQUENCY</b> · feito por <a href="https://twitch.tv/teuzin0dev">Matheus (teuzin0dev)</a> com Godot 4.7 e o Claude (Anthropic)<br>
     <a href="https://github.com/dieguesmosken/dead-frequency">GitHub</a> · <a href="https://twitch.tv/teuzin0dev">Twitch</a> · <a href="https://instagram.com/teuzin0dev">Instagram</a> · <a href="https://recadin.com.br">recadin.com.br</a> · <a href="mailto:contato@badwolf3d.com.br">contato@badwolf3d.com.br</a>
   </div>
+  <div class="small"><a href="#privacidade">Privacidade</a> · <a href="#assinatura">Política de assinatura de código</a> · <a href="https://github.com/dieguesmosken/dead-frequency/releases/latest/download/SHA256SUMS.txt">SHA256SUMS</a></div>
   <div class="small dim">Modelos 3D: Kenney, KayKit (Kay Lousberg) e Quaternius (CC0). Lojas, operadoras e marcas do jogo são paródias, sem relação com empresas reais.</div>
 </footer>
 
