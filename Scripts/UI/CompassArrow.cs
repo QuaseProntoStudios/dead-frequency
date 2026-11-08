@@ -28,7 +28,7 @@ public partial class CompassArrow : Control
         Vector3 to = Target - Player.GlobalPosition;
         to.Y = 0f;
         _distance = to.Length();
-        Visible = _distance > HideDistance;
+        Visible = _distance > HideDistance && (GameSettings.Instance?.ShowCompass ?? true);
         if (!Visible)
             return;
 

@@ -29,6 +29,7 @@ public partial class GameHud : CanvasLayer
     private MinimapView _minimap;
     private CompassArrow _compass;
     private Label _status;
+    private Label _fps;
 
     [Export] public CityGenerator City { get; set; }
     private double _toastTimeLeft;
@@ -124,6 +125,11 @@ public partial class GameHud : CanvasLayer
         Place(_status, 0.5f, 1f, 0.5f, 1f, -300, -40, 300, -14);
         root.AddChild(_status);
 
+        // Contador de FPS (Opções > Interface).
+        _fps = UiStyle.MakeLabel("", 15, HorizontalAlignment.Right, UiStyle.PhosphorDim);
+        Place(_fps, 1f, 1f, 1f, 1f, -200, -110, -24, -86);
+        root.AddChild(_fps);
+
         root.AddChild(UiStyle.MakeScanlines(0.06f));
 
         if (Player == null)
@@ -186,7 +192,12 @@ public partial class GameHud : CanvasLayer
         _crosshair.Color = hasTarget ? UiStyle.Phosphor : new Color(1f, 1f, 1f, 0.7f);
         float half = hasTarget ? 4f : 2f;
         Place(_crosshair, 0.5f, 0.5f, 0.5f, 0.5f, -half, -half, half, half);
-        _crosshair.Visible = Player.State == PlayerState.Walking || hasTarget;
+        GameSettings gs = GameSettings.Instance;
+        _crosshair.Visible = (gs?.ShowCrosshair ?? true) && (Player.State == PlayerState.Walking || hasTarget);
+        _fps.Visible = gs?.ShowFps ?? false;
+        if (_fps.Visible)
+            _fps.Text = $"{Engine.GetFramesPerSecond()} FPS";
+        _status.Visible = gs?.ShowKeyHints ?? true;
 
         CargoItem held = Player.HeldItem;
         _cargoPanel.Visible = held != null;
@@ -200,7 +211,7 @@ public partial class GameHud : CanvasLayer
         VanController van = Player.CurrentVehicle;
         _speed.Visible = van != null;
         if (van != null)
-            _speed.Text = $"{van.SpeedKmh:000} km/h";
+            _speed.Text = GameSettings.Instance?.SpeedUnit == 1 ? $"{van.SpeedKmh * 0.621371f:000} mph" : $"{van.SpeedKmh:000} km/h";
 
         UpdateJobPanel();
         UpdateItems();
@@ -345,7 +356,7 @@ public partial class GameHud : CanvasLayer
     {
         _toast.Text = text;
         _toast.AddThemeColorOverride("font_color", color ?? UiStyle.Phosphor);
-        _toastTimeLeft = seconds;
+        _toastTimeLeft = seconds * (GameSettings.Instance?.ToastDuration ?? 1f);
         _toastPanel.Visible = true;
         _toastPanel.Modulate = Colors.White;
         _toastPanel.ResetSize();

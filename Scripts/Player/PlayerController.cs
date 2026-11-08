@@ -116,6 +116,10 @@ public partial class PlayerController : CharacterBody3D
 
     private float _gravity;
     private float _sensitivityMultiplier = 1f;
+    private float _vehicleSensitivity = 1f;
+    private bool _headBob = true;
+    private float _bobTime;
+    private Vector3 _cameraBase;
     private bool _invertY;
 
     private IInteractable _currentTarget;
@@ -134,6 +138,7 @@ public partial class PlayerController : CharacterBody3D
     {
         _head = GetNode<Node3D>("Head");
         _camera = GetNode<Camera3D>("Head/Camera3D");
+        _cameraBase = _camera.Position;
         _carryMarker = GetNode<Marker3D>("Head/CarryMarker");
         _collisionShape = GetNode<CollisionShape3D>("CollisionShape3D");
 
@@ -194,6 +199,8 @@ public partial class PlayerController : CharacterBody3D
     {
         GameSettings s = GameSettings.Instance;
         _sensitivityMultiplier = s.MouseSensitivity;
+        _vehicleSensitivity = s.VehicleSensitivity;
+        _headBob = s.HeadBob;
         _invertY = s.InvertY;
         if (_camera != null)
             _camera.Fov = s.Fov;
@@ -222,7 +229,7 @@ public partial class PlayerController : CharacterBody3D
 
     private void RotateLook(Vector2 relative)
     {
-        float sens = BaseMouseSensitivity * _sensitivityMultiplier;
+        float sens = BaseMouseSensitivity * _sensitivityMultiplier * (State == PlayerState.Driving ? _vehicleSensitivity : 1f);
         float pitchDelta = relative.Y * sens * (_invertY ? -1f : 1f);
         float maxPitch = Mathf.DegToRad(MaxPitchDegrees);
 
@@ -242,6 +249,23 @@ public partial class PlayerController : CharacterBody3D
         }
 
         _head.Rotation = headRotation;
+    }
+
+    /// <summary>Balanço da câmera ao andar (Opções > Controles).</summary>
+    public override void _Process(double delta)
+    {
+        if (_camera == null)
+            return;
+        float speed = new Vector2(Velocity.X, Velocity.Z).Length();
+        bool bob = _headBob && State == PlayerState.Walking && IsOnFloor() && speed > 0.5f;
+        Vector3 target = _cameraBase;
+        if (bob)
+        {
+            _bobTime += (float)delta * speed * 2.1f;
+            float amount = Mathf.Clamp(speed / 6f, 0.3f, 1f);
+            target += new Vector3(Mathf.Cos(_bobTime * 0.5f) * 0.025f * amount, Mathf.Abs(Mathf.Sin(_bobTime * 0.5f)) * 0.04f * amount, 0f);
+        }
+        _camera.Position = _camera.Position.Lerp(target, 1f - Mathf.Exp(-12f * (float)delta));
     }
 
     // ---------------- Física ----------------

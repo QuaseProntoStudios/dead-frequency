@@ -1,31 +1,29 @@
 # Launcher do Dead Frequency
 
-Programa pequeno que mantém o jogo atualizado sozinho:
+Janela pequena (feita em Godot, só GDScript) que instala e mantém o jogo atualizado:
 
-1. Confere o último release em [github.com/dieguesmosken/dead-frequency/releases](https://github.com/dieguesmosken/dead-frequency/releases).
-2. Se a versão instalada for mais antiga (ou o jogo não estiver instalado), baixa o zip do seu sistema
-   e extrai na pasta `game/`, ao lado do launcher.
-3. Abre o jogo. Sem internet, abre a versão que já estiver instalada.
+1. **Primeira vez:** pergunta a pasta de instalação (cria a pasta) e se você quer atualizações automáticas.
+2. Confere o último release em [github.com/dieguesmosken/dead-frequency/releases](https://github.com/dieguesmosken/dead-frequency/releases).
+3. **Jogo não instalado:** pergunta se quer baixar agora. **Versão nova:** baixa sozinho (ou pergunta, se as automáticas estiverem desligadas).
+4. Barra de progresso no download (MB e velocidade) e na instalação, depois o botão **JOGAR**.
+5. A **engrenagem** troca a pasta, liga/desliga as automáticas, abre a pasta, verifica agora e reinstala.
 
-Os saves e as opções ficam na pasta de usuário do Godot (`%APPDATA%\Godot\app_userdata\Dead Frequency`),
-então atualizar não apaga nada.
+Configuração em `user://launcher.cfg` (no Windows: `%APPDATA%\Godot\app_userdata\Dead Frequency Launcher`).
+A versão instalada fica em `<pasta>/version.txt`. Os saves do jogo ficam na pasta de usuário do jogo, então
+atualizar ou reinstalar não apaga nada. Quem usava o launcher antigo (pasta `game/` ao lado dele) continua com a mesma pasta.
 
-## Usar
+## Código
 
-Baixe `DeadFrequencyLauncher-windows.exe` (ou `-linux`) no release e coloque numa pasta só dele.
-Abra sempre por ele.
-
-| Opção | O que faz |
-|---|---|
-| `--check` | só verifica se há atualização |
-| `--no-launch` | atualiza e não abre o jogo |
-| `--dir <pasta>` | instala em outra pasta |
+O projeto do launcher fica em `launcher/app/` (`launcher.gd` monta a interface toda em código).
+A pasta `launcher/` tem `.gdignore` para o projeto do jogo não enxergar o launcher.
 
 ## Compilar
 
+Precisa do Godot 4.7.2 **padrão** (sem .NET) e dos templates de exportação:
+
 ```bash
-dotnet publish launcher/DeadFrequencyLauncher.csproj -c Release -r win-x64 -o out/win
-dotnet publish launcher/DeadFrequencyLauncher.csproj -c Release -r linux-x64 -o out/linux
+godot --headless --path launcher/app --export-release "Windows Desktop" ../../out/DeadFrequencyLauncher.exe
+godot --headless --path launcher/app --export-release "Linux" ../../out/DeadFrequencyLauncher.x86_64
 ```
 
-O GitHub Actions (`.github/workflows/release.yml`) já compila e anexa os dois no release.
+O GitHub Actions (`.github/workflows/release.yml`) já faz isso e anexa os dois no release.

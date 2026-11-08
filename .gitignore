@@ -23,3 +23,9 @@ server/.dev.vars
 _to_delete/
 *.zip
 _autotest/
+# Teste local do launcher
+launcher/app/override.cfg
+launcher/app/_test.gd
+launcher/app/.godot/
+out/
+launcher/app/_test.gd.uid

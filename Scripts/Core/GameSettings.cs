@@ -35,6 +35,47 @@ public partial class GameSettings : Node
     /// <summary>Endereço do "meu servidor" (só usado no modo 1).</summary>
     public string ServerUrl { get; set; } = "";
     public string PlayerName { get; set; } = "Entregador";
+
+    // ---------------- v0.9.2: opções completas (abas) ----------------
+    /// <summary>0 = janela, 1 = tela cheia (sem borda), 2 = tela cheia exclusiva, 3 = janela maximizada.</summary>
+    public int WindowMode { get; set; }
+    /// <summary>Resolução interna do 3D (0,5 a 1,0). Menor = mais leve; a interface continua nítida.</summary>
+    public float RenderScale { get; set; } = 1f;
+    /// <summary>0 = sem limite.</summary>
+    public int MaxFps { get; set; }
+    /// <summary>0 = baixa (sem sombras nem brilho), 1 = média, 2 = alta.</summary>
+    public int Quality { get; set; } = 2;
+    /// <summary>0 = desligado, 1 = FXAA, 2 = MSAA 2x, 3 = MSAA 4x.</summary>
+    public int AntiAliasing { get; set; } = 1;
+    public float Brightness { get; set; } = 1f;
+    public float Contrast { get; set; } = 1f;
+    public float UiVolume { get; set; } = 0.8f;
+    /// <summary>Volume das rádios 96.6 (multiplica a música).</summary>
+    public float RadioVolume { get; set; } = 1f;
+    public bool MuteOnFocusLoss { get; set; } = true;
+    public bool PauseOnFocusLoss { get; set; } = true;
+    public float VehicleSensitivity { get; set; } = 1f;
+    public bool HeadBob { get; set; } = true;
+    public bool ShowFps { get; set; }
+    public float UiScale { get; set; } = 1f;
+    public bool Scanlines { get; set; } = true;
+    public bool ShowCrosshair { get; set; } = true;
+    public bool ShowKeyHints { get; set; } = true;
+    public bool ShowCompass { get; set; } = true;
+    /// <summary>Multiplica quanto tempo os avisos ficam na tela.</summary>
+    public float ToastDuration { get; set; } = 1f;
+    /// <summary>0 = km/h, 1 = mph.</summary>
+    public int SpeedUnit { get; set; }
+    public bool Clock24h { get; set; } = true;
+
+    /// <summary>Ações que dá para trocar a tecla nas Opções (id do InputMap, nome na tela).</summary>
+    public static readonly (string Action, string Label)[] RebindableActions =
+    {
+        ("move_forward", "Frente / acelerar"), ("move_back", "Trás / ré"), ("move_left", "Esquerda"), ("move_right", "Direita"),
+        ("sprint", "Correr"), ("jump", "Pular / freio de mão"), ("interact", "Usar (E)"), ("throw", "Arremessar"),
+        ("flashlight", "Lanterna"), ("inventory", "Inventário"), ("night_vision", "Visão noturna"), ("radio", "Rádio da van"),
+        ("pause", "Pausa"),
+    };
     /// <summary>Última profissão escolhida (Professions.*).</summary>
     public string Profession { get; set; } = "entregador";
     /// <summary>Ao criar sala: o servidor escolhe a profissão de cada um (equilibra as vagas).</summary>
@@ -60,20 +101,112 @@ public partial class GameSettings : Node
         Apply();
     }
 
+    public override void _Notification(int what)
+    {
+        if (what == NotificationApplicationFocusOut && MuteOnFocusLoss)
+            AudioServer.SetBusMute(0, true);
+        else if (what == NotificationApplicationFocusIn)
+            AudioServer.SetBusMute(0, MasterVolume <= 0.001f);
+    }
+
+    // ---------------- teclas ----------------
+
+    /// <summary>Texto da tecla principal de uma ação ("E", "Shift", "Mouse esq.").</summary>
+    public static string KeyName(string action)
+    {
+        if (!InputMap.HasAction(action))
+            return "-";
+        foreach (InputEvent e in InputMap.ActionGetEvents(action))
+            return EventName(e);
+        return "-";
+    }
+
+    public static string EventName(InputEvent e) => e switch
+    {
+        InputEventKey k => OS.GetKeycodeString(k.PhysicalKeycode != Key.None ? DisplayServer.KeyboardGetKeycodeFromPhysical(k.PhysicalKeycode) : k.Keycode),
+        InputEventMouseButton m => m.ButtonIndex switch
+        {
+            MouseButton.Left => "Mouse esq.",
+            MouseButton.Right => "Mouse dir.",
+            MouseButton.Middle => "Mouse meio",
+            _ => $"Mouse {(int)m.ButtonIndex}",
+        },
+        _ => e.AsText(),
+    };
+
+    /// <summary>Troca a tecla principal da ação (as outras teclas dela continuam).</summary>
+    public void Rebind(string action, InputEvent e)
+    {
+        if (!InputMap.HasAction(action))
+            return;
+        var events = InputMap.ActionGetEvents(action);
+        InputMap.ActionEraseEvents(action);
+        InputMap.ActionAddEvent(action, e);
+        for (int i = 1; i < events.Count; i++)
+            InputMap.ActionAddEvent(action, events[i]);
+        _customKeys[action] = Serialize(e);
+    }
+
+    public void ResetKeys()
+    {
+        InputMap.LoadFromProjectSettings();
+        _customKeys.Clear();
+    }
+
+    private readonly System.Collections.Generic.Dictionary<string, string> _customKeys = new();
+
+    private static string Serialize(InputEvent e) => e switch
+    {
+        InputEventKey k => "k:" + (long)(k.PhysicalKeycode != Key.None ? k.PhysicalKeycode : k.Keycode),
+        InputEventMouseButton m => "m:" + (long)m.ButtonIndex,
+        _ => "",
+    };
+
+    private static InputEvent Deserialize(string s)
+    {
+        if (s.Length < 3 || !long.TryParse(s[2..], out long code))
+            return null;
+        return s[0] switch
+        {
+            'k' => new InputEventKey { PhysicalKeycode = (Key)code },
+            'm' => new InputEventMouseButton { ButtonIndex = (MouseButton)code },
+            _ => null,
+        };
+    }
+
     /// <summary>Aplica tudo e avisa os ouvintes. Chamado pelos menus a cada alteração.</summary>
     public void Apply()
     {
         SetBusVolume("Master", MasterVolume);
         SetBusVolume("Music", MusicVolume);
         SetBusVolume("SFX", SfxVolume);
-        SetBusVolume("UI", SfxVolume);
+        SetBusVolume("UI", UiVolume);
 
         // Só mexe na janela quando muda: rodando incorporado no editor, trocar o modo gera aviso.
-        DisplayServer.WindowMode wantedMode = Fullscreen ? DisplayServer.WindowMode.Fullscreen : DisplayServer.WindowMode.Windowed;
-        DisplayServer.WindowMode currentMode = DisplayServer.WindowGetMode();
-        bool isFullscreen = currentMode is DisplayServer.WindowMode.Fullscreen or DisplayServer.WindowMode.ExclusiveFullscreen;
-        if (isFullscreen != Fullscreen && !Engine.IsEmbeddedInEditor())
+        Fullscreen = WindowMode is 1 or 2;
+        DisplayServer.WindowMode wantedMode = WindowMode switch
+        {
+            1 => DisplayServer.WindowMode.Fullscreen,
+            2 => DisplayServer.WindowMode.ExclusiveFullscreen,
+            3 => DisplayServer.WindowMode.Maximized,
+            _ => DisplayServer.WindowMode.Windowed,
+        };
+        if (DisplayServer.WindowGetMode() != wantedMode && !Engine.IsEmbeddedInEditor())
             DisplayServer.WindowSetMode(wantedMode);
+
+        Engine.MaxFps = MaxFps;
+        Window root = GetTree()?.Root;
+        if (root != null)
+        {
+            root.Scaling3DScale = Mathf.Clamp(RenderScale, 0.5f, 1f);
+            root.ScreenSpaceAA = AntiAliasing == 1 ? Viewport.ScreenSpaceAAEnum.Fxaa : Viewport.ScreenSpaceAAEnum.Disabled;
+            root.Msaa3D = AntiAliasing switch { 2 => Viewport.Msaa.Msaa2X, 3 => Viewport.Msaa.Msaa4X, _ => Viewport.Msaa.Disabled };
+            root.ContentScaleFactor = Mathf.Clamp(UiScale, 0.75f, 1.5f);
+        }
+        if (GetTree() != null)
+            foreach (Node n in GetTree().GetNodesInGroup(UiStyle.ScanlineGroup))
+                if (n is CanvasItem c)
+                    c.Visible = Scanlines;
 
         DisplayServer.VSyncMode wantedVsync = VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled;
         if (DisplayServer.WindowGetVsyncMode() != wantedVsync)
@@ -108,6 +241,32 @@ public partial class GameSettings : Node
         cfg.SetValue("network", "server_mode", ServerMode);
         cfg.SetValue("network", "server_url", ServerUrl);
         cfg.SetValue("network", "player_name", PlayerName);
+        cfg.SetValue("video", "window_mode", WindowMode);
+        cfg.SetValue("video", "render_scale", RenderScale);
+        cfg.SetValue("video", "max_fps", MaxFps);
+        cfg.SetValue("video", "quality", Quality);
+        cfg.SetValue("video", "anti_aliasing", AntiAliasing);
+        cfg.SetValue("video", "brightness", Brightness);
+        cfg.SetValue("video", "contrast", Contrast);
+        cfg.SetValue("audio", "ui_volume", UiVolume);
+        cfg.SetValue("audio", "radio_volume", RadioVolume);
+        cfg.SetValue("audio", "mute_on_focus_loss", MuteOnFocusLoss);
+        cfg.SetValue("game", "pause_on_focus_loss", PauseOnFocusLoss);
+        cfg.SetValue("controls", "vehicle_sensitivity", VehicleSensitivity);
+        cfg.SetValue("controls", "head_bob", HeadBob);
+        cfg.SetValue("interface", "show_fps", ShowFps);
+        cfg.SetValue("interface", "ui_scale", UiScale);
+        cfg.SetValue("interface", "scanlines", Scanlines);
+        cfg.SetValue("interface", "crosshair", ShowCrosshair);
+        cfg.SetValue("interface", "key_hints", ShowKeyHints);
+        cfg.SetValue("interface", "compass", ShowCompass);
+        cfg.SetValue("interface", "toast_duration", ToastDuration);
+        cfg.SetValue("interface", "speed_unit", SpeedUnit);
+        cfg.SetValue("interface", "clock_24h", Clock24h);
+        if (cfg.HasSection("keys"))
+            cfg.EraseSection("keys");
+        foreach ((string action, string code) in _customKeys)
+            cfg.SetValue("keys", action, code);
         cfg.SetValue("game", "profession", Profession);
         cfg.SetValue("network", "auto_profession", AutoProfession);
         cfg.SetValue("network", "public_room", PublicRoom);
@@ -145,5 +304,51 @@ public partial class GameSettings : Node
             ServerUrl = "";
         ServerMode = cfg.GetValue("network", "server_mode", string.IsNullOrWhiteSpace(ServerUrl) ? 0 : 1).AsInt32();
         PlayerName = cfg.GetValue("network", "player_name", PlayerName).AsString();
+        WindowMode = cfg.GetValue("video", "window_mode", Fullscreen ? 1 : 0).AsInt32();
+        RenderScale = cfg.GetValue("video", "render_scale", RenderScale).AsSingle();
+        MaxFps = cfg.GetValue("video", "max_fps", MaxFps).AsInt32();
+        Quality = cfg.GetValue("video", "quality", Quality).AsInt32();
+        AntiAliasing = cfg.GetValue("video", "anti_aliasing", AntiAliasing).AsInt32();
+        Brightness = cfg.GetValue("video", "brightness", Brightness).AsSingle();
+        Contrast = cfg.GetValue("video", "contrast", Contrast).AsSingle();
+        UiVolume = cfg.GetValue("audio", "ui_volume", SfxVolume).AsSingle();
+        RadioVolume = cfg.GetValue("audio", "radio_volume", RadioVolume).AsSingle();
+        MuteOnFocusLoss = cfg.GetValue("audio", "mute_on_focus_loss", MuteOnFocusLoss).AsBool();
+        PauseOnFocusLoss = cfg.GetValue("game", "pause_on_focus_loss", PauseOnFocusLoss).AsBool();
+        VehicleSensitivity = cfg.GetValue("controls", "vehicle_sensitivity", VehicleSensitivity).AsSingle();
+        HeadBob = cfg.GetValue("controls", "head_bob", HeadBob).AsBool();
+        ShowFps = cfg.GetValue("interface", "show_fps", ShowFps).AsBool();
+        UiScale = cfg.GetValue("interface", "ui_scale", UiScale).AsSingle();
+        Scanlines = cfg.GetValue("interface", "scanlines", Scanlines).AsBool();
+        ShowCrosshair = cfg.GetValue("interface", "crosshair", ShowCrosshair).AsBool();
+        ShowKeyHints = cfg.GetValue("interface", "key_hints", ShowKeyHints).AsBool();
+        ShowCompass = cfg.GetValue("interface", "compass", ShowCompass).AsBool();
+        ToastDuration = cfg.GetValue("interface", "toast_duration", ToastDuration).AsSingle();
+        SpeedUnit = cfg.GetValue("interface", "speed_unit", SpeedUnit).AsInt32();
+        Clock24h = cfg.GetValue("interface", "clock_24h", Clock24h).AsBool();
+        if (cfg.HasSection("keys"))
+        {
+            foreach (string action in cfg.GetSectionKeys("keys"))
+            {
+                InputEvent e = Deserialize(cfg.GetValue("keys", action, "").AsString());
+                if (e != null && InputMap.HasAction(action))
+                    Rebind(action, e);
+            }
+        }
+    }
+
+    /// <summary>Volta tudo ao padrão (menos nome, servidor e profissão).</summary>
+    public void ResetToDefaults()
+    {
+        var d = new GameSettings();
+        MouseSensitivity = d.MouseSensitivity; InvertY = d.InvertY; Fov = d.Fov;
+        MasterVolume = d.MasterVolume; MusicVolume = d.MusicVolume; SfxVolume = d.SfxVolume; UiVolume = d.UiVolume; RadioVolume = d.RadioVolume;
+        WindowMode = d.WindowMode; RenderScale = d.RenderScale; MaxFps = d.MaxFps; Quality = d.Quality; AntiAliasing = d.AntiAliasing;
+        Brightness = d.Brightness; Contrast = d.Contrast; VSync = d.VSync; MuteOnFocusLoss = d.MuteOnFocusLoss; PauseOnFocusLoss = d.PauseOnFocusLoss;
+        VehicleSensitivity = d.VehicleSensitivity; HeadBob = d.HeadBob; ShowFps = d.ShowFps; UiScale = d.UiScale; Scanlines = d.Scanlines;
+        ShowCrosshair = d.ShowCrosshair; ShowKeyHints = d.ShowKeyHints; ShowCompass = d.ShowCompass; ToastDuration = d.ToastDuration;
+        SpeedUnit = d.SpeedUnit; Clock24h = d.Clock24h; TimeMode = d.TimeMode; DayLengthMinutes = d.DayLengthMinutes;
+        d.Free();
+        ResetKeys();
     }
 }

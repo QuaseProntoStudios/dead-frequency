@@ -187,7 +187,7 @@ public partial class PauseMenu : CanvasLayer
 
     public override void _Notification(int what)
     {
-        if (what == NotificationApplicationFocusOut && PauseOnFocusLoss && !IsOpen && IsInsideTree())
+        if (what == NotificationApplicationFocusOut && PauseOnFocusLoss && (GameSettings.Instance?.PauseOnFocusLoss ?? true) && !IsOpen && IsInsideTree())
             Open();
     }
 

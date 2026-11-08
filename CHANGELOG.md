@@ -2,6 +2,18 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.9.2 — Launcher e opções  (08/11/2026)
+
+- Launcher novo com janela: barra de progresso (MB e velocidade), botão JOGAR e engrenagem de configurações.
+- Na primeira vez o launcher pergunta a pasta de instalação (e cria a pasta) e se você quer atualizações automáticas.
+- Se o jogo não estiver instalado, ele pergunta se quer baixar; se sair versão nova, baixa sozinho ou pergunta antes (você escolhe).
+- Opções com abas: Vídeo, Áudio, Controles, Interface e Jogo.
+- Vídeo: modo de janela (janela, sem borda, exclusiva, maximizada), limite de FPS, resolução 3D, qualidade, antisserrilhado, campo de visão, brilho e contraste.
+- Áudio: volume da rádio 96.6 e da interface separados, e silenciar quando trocar de janela.
+- Controles: troque qualquer tecla (clique e aperte a nova), sensibilidade na van e balanço da câmera ao andar.
+- Interface: escala da interface, mira, seta de objetivo, dicas de teclas, FPS, tempo dos avisos, linhas de CRT, km/h ou mph e relógio de 12/24 horas.
+- Botão "Restaurar padrão" nas Opções.
+
 ## v0.9.1 — Orelhões de verdade  (07/11/2026)
 
 - Orelhões refeitos: concha oca de verdade (casca aberta na frente e embaixo, cinza por dentro, com borda), telefone com teclado lá dentro e o poste atrás.

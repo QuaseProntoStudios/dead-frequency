@@ -264,6 +264,8 @@ public partial class MainMenu : Control
     private void ShowOptions()
     {
         _menu.Visible = false;
+        _header.Visible = false;
+        _title.AddThemeFontSizeOverride("font_size", 40);
         _optionsPanel.Visible = true;
         _options.FocusFirst();
     }

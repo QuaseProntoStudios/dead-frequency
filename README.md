@@ -6,13 +6,13 @@ ganhe um apartamento no Edifício Sintonia e ajude a cidade da zona morta a func
 os amigos online. Tem física nas caixas, ciclo de dia e noite, rádio com músicas originais, itens,
 lojas paródia e multiplayer.
 
-**Versão atual:** v0.9.1 · veja o [CHANGELOG](CHANGELOG.md) · roteiro em [ROADMAP](ROADMAP.md)
+**Versão atual:** v0.9.2 · veja o [CHANGELOG](CHANGELOG.md) · roteiro em [ROADMAP](ROADMAP.md)
 
 ## Baixar e jogar
 
 Baixe o **launcher** em [Releases](https://github.com/dieguesmosken/dead-frequency/releases/latest)
-(`DeadFrequencyLauncher-windows.exe` ou `-linux`), coloque numa pasta só dele e abra: ele baixa o jogo
-e instala as próximas atualizações sozinho. Também dá para baixar o zip do jogo direto.
+(`DeadFrequencyLauncher-windows.exe` ou `-linux`) e abra: ele pergunta onde instalar, baixa o jogo
+e instala as próximas atualizações (sozinho ou perguntando antes). Também dá para baixar o zip do jogo direto.
 
 ## Rodar pelo código
 

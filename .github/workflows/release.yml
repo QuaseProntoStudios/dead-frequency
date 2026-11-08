@@ -39,9 +39,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         if: steps.ver.outputs.exists == 'false'
         with:
-          dotnet-version: |
-            10.0.x
-            8.0.x
+          dotnet-version: 10.0.x
 
       - name: Baixar Godot .NET e templates de exportação
         if: steps.ver.outputs.exists == 'false'
@@ -83,14 +81,30 @@ jobs:
           (cd build/linux && zip -qr "../../DeadFrequency-v${VER}-linux.zip" .)
           ls -la *.zip
 
-      - name: Compilar o launcher (atualiza o jogo sozinho)
+      - name: Compilar o launcher (Godot padrão, só GDScript)
         if: steps.ver.outputs.exists == 'false'
         run: |
           set -e
-          dotnet publish launcher/DeadFrequencyLauncher.csproj -c Release -r win-x64 -o out/launcher-win
-          dotnet publish launcher/DeadFrequencyLauncher.csproj -c Release -r linux-x64 -o out/launcher-linux
-          cp out/launcher-win/DeadFrequencyLauncher.exe DeadFrequencyLauncher-windows.exe
-          cp out/launcher-linux/DeadFrequencyLauncher DeadFrequencyLauncher-linux
+          TAG="${GODOT_VERSION}-${GODOT_STATUS}"
+          BASE="https://github.com/godotengine/godot/releases/download/${TAG}"
+          ALT="https://github.com/godotengine/godot-builds/releases/download/${TAG}"
+          ED="Godot_v${TAG}_linux.x86_64.zip"
+          TPZ="Godot_v${TAG}_export_templates.tpz"
+          curl -fsSL -o std.zip "$BASE/$ED" || curl -fsSL -o std.zip "$ALT/$ED"
+          curl -fsSL -o std.tpz "$BASE/$TPZ" || curl -fsSL -o std.tpz "$ALT/$TPZ"
+          unzip -q std.zip -d godot_std
+          STD=$(find godot_std -type f -name "Godot_v*_linux.x86_64" | head -1)
+          chmod +x "$STD"
+          DEST="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+          mkdir -p "$DEST"
+          unzip -q std.tpz -d tpl_std
+          mv tpl_std/templates/* "$DEST/"
+          mkdir -p out
+          "$STD" --headless --path launcher/app --import || true
+          "$STD" --headless --path launcher/app --export-release "Windows Desktop" ../../out/DeadFrequencyLauncher.exe
+          "$STD" --headless --path launcher/app --export-release "Linux" ../../out/DeadFrequencyLauncher.x86_64
+          cp out/DeadFrequencyLauncher.exe DeadFrequencyLauncher-windows.exe
+          cp out/DeadFrequencyLauncher.x86_64 DeadFrequencyLauncher-linux
           chmod +x DeadFrequencyLauncher-linux
           ls -la DeadFrequencyLauncher-*
 
@@ -99,7 +113,7 @@ jobs:
         run: |
           VER=${{ steps.ver.outputs.version }}
           awk -v v="## v$VER" 'index($0, v)==1 {on=1; next} /^## v/ && on {exit} on' CHANGELOG.md > notes.md
-          printf '\n---\n**Mais fácil:** baixe o `DeadFrequencyLauncher-windows.exe` (ou `-linux`), coloque numa pasta só dele e abra: ele baixa o jogo e instala as próximas atualizações sozinho.\n**Windows (manual):** baixe o zip, extraia e abra `DeadFrequency.exe`.\n**Linux (manual):** extraia e rode `./DeadFrequency.x86_64`.\nHistórico completo: [CHANGELOG.md](CHANGELOG.md)\n' >> notes.md
+          printf '\n---\n**Mais fácil:** baixe o `DeadFrequencyLauncher-windows.exe` (ou `-linux`) e abra: ele pergunta a pasta, baixa o jogo e instala as próximas atualizações (sozinho ou perguntando antes).\n**Windows (manual):** baixe o zip, extraia e abra `DeadFrequency.exe`.\n**Linux (manual):** extraia e rode `./DeadFrequency.x86_64`.\nHistórico completo: [CHANGELOG.md](CHANGELOG.md)\n' >> notes.md
           gh release create "v$VER" DeadFrequency-v${VER}-windows.zip DeadFrequency-v${VER}-linux.zip \
             DeadFrequencyLauncher-windows.exe DeadFrequencyLauncher-linux \
             --title "v$VER — ${{ steps.ver.outputs.title }}" --notes-file notes.md --target "$GITHUB_SHA"

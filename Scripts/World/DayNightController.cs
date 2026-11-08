@@ -61,9 +61,46 @@ public partial class DayNightController : Node
         _soloHours = target;
     }
 
+    private bool _glowDefault;
+    private bool _captured;
+
+    /// <summary>Qualidade, brilho e contraste das Opções > Vídeo.</summary>
+    private void ApplyVideo()
+    {
+        GameSettings s = GameSettings.Instance;
+        if (s == null)
+            return;
+        Environment env = World?.Environment;
+        if (env != null)
+        {
+            if (!_captured)
+            {
+                _glowDefault = env.GlowEnabled;
+                _captured = true;
+            }
+            env.GlowEnabled = _glowDefault && s.Quality > 0;
+            env.AdjustmentEnabled = true;
+            env.AdjustmentBrightness = s.Brightness;
+            env.AdjustmentContrast = s.Contrast;
+            env.SsaoEnabled = env.SsaoEnabled && s.Quality >= 2;
+        }
+        if (Sun != null)
+        {
+            Sun.ShadowEnabled = s.Quality > 0;
+            Sun.DirectionalShadowMaxDistance = s.Quality >= 2 ? 120f : 60f;
+        }
+        RenderingServer.DirectionalShadowAtlasSetSize(s.Quality >= 2 ? 4096 : 2048, true);
+    }
+
     public override void _Ready()
     {
         _soloHours = SoloStartHour;
+        if (GameSettings.Instance != null)
+        {
+            GameSettings.Instance.SettingsChanged += ApplyVideo;
+            TreeExiting += () => GameSettings.Instance.SettingsChanged -= ApplyVideo;
+        }
+        Callable.From(ApplyVideo).CallDeferred();
         // A cidade termina de montar no _Ready dela; o primeiro ajuste vai para o fim do frame.
         Callable.From(() => Update(0.0)).CallDeferred();
     }
@@ -106,6 +143,11 @@ public partial class DayNightController : Node
             >= 17f and < 19.5f => "ENTARDECER",
             _ => "NOITE",
         };
+        if (GameSettings.Instance?.Clock24h == false)
+        {
+            int h12 = h % 12 == 0 ? 12 : h % 12;
+            return $"{h12}:{m:00} {(h < 12 ? "AM" : "PM")} · {phase}";
+        }
         return $"{h:00}:{m:00} · {phase}";
     }
 

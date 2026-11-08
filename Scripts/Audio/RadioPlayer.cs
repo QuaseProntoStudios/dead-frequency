@@ -61,6 +61,8 @@ public partial class RadioPlayer : Node3D
     {
         if (!On)
             return;
+        float radio = GameSettings.Instance?.RadioVolume ?? 1f;
+        _player.VolumeDb = VolumeDb + Mathf.LinearToDb(Mathf.Max(radio, 0.001f));
         _checkTimer -= delta;
         if (_checkTimer > 0)
             return;

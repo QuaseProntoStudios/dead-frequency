@@ -116,6 +116,8 @@ public static class UiStyle
         return button;
     }
 
+    public const string ScanlineGroup = "ui_scanlines";
+
     /// <summary>Linhas de varredura + vinheta por cima de tudo (efeito CRT barato).</summary>
     public static ColorRect MakeScanlines(float strength = 0.22f)
     {
@@ -134,8 +136,9 @@ void fragment() {
         var material = new ShaderMaterial { Shader = shader };
         material.SetShaderParameter("strength", strength);
 
-        var rect = new ColorRect { Material = material, MouseFilter = Control.MouseFilterEnum.Ignore };
+        var rect = new ColorRect { Material = material, MouseFilter = Control.MouseFilterEnum.Ignore, Visible = GameSettings.Instance?.Scanlines ?? true };
         rect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        rect.AddToGroup(ScanlineGroup); // Opções > Interface liga/desliga
         return rect;
     }
 }
