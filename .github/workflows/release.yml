@@ -112,7 +112,7 @@ jobs:
         if: steps.ver.outputs.exists == 'false'
         run: |
           VER=${{ steps.ver.outputs.version }}
-          python3 site/release_notes.py "$VER" "$GITHUB_SHA" > notes.md
+          python3 site/release_notes.py "$VER" main > notes.md
           gh release create "v$VER" DeadFrequency-v${VER}-windows.zip DeadFrequency-v${VER}-linux.zip \
             DeadFrequencyLauncher-windows.exe DeadFrequencyLauncher-linux \
             --title "v$VER — ${{ steps.ver.outputs.title }}" --notes-file notes.md --target "$GITHUB_SHA"

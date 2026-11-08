@@ -24,7 +24,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release list --limit 50 --json tagName --jq '.[].tagName' | while read -r tag; do
-            if python3 site/release_notes.py "${tag#v}" "$GITHUB_SHA" > notes.md 2>/dev/null; then
+            if python3 site/release_notes.py "${tag#v}" main > notes.md 2>/dev/null; then
               gh release edit "$tag" --notes-file notes.md && echo "ok $tag"
             else
               echo "pulando $tag (não está no GameVersion.cs)"
