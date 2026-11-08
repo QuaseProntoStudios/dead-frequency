@@ -1,16 +1,44 @@
-# Dead Frequency
+<p align="center">
+  <img src="site/assets/shots/hero.jpg" alt="Dead Frequency — o depósito à noite" width="100%">
+</p>
 
-Cidade simulada em primeira pessoa, estilo PS1, feita em **Godot 4.7 (.NET / C#)**.
+<h1 align="center">Dead Frequency</h1>
+
+<p align="center">
+  <b>Cidade simulada na zona morta · primeira pessoa · estilo PS1 · Godot 4.7 (.NET / C#)</b><br>
+  <a href="https://github.com/dieguesmosken/dead-frequency/releases/latest"><img alt="Versão" src="https://img.shields.io/github/v/release/dieguesmosken/dead-frequency?label=vers%C3%A3o&color=2a9a4a"></a>
+  <a href="https://github.com/dieguesmosken/dead-frequency/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/dieguesmosken/dead-frequency/total?label=downloads&color=2a9a4a"></a>
+  <img alt="Godot 4.7" src="https://img.shields.io/badge/Godot-4.7%20.NET-478cbf">
+  <img alt="Plataformas" src="https://img.shields.io/badge/Windows%20%7C%20Linux-grátis-4dff7a">
+</p>
+
+<p align="center">
+  <a href="https://dieguesmosken.github.io/dead-frequency/"><b>🌐 Site</b></a> ·
+  <a href="https://github.com/dieguesmosken/dead-frequency/releases/latest/download/DeadFrequencyLauncher-windows.exe"><b>⬇ Baixar (Windows)</b></a> ·
+  <a href="https://dieguesmosken.github.io/dead-frequency/#servidor">📡 Status do servidor</a> ·
+  <a href="https://dieguesmosken.github.io/dead-frequency/#apoie">💚 Apoie (Pix)</a>
+</p>
+
 Escolha uma profissão — entregador, taxista, gari, repositor, frentista ou locutor da rádio 96.6 —,
 ganhe um apartamento no Edifício Sintonia e ajude a cidade da zona morta a funcionar, sozinho ou com
 os amigos online. Tem física nas caixas, ciclo de dia e noite, rádio com músicas originais, itens,
-lojas paródia e multiplayer.
+lojas paródia, personagens e bichos animados e multiplayer.
 
-**Versão atual:** v0.9.4 · veja o [CHANGELOG](CHANGELOG.md) · roteiro em [ROADMAP](ROADMAP.md)
+**Versão atual:** v0.9.4 · veja o [CHANGELOG](CHANGELOG.md) (ou com fotos, no [site](https://dieguesmosken.github.io/dead-frequency/#novidades)) · roteiro em [ROADMAP](ROADMAP.md)
+
+## Fotos
+
+| | | |
+|---|---|---|
+| ![Personagens animados](site/assets/shots/v0.9.4/personagens.jpg) | ![Vacas no sítio](site/assets/shots/v0.9.4/animal_Cow.jpg) | ![Celeiro](site/assets/shots/v0.9.4/farm_Barn.jpg) |
+| ![Frentista](site/assets/shots/v0.9.3/posto_carro_bomba.jpg) | ![Frota do pátio](site/assets/shots/v0.9.3/frota.jpg) | ![Orelhões](site/assets/shots/v0.9.4/orelhao_0_cyan.jpg) |
+| ![Mercado à noite](site/assets/shots/v0.9.0/mercado_frente_noite.jpg) | ![Rádio 96.6](site/assets/shots/v0.9.0/radio_estudio.jpg) | ![Launcher](site/assets/shots/v0.9.2/4_progresso.jpg) |
+
+Mais fotos na [galeria do site](https://dieguesmosken.github.io/dead-frequency/#galeria).
 
 ## Baixar e jogar
 
-Baixe o **launcher** em [Releases](https://github.com/dieguesmosken/dead-frequency/releases/latest)
+Baixe o **launcher** no [site](https://dieguesmosken.github.io/dead-frequency/#baixar) ou em [Releases](https://github.com/dieguesmosken/dead-frequency/releases/latest)
 (`DeadFrequencyLauncher-windows.exe` ou `-linux`) e abra: ele pergunta onde instalar, baixa o jogo
 e instala as próximas atualizações (sozinho ou perguntando antes). Também dá para baixar o zip do jogo direto.
 
@@ -67,6 +95,20 @@ npm install
 npx wrangler login
 npm run deploy
 ```
+
+O servidor também tem estatísticas públicas (só números somados) em `/api/stats`, mostradas no
+[site](https://dieguesmosken.github.io/dead-frequency/#servidor), e o painel `/admin` (pede o `ADMIN_TOKEN`).
+
+## Site
+
+O site fica em [`site/`](site/) e é publicado pelo GitHub Actions no GitHub Pages a cada push.
+`python3 site/build.py` gera `site/data/site.json` com o changelog do `GameVersion.cs` e as fotos de
+`site/assets/shots/vX.Y.Z/` (legendas em `captions.json`). O texto dos releases sai de `site/release_notes.py`.
+
+## Apoie
+
+O jogo é grátis. Para ajudar com o servidor e as próximas versões: **Pix `contato@badwolf3d.com.br`**
+(QR Code no [site](https://dieguesmosken.github.io/dead-frequency/#apoie)).
 
 ## Créditos
 

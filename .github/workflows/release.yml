@@ -112,8 +112,7 @@ jobs:
         if: steps.ver.outputs.exists == 'false'
         run: |
           VER=${{ steps.ver.outputs.version }}
-          awk -v v="## v$VER" 'index($0, v)==1 {on=1; next} /^## v/ && on {exit} on' CHANGELOG.md > notes.md
-          printf '\n---\n**Mais fácil:** baixe o `DeadFrequencyLauncher-windows.exe` (ou `-linux`) e abra: ele pergunta a pasta, baixa o jogo e instala as próximas atualizações (sozinho ou perguntando antes).\n**Windows (manual):** baixe o zip, extraia e abra `DeadFrequency.exe`.\n**Linux (manual):** extraia e rode `./DeadFrequency.x86_64`.\nHistórico completo: [CHANGELOG.md](CHANGELOG.md)\n' >> notes.md
+          python3 site/release_notes.py "$VER" "$GITHUB_SHA" > notes.md
           gh release create "v$VER" DeadFrequency-v${VER}-windows.zip DeadFrequency-v${VER}-linux.zip \
             DeadFrequencyLauncher-windows.exe DeadFrequencyLauncher-linux \
             --title "v$VER — ${{ steps.ver.outputs.title }}" --notes-file notes.md --target "$GITHUB_SHA"

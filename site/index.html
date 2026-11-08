@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Frequency — cidade simulada na zona morta</title>
+<meta name="description" content="Dead Frequency: cidade simulada em primeira pessoa, estilo PS1, feita em Godot. Escolha uma profissão, ouça a Rádio 96.6 e jogue com os amigos online. Grátis.">
+<meta property="og:title" content="Dead Frequency">
+<meta property="og:description" content="Cidade simulada em primeira pessoa, estilo PS1. Entregador, taxista, gari, frentista, repositor ou locutor da Rádio 96.6 — sozinho ou online.">
+<meta property="og:image" content="https://dieguesmosken.github.io/dead-frequency/assets/shots/hero.jpg">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#050806">
+<link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="scanlines" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="#topo"><span class="dot"></span>DEAD FREQUENCY <small>96.6</small></a>
+  <button class="menu-btn" aria-label="Abrir menu" aria-expanded="false">≡</button>
+  <nav>
+    <a href="#jogo">Jogo</a>
+    <a href="#galeria">Galeria</a>
+    <a href="#baixar">Baixar</a>
+    <a href="#servidor">Servidor</a>
+    <a href="#novidades">Novidades</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#apoie" class="hl">Apoie</a>
+  </nav>
+</header>
+
+<main id="topo">
+  <!-- ======================== HERO -->
+  <section class="hero" style="--hero: url('assets/shots/hero.jpg')">
+    <div class="hero-inner">
+      <p class="tag">▸ sintonizando… <span id="hero-version">v—</span></p>
+      <h1 class="glitch" data-text="DEAD FREQUENCY">DEAD FREQUENCY</h1>
+      <p class="lead">Uma cidade simulada na zona morta, em primeira pessoa e com cara de PlayStation 1.
+        Escolha uma profissão, ganhe um apartamento no Edifício Sintonia, ouça a Rádio 96.6
+        e ajude a cidade a funcionar — sozinho ou com até 8 amigos online.</p>
+      <div class="cta">
+        <a class="btn primary" id="hero-download" href="https://github.com/dieguesmosken/dead-frequency/releases/latest/download/DeadFrequencyLauncher-windows.exe">⬇ Baixar para Windows</a>
+        <a class="btn" href="#baixar">Linux e outras opções</a>
+      </div>
+      <p class="small dim">Grátis · Windows e Linux · o launcher instala e atualiza sozinho</p>
+    </div>
+  </section>
+
+  <!-- ======================== O JOGO -->
+  <section id="jogo" class="block">
+    <h2><span>01</span> O jogo</h2>
+    <div class="features">
+      <article><h3>6 profissões</h3><p>Entregador (caixas que quebram de verdade), taxista, gari, repositor do mercado, frentista e locutor da Rádio 96.6. Cada uma paga do seu jeito.</p></article>
+      <article><h3>Rádio 96.6</h3><p>Músicas originais de bandas fictícias, sincronizadas pelo relógio: todo mundo ouve o mesmo trecho, na van, no mercado ou no apartamento.</p></article>
+      <article><h3>Online com os amigos</h3><p>Salas por código de 5 letras ou pela lista de salas públicas. Servidor oficial grátis, servidor próprio ou hospede no seu PC.</p></article>
+      <article><h3>Cidade e sítio</h3><p>Cidade gerada com ruas, postos, mercado com interior, delegacia, bombeiros, ônibus 966 e pedestres — e um sítio com bichos, celeiros e estradas de terra.</p></article>
+      <article><h3>Física tátil</h3><p>Pegue e arremesse caixas, empilhe na caçamba, dirija a caminhonete, a moto de entrega ou um caminhão emprestado.</p></article>
+      <article><h3>Estilo PS1</h3><p>Low-poly, neblina densa, noites escuras, orelhões das operadoras paródia (tchau, morto e a rara Telefóbica) e outdoors iluminados.</p></article>
+    </div>
+  </section>
+
+  <!-- ======================== GALERIA -->
+  <section id="galeria" class="block">
+    <h2><span>02</span> Galeria</h2>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <!-- ======================== BAIXAR -->
+  <section id="baixar" class="block">
+    <h2><span>03</span> Baixar</h2>
+    <p class="dim">Versão atual: <b id="dl-version">—</b> <span id="dl-date" class="small"></span></p>
+    <div class="downloads">
+      <article class="card rec">
+        <span class="badge">Recomendado</span>
+        <h3>Launcher · Windows</h3>
+        <p>Pergunta a pasta, baixa o jogo com barra de progresso e instala as próximas atualizações sozinho (ou perguntando antes).</p>
+        <a class="btn primary" data-asset="DeadFrequencyLauncher-windows.exe" href="https://github.com/dieguesmosken/dead-frequency/releases/latest/download/DeadFrequencyLauncher-windows.exe">⬇ DeadFrequencyLauncher.exe <span class="size"></span></a>
+      </article>
+      <article class="card">
+        <h3>Launcher · Linux</h3>
+        <p>O mesmo launcher. Depois de baixar: <code>chmod +x DeadFrequencyLauncher-linux</code> e abra.</p>
+        <a class="btn" data-asset="DeadFrequencyLauncher-linux" href="https://github.com/dieguesmosken/dead-frequency/releases/latest/download/DeadFrequencyLauncher-linux">⬇ Launcher Linux <span class="size"></span></a>
+      </article>
+      <article class="card">
+        <h3>Jogo completo (.zip)</h3>
+        <p>Sem launcher: extraia e abra <code>DeadFrequency.exe</code> (Windows) ou <code>./DeadFrequency.x86_64</code> (Linux).</p>
+        <div class="row">
+          <a class="btn" id="zip-win" href="https://github.com/dieguesmosken/dead-frequency/releases/latest">Windows .zip <span class="size"></span></a>
+          <a class="btn" id="zip-linux" href="https://github.com/dieguesmosken/dead-frequency/releases/latest">Linux .zip <span class="size"></span></a>
+        </div>
+      </article>
+    </div>
+    <p class="small dim">O Windows pode avisar que o arquivo é "desconhecido" (o jogo não tem assinatura paga): clique em <i>Mais informações → Executar assim mesmo</i>.
+      Todas as versões: <a href="https://github.com/dieguesmosken/dead-frequency/releases">GitHub Releases</a> · código aberto em <a href="https://github.com/dieguesmosken/dead-frequency">github.com/dieguesmosken/dead-frequency</a>.</p>
+  </section>
+
+  <!-- ======================== SERVIDOR -->
+  <section id="servidor" class="block">
+    <h2><span>04</span> Servidor online</h2>
+    <div class="status-head">
+      <div class="led" id="srv-led"></div>
+      <div>
+        <b id="srv-state">Verificando o servidor oficial…</b>
+        <div class="small dim" id="srv-sub">dead-frequency.teuzin0dev.workers.dev</div>
+      </div>
+      <a class="btn ghost small-btn" href="https://dead-frequency.teuzin0dev.workers.dev/admin" target="_blank" rel="noopener">Painel admin ↗</a>
+    </div>
+    <div class="stats" id="stats">
+      <div class="stat"><span id="st-online">—</span><label>jogadores online</label></div>
+      <div class="stat"><span id="st-rooms">—</span><label>salas abertas</label></div>
+      <div class="stat"><span id="st-public">—</span><label>salas públicas</label></div>
+      <div class="stat"><span id="st-peak">—</span><label>recorde de jogadores</label></div>
+      <div class="stat"><span id="st-created">—</span><label>salas criadas</label></div>
+      <div class="stat"><span id="st-joins">—</span><label>entradas em salas</label></div>
+      <div class="stat"><span id="st-deliv">—</span><label>entregas feitas</label></div>
+      <div class="stat"><span id="st-money">—</span><label>dinheiro ganho</label></div>
+      <div class="stat"><span id="st-shifts">—</span><label>turnos completos</label></div>
+      <div class="stat"><span id="st-lost">—</span><label>caixas quebradas</label></div>
+    </div>
+    <div id="srv-rooms" class="rooms"></div>
+    <p class="small dim">Só números somados — sem códigos de sala, nomes ou IPs. Atualiza a cada 30 segundos.
+      O painel admin pede o token do servidor. <span id="srv-since"></span></p>
+  </section>
+
+  <!-- ======================== NOVIDADES -->
+  <section id="novidades" class="block">
+    <h2><span>05</span> Novidades</h2>
+    <p class="dim">Todo o histórico do projeto, versão por versão. As fotos são dos testes de cada versão.</p>
+    <div id="changelog" class="changelog"></div>
+  </section>
+
+  <!-- ======================== ROADMAP -->
+  <section id="roadmap" class="block">
+    <h2><span>06</span> Próximas paradas</h2>
+    <ol class="roadmap">
+      <li class="done"><b>v0.9 — Cidade simulada</b><span>Profissões, Rádio 96.6, mercado, apartamentos, launcher, online com lista de salas, personagens animados e o sítio.</span></li>
+      <li><b>Polimento</b><span>Partidas com 3+ PCs, profissão no nome de cada jogador, sacos de lixo e passageiros visíveis para todos, chat (T).</span></li>
+      <li><b>Economia</b><span>Carteira individual e caixa da prefeitura, aluguel e luz do apartamento, mercado com estoque de verdade, ranking semanal.</span></li>
+      <li><b>Painel da caminhonete</b><span>Combustível e bateria com ponteiros, fusíveis que queimam, rádio com dial e estações piratas.</span></li>
+      <li><b>Mais profissões</b><span>Motorista de ônibus, policial, bombeiro, mecânico, padeiro, carteiro, lavador e DJ da 96.6.</span></li>
+      <li><b>Mundo</b><span>Banco, lotérica, farmácia, novos bairros (morro, centro, porto), trânsito de verdade e eventos da noite.</span></li>
+      <li><b>Visual PS1 completo</b><span>Shader com vertex jitter e dithering, monitor CRT dentro da caminhonete.</span></li>
+    </ol>
+    <p class="small dim">Roadmap completo no <a href="https://github.com/dieguesmosken/dead-frequency/blob/main/ROADMAP.md">ROADMAP.md</a>.</p>
+  </section>
+
+  <!-- ======================== APOIE -->
+  <section id="apoie" class="block donate">
+    <h2><span>07</span> Apoie o projeto</h2>
+    <div class="donate-grid">
+      <div>
+        <p>O Dead Frequency é grátis e feito por uma pessoa só. Se você curtiu e quer ajudar a pagar o servidor e acelerar as próximas versões, mande um Pix de qualquer valor. 💚</p>
+        <label class="small dim">Chave Pix (e-mail)</label>
+        <div class="copy">
+          <code id="pix-key">contato@badwolf3d.com.br</code>
+          <button class="btn small-btn" data-copy="#pix-key">Copiar</button>
+        </div>
+        <label class="small dim">Pix copia e cola</label>
+        <div class="copy">
+          <code id="pix-code" class="wrap">carregando…</code>
+          <button class="btn small-btn" data-copy="#pix-code">Copiar</button>
+        </div>
+        <p class="small dim">Também dá para apoiar seguindo a live na <a href="https://twitch.tv/teuzin0dev">Twitch</a>, dando ⭐ no <a href="https://github.com/dieguesmosken/dead-frequency">GitHub</a> e chamando os amigos para uma partida.</p>
+      </div>
+      <figure class="qr">
+        <img src="assets/pix-qr.png" alt="QR Code Pix para contato@badwolf3d.com.br" width="240" height="240">
+        <figcaption class="small dim">Aponte a câmera do app do banco</figcaption>
+      </figure>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div>
+    <b>DEAD FREQUENCY</b> · feito por <a href="https://twitch.tv/teuzin0dev">Matheus (teuzin0dev)</a> com Godot 4.7 e o Claude (Anthropic)<br>
+    <a href="https://github.com/dieguesmosken/dead-frequency">GitHub</a> · <a href="https://twitch.tv/teuzin0dev">Twitch</a> · <a href="https://instagram.com/teuzin0dev">Instagram</a> · <a href="https://recadin.com.br">recadin.com.br</a> · <a href="mailto:contato@badwolf3d.com.br">contato@badwolf3d.com.br</a>
+  </div>
+  <div class="small dim">Modelos 3D: Kenney, KayKit (Kay Lousberg) e Quaternius (CC0). Lojas, operadoras e marcas do jogo são paródias, sem relação com empresas reais.</div>
+</footer>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lb-close" aria-label="Fechar">×</button>
+  <button class="lb-prev" aria-label="Anterior">‹</button>
+  <figure><img alt=""><figcaption></figcaption></figure>
+  <button class="lb-next" aria-label="Próxima">›</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

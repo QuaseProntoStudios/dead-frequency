@@ -24,6 +24,9 @@ function connect(code, name, prof = "entregador") {
 
 const health = await (await fetch(base + "/")).json();
 assert(health.ok, "health");
+const pub = await (await fetch(base + "/api/stats")).json();
+assert(pub.ok && typeof pub.onlinePlayers === "number" && pub.protocol === health.protocol, "stats públicas");
+assert(!JSON.stringify(pub).includes("code") && !("rooms" in pub), "stats sem códigos de sala");
 
 const { code } = await (await fetch(base + "/api/rooms", { method: "POST" })).json();
 assert(/^[A-Z2-9]{5}$/.test(code), "sala criada " + code);

@@ -135,6 +135,15 @@ export default {
       return handleAdmin(request, url, env);
     }
 
+    // Estatísticas públicas para o site (só números agregados: nada de códigos, nomes ou IPs).
+    if (url.pathname === "/api/stats" && request.method === "GET") {
+      const registry = env.REGISTRY.get(env.REGISTRY.idFromName("global"));
+      const stats = await registry.publicStats();
+      return new Response(JSON.stringify({ ok: true, protocol: PROTOCOL_VERSION, maxPlayers: MAX_PLAYERS, ...stats, now: Date.now() }), {
+        headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=15", ...CORS },
+      });
+    }
+
     if (url.pathname === "/api/rooms" && request.method === "GET") {
       const registry = env.REGISTRY.get(env.REGISTRY.idFromName("global"));
       return json({ rooms: await registry.publicRooms() });
@@ -306,6 +315,30 @@ export class Registry extends DurableObject<Env> {
         shift: r.shift,
         autoProfession: r.autoProfession === true,
       }));
+  }
+
+  /** Totais para a página pública de status. */
+  async publicStats(): Promise<Record<string, number>> {
+    const stats = await this.stats();
+    const rooms = Array.from((await this.ctx.storage.list<RoomSummary>({ prefix: "room:" })).values());
+    const stale = Date.now() - 6 * 60 * 60 * 1000;
+    const live = rooms.filter((r) => r.players > 0 && r.updatedAt > stale);
+    return {
+      onlinePlayers: live.reduce((sum, r) => sum + r.players, 0),
+      activeRooms: live.length,
+      publicRooms: live.filter((r) => r.isPublic !== false).length,
+      cityRooms: live.filter((r) => (r.level ?? "city") === "city").length,
+      farmRooms: live.filter((r) => r.level === "farm").length,
+      roomsCreated: stats.roomsCreated,
+      joins: stats.joins,
+      deliveries: stats.deliveries,
+      lostCargo: stats.lostCargo,
+      moneyEarned: stats.moneyEarned,
+      shiftsCompleted: stats.shiftsCompleted,
+      peakPlayers: stats.peakPlayers,
+      peakPlayersAt: stats.peakPlayersAt,
+      since: stats.since,
+    };
   }
 
   async remove(code: string): Promise<void> {

@@ -60,4 +60,7 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
 - Repositório: https://github.com/dieguesmosken/dead-frequency (público).
 - A cada atualização: subir `GameVersion.Current`, escrever a entrada em `GameVersion.Changelog`,
   regenerar `CHANGELOG.md`, fazer um commit "vX.Y.Z — título" e criar a tag `vX.Y.Z`.
+- Site: `site/` (GitHub Pages via .github/workflows/pages.yml). `site/build.py` gera data/site.json do GameVersion.cs;
+  fotos de cada versão em `site/assets/shots/vX.Y.Z/` + captions.json; notas de release = `site/release_notes.py`.
+  Servidor tem `/api/stats` público (só totais). Pix de apoio: contato@badwolf3d.com.br.
 - Nunca versionar `server/.dev.vars` (ADMIN_TOKEN), `server/node_modules`, `.godot/` nem `_to_delete/`.

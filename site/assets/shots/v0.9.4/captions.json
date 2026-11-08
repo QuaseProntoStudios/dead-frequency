@@ -1,0 +1,58 @@
+[
+ {
+  "file": "personagens.jpg",
+  "caption": "Personagens animados, cada um com roupa, pele e cabelo próprios"
+ },
+ {
+  "file": "pedestre.jpg",
+  "caption": "Comerciante na barraca da calçada"
+ },
+ {
+  "file": "noite_pedestre_1.jpg",
+  "caption": "Caixa do mercado à noite"
+ },
+ {
+  "file": "animal_Cow.jpg",
+  "caption": "Vacas e boi animados no cercado do sítio"
+ },
+ {
+  "file": "animal_ShibaInu.jpg",
+  "caption": "O caramelo na varanda"
+ },
+ {
+  "file": "animal_Pig.jpg",
+  "caption": "Porcos no chiqueiro"
+ },
+ {
+  "file": "farm_Barn.jpg",
+  "caption": "Celeiro, fardos de feno e cercas"
+ },
+ {
+  "file": "farm_Windmill.jpg",
+  "caption": "Catavento com as pás girando"
+ },
+ {
+  "file": "farm_mato.jpg",
+  "caption": "Árvores, pinheiros e mato novos"
+ },
+ {
+  "file": "orelhao_0_cyan.jpg",
+  "caption": "Orelhão da tchau (ciano)"
+ },
+ {
+  "file": "orelhao_1_orange.jpg",
+  "caption": "Orelhão da morto (laranja)"
+ },
+ {
+  "file": "orelhao_2_lime.jpg",
+  "caption": "O raro orelhão da Telefóbica, desativado"
+ },
+ {
+  "file": "policia.jpg",
+  "caption": "Viaturas novas na delegacia"
+ },
+ {
+  "file": "debug.jpg",
+  "caption": "Debug (F3) com posição, FPS, RAM e CPU"
+ }
+]
