@@ -9,6 +9,7 @@
   <a href="https://github.com/dieguesmosken/dead-frequency/releases/latest"><img alt="Versão" src="https://img.shields.io/github/v/release/dieguesmosken/dead-frequency?label=vers%C3%A3o&color=2a9a4a"></a>
   <a href="https://github.com/dieguesmosken/dead-frequency/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/dieguesmosken/dead-frequency/total?label=downloads&color=2a9a4a"></a>
   <img alt="Godot 4.7" src="https://img.shields.io/badge/Godot-4.7%20.NET-478cbf">
+  <a href="LICENSE"><img alt="Licença GPL-3.0" src="https://img.shields.io/badge/licen%C3%A7a-GPL--3.0-blue"></a>
   <img alt="Plataformas" src="https://img.shields.io/badge/Windows%20%7C%20Linux-grátis-4dff7a">
 </p>
 
@@ -109,6 +110,17 @@ O site fica em [`site/`](site/) e é publicado pelo GitHub Actions no GitHub Pag
 
 O jogo é grátis. Para ajudar com o servidor e as próximas versões: **Pix `contato@badwolf3d.com.br`**
 (QR Code no [site](https://dieguesmosken.github.io/dead-frequency/#apoie)).
+
+## Licença
+
+O código do Dead Frequency (jogo, launcher, servidor, site e os scripts que geram músicas, sons e texturas)
+é software livre sob a **[GNU GPL v3.0](LICENSE)**: você pode usar, estudar, modificar e redistribuir, desde que
+qualquer versão distribuída continue com o código aberto e sob a mesma licença.
+
+- Os modelos 3D de terceiros em `Assets/Kenney`, `Assets/KayKit` e `Assets/Quaternius` são **CC0** (domínio público),
+  cada pasta com o seu `LICENSE.txt`. O Godot Engine é MIT.
+- A GPL cobre o código, não o nome: "Dead Frequency" e a identidade visual do projeto são de Matheus (teuzin0dev).
+  Versões modificadas devem usar outro nome para não confundir os jogadores.
 
 ## Créditos
 

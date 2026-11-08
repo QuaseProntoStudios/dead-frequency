@@ -12,14 +12,14 @@
 Regras: https://signpath.org/terms · Pedido: https://signpath.org/apply
 
 ### Checklist antes de pedir
-- [ ] **Licença open source aprovada pela OSI** no repositório (arquivo `LICENSE`). Sem isso o projeto não se qualifica.
-- [ ] Todos os componentes open source (Godot = MIT; modelos Kenney/KayKit/Quaternius = CC0; músicas e sons gerados por código).
-- [ ] Projeto ativo e com a versão já publicada no GitHub Releases.
-- [ ] Página de download descreve o que o programa faz (site → seção "O jogo").
-- [ ] **Política de privacidade** e **Política de assinatura de código** no site (seções `#privacidade` e `#assinatura`) — já existem.
-- [ ] Instruções para desinstalar (seção Privacidade) — já existem.
+- [x] **Licença open source aprovada pela OSI**: GPL-3.0 (arquivo `LICENSE`).
+- [x] Todos os componentes open source (Godot = MIT; modelos Kenney/KayKit/Quaternius = CC0; músicas e sons gerados por código).
+- [x] Projeto ativo e com a versão já publicada no GitHub Releases.
+- [x] Página de download descreve o que o programa faz (site → seção "O jogo").
+- [x] **Política de privacidade** e **Política de assinatura de código** no site (seções `#privacidade` e `#assinatura`) — já existem.
+- [x] Instruções para desinstalar (seção Privacidade) — já existem.
 - [ ] **2FA** ligado na conta do GitHub (e depois na do SignPath).
-- [ ] Nome e versão do produto iguais em todos os builds (o CI grava `X.Y.Z.0` nos `.exe`).
+- [x] Nome e versão do produto iguais em todos os builds (o CI grava `X.Y.Z.0` nos `.exe`).
 
 ### Depois de aprovado
 1. No SignPath, crie o projeto (slug `dead-frequency`), a *signing policy* (ex.: `release-signing`, com aprovação manual)
