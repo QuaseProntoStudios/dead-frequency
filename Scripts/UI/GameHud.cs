@@ -24,6 +24,10 @@ public partial class GameHud : CanvasLayer
     private PanelContainer _toastPanel;
     private Label _clock;
     private Label _debug;
+    private PanelContainer _debugAuthPanel;
+    private LineEdit _debugPassword;
+    private Label _debugAuthMessage;
+    private Button _debugAuthButton;
     private PanelContainer _jobPanel;
     private Label _jobTitle;
     private Label _jobBody;
@@ -125,6 +129,35 @@ public partial class GameHud : CanvasLayer
         Place(_debug, 0f, 0f, 0f, 0f, 12, 12, 760, 330);
         root.AddChild(_debug);
 
+        // Autenticação das ferramentas extras (F10). Não interfere no overlay público F3.
+        _debugAuthPanel = new PanelContainer { Visible = false, MouseFilter = Control.MouseFilterEnum.Stop };
+        _debugAuthPanel.AddThemeStyleboxOverride("panel", UiStyle.Box(UiStyle.PanelBackground, UiStyle.PhosphorDim, 2, 12));
+        Place(_debugAuthPanel, 0.5f, 0.5f, 0.5f, 0.5f, -210, -105, 210, 105);
+        var authStack = new VBoxContainer { Theme = UiStyle.Theme };
+        _debugAuthPanel.AddChild(authStack);
+        authStack.AddChild(UiStyle.MakeLabel("DEVELOPER ACCESS", 20, HorizontalAlignment.Center));
+        authStack.AddChild(UiStyle.MakeLabel("Autentique para liberar ferramentas extras", 13, HorizontalAlignment.Center, UiStyle.PhosphorDim));
+        _debugPassword = new LineEdit
+        {
+            PlaceholderText = "Senha de desenvolvedor",
+            Secret = true,
+            CustomMinimumSize = new Vector2(380, 38),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        _debugPassword.TextSubmitted += _ => SubmitDebugPassword();
+        authStack.AddChild(_debugPassword);
+        _debugAuthMessage = UiStyle.MakeLabel("Acesso protegido · validade de 30 minutos", 13, HorizontalAlignment.Center, UiStyle.PhosphorDim);
+        authStack.AddChild(_debugAuthMessage);
+        var authButtons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        _debugAuthButton = new Button { Text = "AUTENTICAR", CustomMinimumSize = new Vector2(150, 38) };
+        _debugAuthButton.Pressed += SubmitDebugPassword;
+        authButtons.AddChild(_debugAuthButton);
+        var authClose = new Button { Text = "FECHAR", CustomMinimumSize = new Vector2(100, 38) };
+        authClose.Pressed += () => _debugAuthPanel.Visible = false;
+        authButtons.AddChild(authClose);
+        authStack.AddChild(authButtons);
+        root.AddChild(_debugAuthPanel);
+
         // Minimapa (só com o radar equipado), canto superior esquerdo.
         _minimap = new MinimapView { Player = Player, City = City, Delivery = Delivery, Visible = false };
         Place(_minimap, 0f, 0f, 0f, 0f, 20, 20, 240, 240);
@@ -162,6 +195,7 @@ public partial class GameHud : CanvasLayer
         {
             NetClient.Instance.MessageReceived += OnNetMessage;
             NetClient.Instance.Disconnected += OnNetDisconnected;
+            NetClient.Instance.DebugAuthResult += OnDebugAuthResult;
         }
 
         foreach (Node node in GetTree().GetNodesInGroup(CargoItem.GroupName))
@@ -177,13 +211,68 @@ public partial class GameHud : CanvasLayer
         {
             NetClient.Instance.MessageReceived -= OnNetMessage;
             NetClient.Instance.Disconnected -= OnNetDisconnected;
+            NetClient.Instance.DebugAuthResult -= OnDebugAuthResult;
         }
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event is InputEventKey { Pressed: true, Echo: false, Keycode: Key.F3 })
+        if (@event is not InputEventKey { Pressed: true, Echo: false } key)
+            return;
+
+        // F3 controla exclusivamente o overlay público.
+        if (key.Keycode == Key.F3)
+        {
             _debug.Visible = !_debug.Visible;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // F10 controla exclusivamente a janela de autenticação, e só com F3 aberto.
+        if (key.Keycode == Key.F10 && _debug.Visible)
+        {
+            _debugAuthPanel.Visible = !_debugAuthPanel.Visible;
+            if (_debugAuthPanel.Visible)
+            {
+                _debugPassword.Clear();
+                _debugAuthMessage.Text = NetClient.Instance?.IsDebugAuthorized == true
+                    ? "Acesso autorizado · ferramentas extras liberadas"
+                    : "Acesso protegido · validade de 30 minutos";
+                _debugPassword.CallDeferred(Control.MethodName.GrabFocus);
+                Input.MouseMode = Input.MouseModeEnum.Visible;
+            }
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    private void SubmitDebugPassword()
+    {
+        string password = _debugPassword?.Text ?? "";
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            _debugAuthMessage.Text = "Digite a senha para continuar.";
+            return;
+        }
+
+        if (NetClient.Instance == null || !NetClient.Instance.IsOnline)
+        {
+            _debugAuthMessage.Text = "Entre em uma sala online para autenticar.";
+            return;
+        }
+
+        _debugAuthButton.Disabled = true;
+        _debugAuthMessage.Text = "Validando senha...";
+        NetClient.Instance.RequestDebugAuth(password);
+        _debugPassword.Clear();
+    }
+
+    private void OnDebugAuthResult(bool success, string message)
+    {
+        _debugAuthButton.Disabled = false;
+        _debugAuthMessage.Text = message;
+        _debugAuthMessage.AddThemeColorOverride("font_color", success ? UiStyle.Phosphor : UiStyle.Warning);
+        if (success)
+            ShowToast("Ferramentas de desenvolvedor autorizadas por 30 minutos.", UiStyle.Phosphor, 4.0);
     }
 
     public override void _Process(double delta)
