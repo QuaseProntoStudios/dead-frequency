@@ -9,7 +9,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ver = sys.argv[1].lstrip("v")
 ref = sys.argv[2] if len(sys.argv) > 2 else "main"
 RAW = f"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/{ref}/site/assets/shots/"
-SITE = "https://dieguesmosken.github.io/dead-frequency/"
+SITE = "https://www.teuzin.com.br/dead-frequency/"
 DL = "https://github.com/dieguesmosken/dead-frequency/releases/download/v" + ver + "/"
 
 src = open(os.path.join(ROOT, "Scripts", "Core", "GameVersion.cs"), encoding="utf-8").read()
