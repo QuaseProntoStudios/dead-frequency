@@ -25,7 +25,13 @@ O AI Studio tem limite diário: quando aparece "Quota limit reached", para e con
 - Modo História: `Audio/Story/story_c<capítulo>_<intro|outro|broken>_<n>.ogg`, na ordem das falas de
   `Scripts/Story/StoryChapters.cs` (n começa em 1). Sem o arquivo, a caixa de diálogo só mostra o texto.
 
-## Falta gerar (limite diário do AI Studio)
+## Capítulo II completo
 
-- `story_c2_intro_1`, `story_c2_intro_2`, `story_c2_outro_1`, `story_c2_outro_2`, `story_c2_broken_1` (Seu Tonho).
-- `story_c2_intro_3` (Toninho).
+As 6 falas que faltavam (`story_c2_intro_1..3`, `story_c2_outro_1..2`, `story_c2_broken_1`) foram geradas no AI Studio
+com as vozes Algenib (Seu Tonho) e Mako (Toninho) e os mesmos estilos da tabela acima. Para cortar o silêncio das pontas
+use `silenceremove` só no começo e no fim (com `areverse`), senão o ffmpeg corta a fala na primeira pausa.
+
+## Vozes locais (VoiceStudio, VoxCPM2)
+
+Para as falas curtas de rua (NPCs sem nome) dá para gerar localmente, sem limite de cota (~50 s por fala na RTX 5050),
+mas o gerador só entende gênero, idade e tom (sem sotaque). Perfis criados por descrição, nunca clonados de terceiros.
