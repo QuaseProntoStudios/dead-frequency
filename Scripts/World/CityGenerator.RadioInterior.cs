@@ -199,23 +199,32 @@ public partial class CityGenerator
         for (float x = -8.6f; x < -3.2f; x += 1.2f)
             AddBox(st, new Vector3(x, 2.6f, z0 + 0.21f), new Vector3(1.0f, 2.4f, 0.08f), foam, false);
 
-        // Mesa de som (mesmo ponto de sempre: RadioConsolePoint).
-        AddBox(st, new Vector3(-6f, 0.45f, z0 + 1.6f), new Vector3(5f, 0.9f, 1.2f), _radioWallInside);
+        // Mesa de controle (mesmo ponto de sempre: RadioConsolePoint). Modelo do Meshy: mixer, VU, monitores,
+        // decks e fone; sem o modelo, a mesa antiga de caixas.
         RadioConsolePoint = st.Position + new Vector3(-6f, 0f, z0 + 1.6f);
-        AddBox(st, new Vector3(-6f, 0.93f, z0 + 1.55f), new Vector3(4.6f, 0.06f, 0.9f), _darkMetal, false);
-        for (int i = 0; i < 18; i++)
+        if (MeshyVehicles.PlaceProp(st, "radio_mesa", new Vector3(-6f, 0.03f, z0 + 1.45f), 0f, new Vector3(3.4f, 1.65f, 1.35f)) != null)
         {
-            float x = -8.1f + i * 0.25f;
-            AddBox(st, new Vector3(x, 1.0f, z0 + 1.5f + (i % 3) * 0.05f), new Vector3(0.05f, 0.08f, 0.12f), i % 4 == 0 ? red : white, false);
+            RadioCollider(st, new Vector3(-6f, 0.45f, z0 + 1.45f), new Vector3(3.4f, 0.9f, 1.3f));
+            foreach (float mx in new[] { -7.1f, -4.9f })
+                MeshyVehicles.PlaceProp(st, "radio_microfone", new Vector3(mx, RadioDeskTop, z0 + 1.75f), Mathf.Pi * 0.5f, new Vector3(0.75f, 0.6f, 0.22f));
+            MeshyVehicles.PlaceProp(st, "radio_rack", new Vector3(-8.55f, 0.03f, z0 + 0.9f), Mathf.Pi * 0.5f, new Vector3(0.6f, 1.45f, 0.5f));
+            RadioCollider(st, new Vector3(-8.55f, 0.73f, z0 + 0.9f), new Vector3(0.5f, 1.45f, 0.6f));
         }
-        AddBox(st, new Vector3(-6f, 1.35f, z0 + 1.15f), new Vector3(1.8f, 0.8f, 0.1f), green, false); // VU / monitor
-        foreach (float mx in new[] { -7.6f, -4.4f })
+        else
         {
-            AddCylinder(st, new Vector3(mx, 1.25f, z0 + 2.0f), 0.015f, 0.6f, _darkMetal);
-            AddCylinder(st, new Vector3(mx, 1.6f, z0 + 2.0f), 0.06f, 0.18f, _darkMetal);
-            AssetProps.Spawn(st, AssetProps.Furniture + "chair_C.gltf", new Vector3(mx, 0.03f, z0 + 2.8f), Mathf.Pi, 0.75f, new Vector3(0.55f, 0.9f, 0.55f));
+            AddBox(st, new Vector3(-6f, 0.45f, z0 + 1.6f), new Vector3(5f, 0.9f, 1.2f), _radioWallInside);
+            AddBox(st, new Vector3(-6f, 0.93f, z0 + 1.55f), new Vector3(4.6f, 0.06f, 0.9f), _darkMetal, false);
+            for (int i = 0; i < 18; i++)
+            {
+                float x = -8.1f + i * 0.25f;
+                AddBox(st, new Vector3(x, 1.0f, z0 + 1.5f + (i % 3) * 0.05f), new Vector3(0.05f, 0.08f, 0.12f), i % 4 == 0 ? red : white, false);
+            }
+            AddBox(st, new Vector3(-6f, 1.35f, z0 + 1.15f), new Vector3(1.8f, 0.8f, 0.1f), green, false); // VU / monitor
         }
-        BuildRadioProp(st, new Vector3(-6f, 0.96f, z0 + 1.9f), 0f, true, -2f);
+        foreach (float mx in new[] { -7.1f, -4.9f })
+            AssetProps.Spawn(st, AssetProps.Furniture + "chair_C.gltf", new Vector3(mx, 0.03f, z0 + 2.9f), Mathf.Pi, 0.75f, new Vector3(0.55f, 0.9f, 0.55f));
+        // O retorno do estúdio: a 96.6 tocando baixinho dentro da cabine (antes era um radinho em cima da mesa).
+        st.AddChild(new RadioPlayer { Name = "StudioMonitor", On = true, VolumeDb = -4f, UnitSize = 3.5f, MaxDistance = 20f, Position = new Vector3(-6f, 1.4f, z0 + 0.6f) });
         // Luz de "NO AR" dentro da cabine (vira para quem está na mesa) e por fora, em cima da porta.
         AddBox(st, new Vector3(-6f, 3.0f, 2.5f), new Vector3(1.1f, 0.35f, 0.06f), Emissive(new Color(1f, 0.1f, 0.05f), 2.5f), false);
         RadioLabel(st, "NO AR", new Vector3(-6f, 3.0f, 2.46f), Mathf.Pi, 0.004f);
@@ -234,6 +243,16 @@ public partial class CityGenerator
         AddBox(st, new Vector3(-6f, 4.62f, 0.3f), new Vector3(2.4f, 0.05f, 0.3f), Emissive(new Color(1f, 0.95f, 1f), 1.8f), false);
     }
 
+    /// <summary>Altura do tampo da mesa de controle do Meshy (onde ficam os microfones).</summary>
+    private const float RadioDeskTop = 0.74f;
+
+    private static void RadioCollider(Node3D parent, Vector3 center, Vector3 size)
+    {
+        var body = new StaticBody3D { Position = center, CollisionLayer = 1, CollisionMask = 0 };
+        body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } });
+        parent.AddChild(body);
+    }
+
     private void BuildRadioRecordingRoom(Node3D st, float z0, Material foam, Material foamDark, Material red)
     {
         // Espuma nas paredes (x -13..-9,2, z -2..2,6): xadrez roxo e grafite.
@@ -249,13 +268,19 @@ public partial class CityGenerator
         MeshInstance3D pop = AddCylinder(st, new Vector3(-11.1f, 1.38f, 0.5f), 0.1f, 0.01f, Flat(new Color(0.05f, 0.05f, 0.05f)));
         pop.Rotation = new Vector3(Mathf.Pi * 0.5f, 0f, 0f);
         AddCylinder(st, new Vector3(-11.1f, 0.03f, 0.4f), 0.2f, 0.06f, _darkMetal);
-        // Banquinho e mesinha com fones e o gravador de rolo.
+        // Banquinho e o gravador de rolo.
         AddCylinder(st, new Vector3(-11.1f, 0.35f, 1.5f), 0.18f, 0.7f, _trunk);
-        AddBox(st, new Vector3(-12.3f, 0.4f, 1.6f), new Vector3(0.9f, 0.8f, 0.6f), _trunk);
-        AddBox(st, new Vector3(-12.3f, 0.87f, 1.6f), new Vector3(0.6f, 0.1f, 0.4f), _darkMetal, false);
-        foreach (float rx in new[] { -12.45f, -12.15f })
-            AddCylinder(st, new Vector3(rx, 0.95f, 1.6f), 0.09f, 0.03f, _signWhite);
-        AddBox(st, new Vector3(-12.3f, 0.95f, 1.8f), new Vector3(0.3f, 0.06f, 0.05f), _darkMetal, false);
+        if (MeshyVehicles.PlaceProp(st, "radio_rolo", new Vector3(-12.45f, 0.03f, 1.4f), Mathf.Pi * 0.5f, new Vector3(0.75f, 1.35f, 0.45f)) != null)
+        {
+            RadioCollider(st, new Vector3(-12.45f, 0.68f, 1.4f), new Vector3(0.45f, 1.35f, 0.75f));
+        }
+        else
+        {
+            AddBox(st, new Vector3(-12.3f, 0.4f, 1.6f), new Vector3(0.9f, 0.8f, 0.6f), _trunk);
+            AddBox(st, new Vector3(-12.3f, 0.87f, 1.6f), new Vector3(0.6f, 0.1f, 0.4f), _darkMetal, false);
+            foreach (float rx in new[] { -12.45f, -12.15f })
+                AddCylinder(st, new Vector3(rx, 0.95f, 1.6f), 0.09f, 0.03f, _signWhite);
+        }
         // Luz "GRAVANDO" em cima da porta, por fora.
         AddBox(st, new Vector3(-11.6f, 2.8f, 2.69f), new Vector3(1.1f, 0.3f, 0.06f), Emissive(new Color(0.7f, 0.08f, 0.04f), 1.6f), false);
         RadioLabel(st, "GRAVANDO", new Vector3(-11.6f, 2.8f, 2.73f), 0f, 0.0035f, new Color(1f, 0.8f, 0.8f), 40);
@@ -336,10 +361,17 @@ public partial class CityGenerator
             AddBox(st, new Vector3(0.52f, 0.5f + (i / 12) * 1.5f, -1.4f + (i % 12) * 0.29f + 0.02f), new Vector3(0.025f, 0.3f, 0.26f), Flat(WallPalette[(i + 3) % WallPalette.Length] * 1.5f, 0.5f), false);
 
         // Toca-discos de enfeite no meio da sala (o som vem do disco escolhido).
-        AddBox(st, new Vector3(-1.4f, 0.45f, 1.2f), new Vector3(1.0f, 0.9f, 0.7f), wood);
-        AddBox(st, new Vector3(-1.4f, 0.93f, 1.2f), new Vector3(0.9f, 0.06f, 0.6f), _darkMetal, false);
-        AddCylinder(st, new Vector3(-1.5f, 0.98f, 1.2f), 0.24f, 0.03f, Flat(new Color(0.04f, 0.04f, 0.05f), 0.3f));
-        AddBeam(st, new Vector3(-1.15f, 1.0f, 1.0f), new Vector3(-1.45f, 1.0f, 1.2f), 0.012f, _signWhite);
+        if (MeshyVehicles.PlaceProp(st, "radio_tocadiscos", new Vector3(-1.4f, 0.03f, 1.2f), RadioTurntableYaw, new Vector3(0.8f, 1.0f, 1.05f)) != null)
+        {
+            RadioCollider(st, new Vector3(-1.4f, 0.5f, 1.2f), new Vector3(1.05f, 1.0f, 1.05f));
+        }
+        else
+        {
+            AddBox(st, new Vector3(-1.4f, 0.45f, 1.2f), new Vector3(1.0f, 0.9f, 0.7f), wood);
+            AddBox(st, new Vector3(-1.4f, 0.93f, 1.2f), new Vector3(0.9f, 0.06f, 0.6f), _darkMetal, false);
+            AddCylinder(st, new Vector3(-1.5f, 0.98f, 1.2f), 0.24f, 0.03f, Flat(new Color(0.04f, 0.04f, 0.05f), 0.3f));
+            AddBeam(st, new Vector3(-1.15f, 1.0f, 1.0f), new Vector3(-1.45f, 1.0f, 1.2f), 0.012f, _signWhite);
+        }
         RadioLabel(st, "OUÇA OS DISCOS E AS FITAS (E)", new Vector3(-0.9f, 2.65f, z0 + 0.5f), 0f, 0.0035f, new Color(1f, 0.9f, 0.6f), 40);
         RadioLamp(st, new Vector3(-0.9f, 3.0f, 0.4f), new Color(1f, 0.8f, 0.55f), 1.4f, 5.5f);
     }
@@ -364,8 +396,25 @@ public partial class CityGenerator
         AddBox(st, new Vector3(-2f, 4.62f, 6.8f), new Vector3(2.0f, 0.05f, 0.3f), Emissive(new Color(0.95f, 0.97f, 1f), 1.6f), false);
     }
 
+    private const float RadioTurntableYaw = Mathf.Pi * 0.5f; // prateleira de discos virada para a porta
+
     private void BuildRadioServerRoom(Node3D st, Material red)
     {
+        // Modelos do Meshy: dois racks de servidor e o rack com o transmissor, de frente para a porta (-X).
+        if (MeshyVehicles.HasProp("radio_servidor"))
+        {
+            foreach (float z in new[] { 5.35f, 8.25f })
+            {
+                MeshyVehicles.PlaceProp(st, "radio_servidor", new Vector3(0.45f, 0.03f, z), -Mathf.Pi * 0.5f, new Vector3(0.75f, 2.05f, 0.8f));
+                RadioCollider(st, new Vector3(0.45f, 1.03f, z), new Vector3(0.8f, 2.05f, 0.75f));
+            }
+            MeshyVehicles.PlaceProp(st, "radio_rack", new Vector3(0.55f, 0.03f, 6.8f), -Mathf.Pi * 0.5f, new Vector3(0.65f, 1.55f, 0.55f));
+            RadioCollider(st, new Vector3(0.55f, 0.78f, 6.8f), new Vector3(0.55f, 1.55f, 0.65f));
+            AddBox(st, new Vector3(0.7f, 3.4f, 8.3f), new Vector3(0.3f, 0.5f, 1.0f), Flat(new Color(0.85f, 0.85f, 0.82f)), false);
+            RadioLabel(st, "SALA DOS SERVIDORES\nNÃO DESLIGAR", new Vector3(-0.69f, 2.6f, 6.7f), -Mathf.Pi * 0.5f, 0.0032f, new Color(1f, 0.85f, 0.5f), 36);
+            RadioLamp(st, new Vector3(0f, 2.8f, 7f), new Color(0.6f, 0.75f, 1f), 1.0f, 4.5f);
+            return;
+        }
         // Três racks encostados na parede leste, com LEDs que piscam em ritmos diferentes.
         StandardMaterial3D ledGreen = Emissive(new Color(0.3f, 1f, 0.4f), 2.2f);
         StandardMaterial3D ledAmber = Emissive(new Color(1f, 0.7f, 0.15f), 2.2f);
