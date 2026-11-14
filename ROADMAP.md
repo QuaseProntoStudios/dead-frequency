@@ -144,7 +144,7 @@ Versão de correção aberta também para ajustes pedidos antes e tarefas em and
 | **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
 | **Painel da van** | Monitor CRT mais legível. |
 | **Orelhão da Telefóbica** | Textura com texto e detalhes, em vez de verde liso. |
-| **Rádio 96.6 por dentro** | Rework do interior: cabine do locutor, sala de gravação, mesa de som, fitas e discos interativos, sala de servidores/escritório e, se couber, sala de câmeras. Muros da rádio com textura. |
+| ✅ **Rádio 96.6 por dentro** | O estúdio virou seis salas (`CityGenerator.RadioInterior.cs`): recepção com balcão, sofá e quadros; cabine do locutor com vidro para a recepção e para a gravação (a mesa de som continua no mesmo lugar, o trabalho de locutor não muda) e luz NO AR dos dois lados; sala de gravação com espuma, microfone com pop filter e gravador de rolo (luz GRAVANDO); discoteca com os 5 discos da programação e 6 fitas (vinheta e comerciais) que tocam ao mirar e apertar E (`RadioMediaInteractable`, um por vez); escritório com computadores de tubo e o quadro da programação; sala dos servidores com racks piscando. Texturas próprias: fachada de concreto azulado, muro com faixa vermelha e branca, parede interna com barrado e piso xadrez (`Assets/Textures/Radio/radio_textures.py.txt`). Sala de câmeras ficou para depois. |
 | **Calçadas** | Calçadas que faltam em volta da DF Entregas; corrigir a calçada estilo Copacabana que não aparece. |
 | **Janelas nas quinas** | Janelas dos prédios não podem ficar cortadas ao meio nas quinas. |
 | **Caixa d'água municipal** | Modelo novo e escada para subir e ver a cidade de cima. |
