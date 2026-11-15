@@ -38,7 +38,7 @@ para olhar o jogador.
 - Ciclista: pose parada + IK, mãos nas manoplas e pés nos pedais que giram com o pedivela (`Cyclist`).
 - Escada de marinheiro da caixa d'água: `PlayerController.StartClimb` (W sobe, S desce, E solta); o boneco põe mãos e pés
   nos degraus. No online vai só o estado `st=3` (servidor e `LocalServer` aceitam), o IK é calculado em cada cliente.
-- NPCs que conversam (`Chatty`) viram a cabeça para o jogador a até ~5 m.
+- NPCs **não** viram mais a cabeça para o jogador (bugava a animação dos parados). `LookTarget` continua na API, mas nada o liga sozinho.
 - Achados ao montar: os modelos do Meshy têm o esqueleto em escala 0,01 (o IK funciona mesmo assim); o eixo "frente"
   do osso `Head` é **+Y**; a animação de sentar (`Chair_Sit_Idle`) atrapalha o IK dos braços, então a ciclista usa a
   pose parada com o quadril no selim. `TwoBoneIK3D` precisa de nó de polo para dobrar certo.
@@ -82,3 +82,8 @@ ganhar modo online depois, mas isso é outro projeto.
 - Se acontecer: cliente pelo pacote NuGet `Colyseus` no `DeadFrequency.csproj` (com tipos gerados pelo
   `schema-codegen`), **nunca** por plugin GDExtension.
 - Até lá, nenhuma mudança no `server/` por causa disso.
+
+
+## LOD de animação (v0.10.1)
+
+- Pedestres a mais de ~65 m da câmera ficam com `AnimationPlayer` e respiração desligados (`CharacterModel.SetFar`); voltam a animar abaixo de 55 m. A posição continua seguindo o percurso.
