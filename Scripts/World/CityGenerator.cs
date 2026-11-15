@@ -2026,8 +2026,9 @@ public partial class CityGenerator : Node3D
         float first = -half + cornerClearance;
         float last = half - cornerClearance;
 
-        PaintCurbStripe(blockCenter, outward, along, -half + cornerClearance * 0.5f, cornerClearance, _curbYellow);
-        PaintCurbStripe(blockCenter, outward, along, half - cornerClearance * 0.5f, cornerClearance, _curbYellow);
+        // Faixas amarelas de esquina também respeitam vãos de garagem e guias rebaixadas.
+        PaintCurbStripeAvoidingKeepClear(blockCenter, outward, along, -half + cornerClearance * 0.5f, cornerClearance);
+        PaintCurbStripeAvoidingKeepClear(blockCenter, outward, along, half - cornerClearance * 0.5f, cornerClearance);
 
         for (float start = first; start < last; start += markPitch)
         {
@@ -2036,10 +2037,88 @@ public partial class CityGenerator : Node3D
                 continue;
             float midpoint = start + length * 0.5f;
             Vector3 parkingSpot = blockCenter + outward * (half + RoadWidth * 0.5f - 1.4f) + along * midpoint;
-            // Onde pode parar fica o meio-fio padrão (cinza e branco, no shader da calçada).
-            if (InNoParking(parkingSpot))
-                PaintCurbStripe(blockCenter, outward, along, midpoint, length, _curbYellow);
+            // Só zonas de proibição recebem amarelo; KeepClear bloqueia carros, mas não pinta a guia.
+            if (InNoParkingPaintZone(parkingSpot) && !IsKeepClearAt(parkingSpot))
+                PaintCurbStripeAvoidingKeepClear(blockCenter, outward, along, midpoint, length);
         }
+    }
+
+    private void PaintCurbStripeAvoidingKeepClear(
+        Vector3 blockCenter, Vector3 outward, Vector3 along, float midpoint, float length)
+    {
+        float start = midpoint - length * 0.5f;
+        float end = midpoint + length * 0.5f;
+        var segments = new List<(float Start, float End)> { (start, end) };
+
+        foreach ((Vector3 center, Vector3 dir, float halfLength) in _keepClear)
+        {
+            if (Mathf.Abs(dir.Dot(along)) < 0.9f)
+                continue;
+
+            Vector3 delta = center - blockCenter;
+            delta.Y = 0f;
+            float clearMidpoint = delta.Dot(along);
+            float across = (delta - along * clearMidpoint).Length();
+            if (across >= 6f)
+                continue;
+
+            float clearStart = clearMidpoint - halfLength;
+            float clearEnd = clearMidpoint + halfLength;
+            var remaining = new List<(float Start, float End)>();
+            foreach ((float segmentStart, float segmentEnd) in segments)
+            {
+                if (clearEnd <= segmentStart || clearStart >= segmentEnd)
+                {
+                    remaining.Add((segmentStart, segmentEnd));
+                    continue;
+                }
+
+                if (clearStart > segmentStart)
+                    remaining.Add((segmentStart, Mathf.Min(clearStart, segmentEnd)));
+                if (clearEnd < segmentEnd)
+                    remaining.Add((Mathf.Max(clearEnd, segmentStart), segmentEnd));
+            }
+            segments = remaining;
+            if (segments.Count == 0)
+                return;
+        }
+
+        foreach ((float segmentStart, float segmentEnd) in segments)
+        {
+            float segmentLength = segmentEnd - segmentStart;
+            if (segmentLength <= 0.05f)
+                continue;
+            PaintCurbStripe(blockCenter, outward, along,
+                (segmentStart + segmentEnd) * 0.5f, segmentLength, _curbYellow);
+        }
+    }
+
+    private bool InNoParkingPaintZone(Vector3 position)
+    {
+        foreach ((Vector3 center, Vector3 dir, float halfLength, WorldChunkCoordinate owner) in _noParking)
+        {
+            Vector3 delta = position - center;
+            delta.Y = 0f;
+            float along = delta.Dot(dir);
+            float across = (delta - dir * along).Length();
+            if (Mathf.Abs(along) < halfLength && across < 6f)
+                return true;
+        }
+        return false;
+    }
+
+    private bool IsKeepClearAt(Vector3 position)
+    {
+        foreach ((Vector3 center, Vector3 dir, float halfLength) in _keepClear)
+        {
+            Vector3 delta = position - center;
+            delta.Y = 0f;
+            float along = delta.Dot(dir);
+            float across = (delta - dir * along).Length();
+            if (Mathf.Abs(along) < halfLength && across < 6f)
+                return true;
+        }
+        return false;
     }
 
     private void PaintCurbStripe(Vector3 blockCenter, Vector3 outward, Vector3 along, float midpoint, float length, Material material)
@@ -2061,6 +2140,11 @@ public partial class CityGenerator : Node3D
 
     private void PaintNoParkingCurb(Vector3 center, Vector3 dir, float halfLength)
     {
+        // Uma zona de proibição pode coincidir com a entrada de um imóvel. Nesse caso,
+        // mantém-se a restrição a carros, mas a guia e a faixa no asfalto ficam interrompidas.
+        if (IsKeepClearAt(center))
+            return;
+
         float length = Mathf.Max(1f, halfLength * 2f + 0.2f);
         if (Mathf.Abs(dir.Z) > 0.5f)
         {
@@ -2068,7 +2152,7 @@ public partial class CityGenerator : Node3D
             foreach (float side in new[] { -1f, 1f })
             {
                 Vector3 parkingSpot = new(roadX + side * (RoadWidth * 0.5f - 1.4f), 0f, center.Z);
-                if (!InNoParking(parkingSpot))
+                if (!InNoParkingPaintZone(parkingSpot))
                     continue;
                 Vector3 curb = new(roadX + side * (RoadWidth * 0.5f - 0.045f), CurbHeight * 0.5f, center.Z);
                 AddBox(_activeChunkRoot ?? _staticRoot, curb, new Vector3(0.03f, CurbHeight, length), _curbYellow, false);
@@ -2081,7 +2165,7 @@ public partial class CityGenerator : Node3D
             foreach (float side in new[] { -1f, 1f })
             {
                 Vector3 parkingSpot = new(center.X, 0f, roadZ + side * (RoadWidth * 0.5f - 1.4f));
-                if (!InNoParking(parkingSpot))
+                if (!InNoParkingPaintZone(parkingSpot))
                     continue;
                 Vector3 curb = new(center.X, CurbHeight * 0.5f, roadZ + side * (RoadWidth * 0.5f - 0.045f));
                 AddBox(_activeChunkRoot ?? _staticRoot, curb, new Vector3(length, CurbHeight, 0.03f), _curbYellow, false);
