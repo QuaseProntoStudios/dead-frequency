@@ -2,6 +2,11 @@
 // Diálogos de calçada (v0.9.5): balões curtos estilo PS1 em cima da cabeça dos NPCs quando o
 // jogador passa perto. Frases do dia a dia, comentários sobre a caixa que ele carrega
 // (a eterna briga do biscoito × bolacha), o chinelo, o caramelo e a madrugada.
+// v0.10.1: falas com voz. Cada tipo de morador (os 6 modelos do Meshy em CharacterModel) tem três falas
+// próprias, gravadas no Google AI Studio (docs/radio/VOZES.md, roteiro em docs/radio/falas_de_rua.csv) e salvas
+// em Audio/Street/<tipo>_<n>.ogg. Só se ouvem de perto; sem o arquivo, a fala aparece só no balão.
+// As frases genéricas abaixo continuam só no balão.
+using System.Collections.Generic;
 using Godot;
 
 namespace DeadFrequency;
@@ -13,6 +18,104 @@ public static class SidewalkTalk
 
     /// <summary>Uma pessoa fala por vez (senão vira uma gritaria de balões).</summary>
     public static bool CanTalkNow() => Time.GetTicksMsec() - _lastTalkMs > 4500;
+
+    public const string VoiceFolder = "res://Audio/Street/";
+
+    /// <summary>Falas com voz de cada tipo de morador (CharacterModel.NpcKind). O áudio é Audio/Street/&lt;tipo&gt;_&lt;n&gt;.ogg, n a partir de 1.</summary>
+    public static readonly Dictionary<string, string[]> KindLines = new()
+    {
+        ["npc_senhor"] = new[]
+        {
+            "No meu tempo a gente entregava tudo de bicicleta, sabia?",
+            "Vou ali na praça jogar dominó. Se a patroa perguntar, eu fui no médico.",
+            "Liga o rádio na 96.6 que daqui a pouco tem o programa do Seu Waldir.",
+        },
+        ["npc_rapaz"] = new[]
+        {
+            "E aí, firmeza? Tá entregando o quê hoje?",
+            "Tô juntando pra comprar um Fuska. Falta só... quase tudo.",
+            "Viu o jogo ontem? Nem eu, caiu a antena de novo.",
+        },
+        ["npc_escritorio"] = new[]
+        {
+            "Atrasado de novo... o relógio de ponto não perdoa.",
+            "Três reuniões hoje e nenhuma resolveu nada.",
+            "Será que o fax chegou? Mandei faz dois dias.",
+        },
+        ["npc_moca"] = new[]
+        {
+            "Oi! Você sabe se as lojas do shopping já abriram?",
+            "Tô esperando o 966 faz meia hora. Já decorei o ponto inteiro.",
+            "Pede pra tocar a minha música na 96.6? Eu liguei três vezes e nada.",
+        },
+        ["npc_dona"] = new[]
+        {
+            "Moço, vê se não amassa a minha encomenda, hein!",
+            "O carro do ovo passou e eu perdi. De novo!",
+            "Feijão no fogo e eu aqui conversando. Deixa eu ir!",
+        },
+        ["npc_senhora"] = new[]
+        {
+            "Ai, meu filho, me ajuda a atravessar? Brincadeira, eu atravesso sozinha.",
+            "Você é neto da Dona Cida? Tem a cara dela.",
+            "Leva um casaco, que essa neblina pega a gente.",
+        },
+    };
+
+    // Áudios já procurados (null = não existe), para não perguntar ao ResourceLoader toda vez.
+    private static readonly Dictionary<string, AudioStream> VoiceCache = new();
+
+    /// <summary>Sorteia uma das falas do tipo de morador; false se o tipo não tem falas próprias.</summary>
+    public static bool TryKindLine(string kind, out int index, out string text)
+    {
+        index = -1;
+        text = null;
+        if (string.IsNullOrEmpty(kind) || !KindLines.TryGetValue(kind, out string[] lines) || lines.Length == 0)
+            return false;
+        Rng.Randomize();
+        index = Rng.RandiRange(0, lines.Length - 1);
+        text = lines[index];
+        return true;
+    }
+
+    /// <summary>Áudio da fala n (a partir de 0) do tipo de morador, ou null se ainda não foi gravado.</summary>
+    public static AudioStream VoiceFor(string kind, int index)
+    {
+        string path = $"{VoiceFolder}{kind}_{index + 1}.ogg";
+        if (!VoiceCache.TryGetValue(path, out AudioStream stream))
+        {
+            stream = ResourceLoader.Exists(path) ? ResourceLoader.Load<AudioStream>(path) : null;
+            VoiceCache[path] = stream;
+        }
+        return stream;
+    }
+
+    /// <summary>Fala de um morador com voz: toca o áudio (ouvido só de perto) e mostra o balão enquanto dura.</summary>
+    public static void SayVoiced(Node3D speaker, string kind, int index, string text, float height = 2.15f)
+    {
+        if (speaker == null || !GodotObject.IsInstanceValid(speaker) || !speaker.IsInsideTree())
+            return;
+        float seconds = 4f;
+        AudioStream voice = VoiceFor(kind, index);
+        if (voice != null)
+        {
+            speaker.GetNodeOrNull<AudioStreamPlayer3D>("Voz")?.QueueFree();
+            var player = new AudioStreamPlayer3D
+            {
+                Name = "Voz",
+                Stream = voice,
+                Bus = AudioManager.SfxBus,
+                UnitSize = 3f,
+                MaxDistance = 14f,
+                Position = new Vector3(0f, height - 0.45f, 0f),
+            };
+            speaker.AddChild(player);
+            player.Finished += player.QueueFree;
+            player.Play();
+            seconds = Mathf.Max(seconds, (float)voice.GetLength() + 0.6f);
+        }
+        Say(speaker, text, height, seconds);
+    }
 
     private static readonly string[] Daily =
     {

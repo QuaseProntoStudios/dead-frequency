@@ -39,12 +39,11 @@ public partial class CityGenerator
 
         StandardMaterial3D gravel = Flat(new Color(0.3f, 0.29f, 0.27f));
         StandardMaterial3D wall = Flat(new Color(0.16f, 0.17f, 0.19f), 0.7f);
-        StandardMaterial3D green = Emissive(new Color(0.35f, 1f, 0.45f), 1.4f);
         StandardMaterial3D red = Flat(new Color(0.8f, 0.1f, 0.08f), 0.6f);
         StandardMaterial3D white = Flat(new Color(0.92f, 0.92f, 0.9f), 0.6f);
-        StandardMaterial3D floor = Flat(new Color(0.32f, 0.3f, 0.3f), 0.8f);
-        StandardMaterial3D foam = Flat(new Color(0.42f, 0.26f, 0.55f), 1f);
-        StandardMaterial3D inner = Flat(new Color(0.55f, 0.55f, 0.58f), 0.8f);
+        EnsureRadioMaterials();
+        StandardMaterial3D floor = _radioFloor;
+        StandardMaterial3D facade = _radioFacade;
 
         AddBox(st, new Vector3(0f, 0.01f, 0f), new Vector3(30f, 0.02f, 30f), gravel, false);
 
@@ -53,13 +52,13 @@ public partial class CityGenerator
         float cx = (x0 + x1) * 0.5f, cz = (z0 + z1) * 0.5f;
         AddBox(st, new Vector3(cx, 0.03f, cz), new Vector3(x1 - x0, 0.04f, z1 - z0), floor, false);
         AddBox(st, new Vector3(cx, h, cz), new Vector3(x1 - x0 + 0.4f, 0.3f, z1 - z0 + 0.4f), wall);
-        AddBox(st, new Vector3(cx, h * 0.5f, z0), new Vector3(x1 - x0, h, t), wall);
-        AddBox(st, new Vector3(x0, h * 0.5f, cz), new Vector3(t, h, z1 - z0), wall);
-        AddBox(st, new Vector3(x1, h * 0.5f, cz), new Vector3(t, h, z1 - z0), wall);
+        AddBox(st, new Vector3(cx, h * 0.5f, z0), new Vector3(x1 - x0, h, t), facade);
+        AddBox(st, new Vector3(x0, h * 0.5f, cz), new Vector3(t, h, z1 - z0), facade);
+        AddBox(st, new Vector3(x1, h * 0.5f, cz), new Vector3(t, h, z1 - z0), facade);
         const float doorA = -7f, doorB = -5.4f;
-        AddBox(st, new Vector3((x0 + doorA) * 0.5f, h * 0.5f, z1), new Vector3(doorA - x0, h, t), wall);
-        AddBox(st, new Vector3((doorB + x1) * 0.5f, h * 0.5f, z1), new Vector3(x1 - doorB, h, t), wall);
-        AddBox(st, new Vector3((doorA + doorB) * 0.5f, (2.4f + h) * 0.5f, z1), new Vector3(doorB - doorA, h - 2.4f, t), wall);
+        AddBox(st, new Vector3((x0 + doorA) * 0.5f, h * 0.5f, z1), new Vector3(doorA - x0, h, t), facade);
+        AddBox(st, new Vector3((doorB + x1) * 0.5f, h * 0.5f, z1), new Vector3(x1 - doorB, h, t), facade);
+        AddBox(st, new Vector3((doorA + doorB) * 0.5f, (2.4f + h) * 0.5f, z1), new Vector3(doorB - doorA, h - 2.4f, t), facade);
         // Vitrine do estúdio e letreiro aceso.
         AddBox(st, new Vector3(-1.8f, 2.0f, z1), new Vector3(4.2f, 1.6f, 0.3f), _glass, false);
         AddBox(st, new Vector3(-10.2f, 2.0f, z1), new Vector3(4.2f, 1.6f, 0.3f), _glass, false);
@@ -77,37 +76,8 @@ public partial class CityGenerator
             Position = new Vector3((doorA + doorB) * 0.5f, 2.75f, z1 + 0.22f),
         });
 
-        // Por dentro: espuma acústica, mesa de som, microfones, discos e o rádio no ar.
-        for (float x = x0 + 0.8f; x < x1 - 0.5f; x += 1.2f)
-            AddBox(st, new Vector3(x, 2.6f, z0 + 0.21f), new Vector3(1.0f, 2.4f, 0.08f), foam, false);
-        AddBox(st, new Vector3(-6f, 0.45f, z0 + 1.6f), new Vector3(5f, 0.9f, 1.2f), wall);
-        RadioConsolePoint = st.Position + new Vector3(-6f, 0f, z0 + 1.6f);
-        AddBox(st, new Vector3(-6f, 0.93f, z0 + 1.55f), new Vector3(4.6f, 0.06f, 0.9f), _darkMetal, false);
-        for (int i = 0; i < 18; i++)
-        {
-            float x = -8.1f + i * 0.25f;
-            AddBox(st, new Vector3(x, 1.0f, z0 + 1.5f + (i % 3) * 0.05f), new Vector3(0.05f, 0.08f, 0.12f), i % 4 == 0 ? red : white, false);
-        }
-        AddBox(st, new Vector3(-6f, 1.35f, z0 + 1.15f), new Vector3(1.8f, 0.8f, 0.1f), green, false); // VU / monitor
-        foreach (float mx in new[] { -7.6f, -4.4f })
-        {
-            AddCylinder(st, new Vector3(mx, 1.25f, z0 + 2.0f), 0.015f, 0.6f, _darkMetal);
-            AddCylinder(st, new Vector3(mx, 1.6f, z0 + 2.0f), 0.06f, 0.18f, _darkMetal);
-            AssetProps.Spawn(st, AssetProps.Furniture + "chair_C.gltf", new Vector3(mx, 0.03f, z0 + 2.8f), Mathf.Pi, 0.75f, new Vector3(0.55f, 0.9f, 0.55f));
-        }
-        // Estante de discos.
-        AddBox(st, new Vector3(x1 - 0.5f, 1.2f, cz), new Vector3(0.6f, 2.4f, 5f), _trunk);
-        for (int i = 0; i < 30; i++)
-            AddBox(st, new Vector3(x1 - 0.8f, 0.4f + (i % 5) * 0.45f, cz - 2.2f + (i / 5) * 0.8f), new Vector3(0.05f, 0.32f, 0.32f), Flat(WallPalette[i % WallPalette.Length] * 1.6f, 0.5f), false);
-        st.AddChild(new OmniLight3D { Position = new Vector3(cx, h - 0.6f, cz), LightColor = new Color(0.9f, 0.8f, 1f), LightEnergy = 2.2f, OmniRange = 11f });
-        st.AddChild(new OmniLight3D { Position = new Vector3(-6f, 2.6f, z0 + 2.5f), LightColor = new Color(1f, 0.85f, 0.7f), LightEnergy = 1.5f, OmniRange = 6f });
-        // Revestimento claro por dentro (as paredes de fora são escuras).
-        AddBox(st, new Vector3(cx, h * 0.5f, z0 + 0.14f), new Vector3(x1 - x0 - 0.4f, h - 0.1f, 0.02f), inner, false);
-        AddBox(st, new Vector3(x0 + 0.14f, h * 0.5f, cz), new Vector3(0.02f, h - 0.1f, z1 - z0 - 0.4f), inner, false);
-        AddBox(st, new Vector3(x1 - 0.14f, h * 0.5f, cz), new Vector3(0.02f, h - 0.1f, z1 - z0 - 0.4f), inner, false);
-        AddBox(st, new Vector3(cx, h - 0.16f, cz), new Vector3(x1 - x0 - 0.4f, 0.02f, z1 - z0 - 0.4f), inner, false);
-        AddBox(st, new Vector3(cx, h - 0.2f, cz), new Vector3(2.4f, 0.05f, 0.3f), Emissive(new Color(1f, 0.95f, 1f), 1.8f), false);
-        BuildRadioProp(st, new Vector3(-6f, 0.96f, z0 + 1.9f), 0f, true, -2f);
+        // Por dentro (v0.10.1): recepção, cabine, gravação, discoteca, escritório e servidores.
+        BuildRadioInterior(st, x0, x1, z0, z1, h, doorA, doorB);
         // Caixa de som na fachada: quem passa na calçada ouve a rádio.
         st.AddChild(new RadioPlayer { Name = "FacadeSpeaker", On = true, VolumeDb = -8f, UnitSize = 5f, MaxDistance = 28f, Position = new Vector3((doorA + doorB) * 0.5f, 3.4f, z1 + 0.4f) });
         // Parabólica no telhado.
@@ -131,7 +101,7 @@ public partial class CityGenerator
             (new Vector3(-9f, muroH * 0.5f, 14.5f), new Vector3(11f, muroH, 0.2f)),
             (new Vector3(7f, muroH * 0.5f, 14.5f), new Vector3(15f, muroH, 0.2f)),
         })
-            WallWithRailing(st, p, s, wall, 1.0f);
+            WallWithRailing(st, p, s, _radioMuro, 1.0f); // muro rebocado com a faixa da rádio (textura)
         BuildPedestrianGate(st, new Vector3(14.5f, 0f, gateZ), gateW, muroH + 1.0f);
         RegisterObstacle(st.Position + new Vector3(-6.2f, 0f, 15f));
         Poster(st, new Vector3(-12f, 0.7f, 14.55f), 0f, 0.9f);

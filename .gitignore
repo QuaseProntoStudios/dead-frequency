@@ -2,6 +2,8 @@
 .godot/
 /android/
 *.translation
+*.uid
+*.import
 
 # .NET
 .mono/
@@ -37,3 +39,4 @@ docs/**/*.uid
 # Chaves de assinatura do Android: nunca no repositório (ficam nos segredos ANDROID_KEYSTORE_* do GitHub).
 *.keystore
 *.jks
+site/data/builds.json

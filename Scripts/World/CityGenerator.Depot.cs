@@ -336,6 +336,13 @@ public partial class CityGenerator
         body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(1.2f, 2.2f, 2.4f) } });
         fork.AddChild(body);
 
+        // v0.10.1: empilhadeira do Meshy com rodas de verdade (o Meshy faz sem rodas).
+        if (MeshyVehicles.HasProp("empilhadeira"))
+        {
+            MeshyVehicles.BuildWheeledProp(fork, "empilhadeira", new Vector3(1.15f, 2.4f, 2.6f), -1, 0.08f, 0.27f, 0.22f, new[] { -0.12f, 0.3f }, 0f);
+            return;
+        }
+
         // Frente (garfos) = -Z.
         AddBox(fork, new Vector3(0f, 0.55f, 0.35f), new Vector3(1.1f, 0.7f, 1.7f), _forkYellow, false); // chassi
         AddBox(fork, new Vector3(0f, 0.6f, 1.25f), new Vector3(1.1f, 0.8f, 0.3f), _darkMetal, false); // contrapeso
@@ -491,8 +498,8 @@ public partial class CityGenerator
         // v0.9.9: caminhões mais para a frente do pátio, liberando o portão novo do lado -X (z -5..5).
         (VehicleKind Kind, Vector3 Pos, float RotDeg)[] fleet =
         {
-            (VehicleKind.TruckYellow, new Vector3(-13.6f, 0.3f, 9f), 90f),
-            (VehicleKind.TruckRed, new Vector3(-13.6f, 0.3f, 14.5f), 90f),
+            (VehicleKind.TruckYellow, new Vector3(-12.2f, 0.3f, 8.5f), 90f),
+            (VehicleKind.TruckRed, new Vector3(-12.2f, 0.3f, 12.2f), 90f),
             (VehicleKind.Moto, new Vector3(11.2f, 0.3f, -2.6f), 20f),
         };
         foreach ((VehicleKind kind, Vector3 pos, float rot) in fleet)
@@ -500,8 +507,8 @@ public partial class CityGenerator
 
         // Táxi da cooperativa e van de viagem, lado a lado no canto da frente encostados no muro +X,
         // de bico para o portão desse lado (o orelhão do pátio fica em x 8, z 16,6: longe do caminho).
-        Taxi = Park(VehicleFactory.BuildTaxi(), new Vector3(15.4f, 0.3f, 13f), 180f);
-        TravelVan = Park(VehicleFactory.BuildTravelVan(), new Vector3(12.2f, 0.3f, 13f), 180f);
+        Taxi = Park(VehicleFactory.BuildTaxi(), new Vector3(13.4f, 0.3f, 11.5f), 180f);
+        TravelVan = Park(VehicleFactory.BuildTravelVan(), new Vector3(10.6f, 0.3f, 11.5f), 180f);
 
         VanController Park(VanController v, Vector3 pos, float rotDeg)
         {

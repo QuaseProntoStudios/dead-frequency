@@ -356,16 +356,20 @@ public partial class CityGenerator : Node3D
             int x = chunk.Coordinate.X;
             int z = chunk.Coordinate.Z;
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetLampForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildPoleWiresForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildBikeLanesForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetDrainageForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildSpeedBumpsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildParkedCarsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetSignsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildPhoneBoothsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildHydrantsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetPropsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStrayDogsForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildRoadPatchesForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildNoParkingSignsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildCurbMarkingsForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildTrashBinsForBlock(x, z));
 
             StaticBatcher.Merge(root);
             OptimizeVisibility(root);
@@ -421,16 +425,20 @@ public partial class CityGenerator : Node3D
         int bx = coordinate.X;
         int bz = coordinate.Z;
         BuildStreetLampForBlock(bx, bz);
+        BuildPoleWiresForBlock(bx, bz);
         BuildBikeLanesForBlock(bx, bz);
         BuildStreetDrainageForBlock(bx, bz);
+        BuildSpeedBumpsForBlock(bx, bz);
         BuildParkedCarsForBlock(bx, bz);
         BuildStreetSignsForBlock(bx, bz);
         BuildPhoneBoothsForBlock(bx, bz);
         BuildHydrantsForBlock(bx, bz);
         BuildStreetPropsForBlock(bx, bz);
         BuildStrayDogsForBlock(bx, bz);
+        BuildRoadPatchesForBlock(bx, bz);
         BuildNoParkingSignsForBlock(bx, bz);
         BuildCurbMarkingsForBlock(bx, bz);
+        BuildTrashBinsForBlock(bx, bz);
     }
 
     /// <summary>Descarta apenas a geometria do chunk; os dados lógicos permanecem na memória.</summary>
@@ -754,12 +762,16 @@ public partial class CityGenerator : Node3D
             BuildCurbMarkings();
             BuildBikeLanes();
             BuildStreetDrainage();
+            BuildSpeedBumps();
             BuildStreetLamps();
+            BuildPoleWires();
             BuildStreetSigns();
             BuildPhoneBooths();
             BuildHydrants();
+            BuildTrashBins();
             BuildStreetProps();
             BuildStrayDogs();
+            BuildRoadPatches();
             BuildParkedCars();
             float legacyOutside = Radius * Period + Period * 0.5f + RoadWidth * 0.5f + 6f;
             BuildRadioTower(new Vector3(-legacyOutside, 0f, -legacyOutside));
@@ -923,12 +935,35 @@ public partial class CityGenerator : Node3D
     /// <summary>Otimização (v0.9.7): peça pequena (banco, placa, ar-condicionado, lixeira...) some além de
     /// 90 m e média além de 170 m, dentro da neblina; luz de poste apaga suave além de 70 m. Prédios e
     /// chão ficam sempre. Quem já tem distância própria (capim, árvores) não é mexido.</summary>
+    /// <summary>
+    /// Até onde as luzes (postes, holofotes, lâmpadas) acendem. No renderizador de compatibilidade (celular) cada luz
+    /// que toca um objeto desenha esse objeto de novo: no teste da avenida, encurtar de 70 m para 30 m cortou ~40% das
+    /// chamadas de desenho. No PC (Forward+) as luzes são baratas e continuam até 70 m.
+    /// </summary>
+    private static float LightFadeBegin =>
+        _lightFadeBegin > 0f ? _lightFadeBegin
+            : _lightFadeBegin = RenderingServer.GetCurrentRenderingMethod() == "gl_compatibility" ? 30f : 70f;
+    private static float _lightFadeBegin;
+
     public static void OptimizeVisibility(Node root)
     {
         foreach (Node n in root.FindChildren("*", "", true, false))
         {
             switch (n)
             {
+                // Letreiros pequenos (Label3D) não dão para ler de longe e cada um custa 1–2 chamadas de desenho
+                // (texto + contorno): somem a partir de 45 m.
+                case Label3D lab when lab.VisibilityRangeEnd <= 0f && lab.Billboard == BaseMaterial3D.BillboardModeEnum.Disabled:
+                {
+                    Vector3 size = lab.GetAabb().Size * lab.GlobalTransform.Basis.Scale;
+                    if (Mathf.Max(size.X, Mathf.Max(size.Y, size.Z)) < 2f)
+                    {
+                        lab.VisibilityRangeEnd = 45f;
+                        lab.VisibilityRangeEndMargin = 5f;
+                        lab.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+                    }
+                    break;
+                }
                 case GeometryInstance3D g when g.VisibilityRangeEnd <= 0f && g is not MultiMeshInstance3D:
                 {
                     Aabb box = g is VisualInstance3D v ? v.GetAabb() : new Aabb();
@@ -950,8 +985,8 @@ public partial class CityGenerator : Node3D
                     if (!l.DistanceFadeEnabled)
                     {
                         l.DistanceFadeEnabled = true;
-                        l.DistanceFadeBegin = 70f;
-                        l.DistanceFadeLength = 20f;
+                        l.DistanceFadeBegin = LightFadeBegin;
+                        l.DistanceFadeLength = LightFadeBegin * 0.3f;
                         l.DistanceFadeShadow = 30f;
                     }
                     break;
@@ -999,7 +1034,7 @@ public partial class CityGenerator : Node3D
         _groundMaterial.SetShaderParameter("asphalt_tex", GD.Load<Texture2D>("res://Assets/Textures/City/asphalt.png"));
         _sidewalkMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/sidewalk.gdshader") };
         _sidewalkMaterial.SetShaderParameter("slab_tex", GD.Load<Texture2D>("res://Assets/Textures/City/sidewalk.png"));
-        _sidewalkMaterial.SetShaderParameter("pt_tex", GD.Load<Texture2D>("res://Assets/Textures/City/sidewalk_pt.svg"));
+        _sidewalkMaterial.SetShaderParameter("pt_tex", GD.Load<Texture2D>("res://Assets/Textures/City/sidewalk_pt.png"));
         _sidewalkMaterial.SetShaderParameter("block_period", Period);
         _sidewalkMaterial.SetShaderParameter("block_half", BlockSize * 0.5f);
         _sidewalkMaterial.SetShaderParameter("curb_height", CurbHeight);
@@ -1441,9 +1476,13 @@ public partial class CityGenerator : Node3D
         {
             foreach (WorldParkTreePlan treePlan in blockPlan.ParkTrees)
             {
-                if (NatureKit.Spawn(block, treePlan.Model, treePlan.Position, treePlan.RotationY,
-                    treePlan.Scale * 0.7f, 0.25f) != null)
+                Node3D planned = NatureKit.Spawn(block, treePlan.Model, treePlan.Position, treePlan.RotationY,
+                    treePlan.Scale * 0.7f, 0.25f);
+                if (planned != null)
+                {
+                    AddWhitewash(planned, treePlan.Scale * 0.7f);
                     continue;
+                }
 
                 var fallbackTree = new StaticBody3D
                 {
@@ -1479,8 +1518,12 @@ public partial class CityGenerator : Node3D
             float scale = _rng.RandfRange(0.8f, 1.4f);
             // Árvore da Quaternius (Stylized Nature); se o modelo faltar, volta para a de cones.
             string model = NatureKit.CommonTrees[AssetProps.Hash(pos, 4) % NatureKit.CommonTrees.Length];
-            if (NatureKit.Spawn(block, model, pos, AssetProps.Hash(pos, 7) % 628 / 100f, scale * 0.7f, 0.25f) != null)
+            Node3D spawned = NatureKit.Spawn(block, model, pos, AssetProps.Hash(pos, 7) % 628 / 100f, scale * 0.7f, 0.25f);
+            if (spawned != null)
+            {
+                AddWhitewash(spawned, scale * 0.7f);
                 continue;
+            }
             var tree = new StaticBody3D { Position = pos, CollisionLayer = 1, CollisionMask = 0 };
             tree.AddChild(new CollisionShape3D { Shape = new CylinderShape3D { Radius = 0.25f, Height = 3f }, Position = new Vector3(0f, 1.5f, 0f) });
             AddCylinder(tree, new Vector3(0f, 1.2f * scale, 0f), 0.18f * scale, 2.4f * scale, _trunk);
@@ -1656,17 +1699,22 @@ public partial class CityGenerator : Node3D
         // v0.9.9: portão novo em -X (pedido dos testes) e grade de metal em cima do muro da cidade.
         float wallH = farm ? 1.2f : 1.3f;
         float gate = 10f;
-        float seg = (BlockSize - gate) * 0.5f;
         Material wallMat = farm ? _trunk : _muro;
+        // v0.10.1: na cidade o muro recua e a calçada contorna o depósito como nos outros quarteirões
+        // (nos portões a guia é rebaixada: sem calçada, a van entra direto).
+        float wh = farm ? half : half - SidewalkWidth;
+        float seg = wh - gate * 0.5f;
+        if (!farm)
+            BuildDepotSidewalk(depot, half, gate);
         (Vector3 c, Vector3 s)[] walls =
         {
-            (new Vector3(0f, wallH * 0.5f, -half), new Vector3(BlockSize, wallH, 0.3f)),
-            (new Vector3(-half + seg * 0.5f, wallH * 0.5f, half), new Vector3(seg, wallH, 0.3f)),
-            (new Vector3(half - seg * 0.5f, wallH * 0.5f, half), new Vector3(seg, wallH, 0.3f)),
-            (new Vector3(half, wallH * 0.5f, -half + seg * 0.5f), new Vector3(0.3f, wallH, seg)),
-            (new Vector3(half, wallH * 0.5f, half - seg * 0.5f), new Vector3(0.3f, wallH, seg)),
-            (new Vector3(-half, wallH * 0.5f, -half + seg * 0.5f), new Vector3(0.3f, wallH, seg)),
-            (new Vector3(-half, wallH * 0.5f, half - seg * 0.5f), new Vector3(0.3f, wallH, seg)),
+            (new Vector3(0f, wallH * 0.5f, -wh), new Vector3(wh * 2f, wallH, 0.3f)),
+            (new Vector3(-wh + seg * 0.5f, wallH * 0.5f, wh), new Vector3(seg, wallH, 0.3f)),
+            (new Vector3(wh - seg * 0.5f, wallH * 0.5f, wh), new Vector3(seg, wallH, 0.3f)),
+            (new Vector3(wh, wallH * 0.5f, -wh + seg * 0.5f), new Vector3(0.3f, wallH, seg)),
+            (new Vector3(wh, wallH * 0.5f, wh - seg * 0.5f), new Vector3(0.3f, wallH, seg)),
+            (new Vector3(-wh, wallH * 0.5f, -wh + seg * 0.5f), new Vector3(0.3f, wallH, seg)),
+            (new Vector3(-wh, wallH * 0.5f, wh - seg * 0.5f), new Vector3(0.3f, wallH, seg)),
         };
         foreach ((Vector3 c, Vector3 s) in walls)
         {
@@ -1687,6 +1735,24 @@ public partial class CityGenerator : Node3D
             AddCylinder(depot, new Vector3(13f, 0.45f, -half + 15f + i * 0.9f), 0.35f, 0.9f, _darkMetal);
     }
 
+    /// <summary>Calçada em volta do depósito (faixa de SidewalkWidth junto da rua), aberta nos três portões.</summary>
+    private void BuildDepotSidewalk(Node3D depot, float half, float gate)
+    {
+        float w = SidewalkWidth, y = CurbHeight * 0.5f;
+        float mid = half - w * 0.5f;
+        float run = (half * 2f - gate) * 0.5f; // de cada lado do portão
+        float off = gate * 0.5f + run * 0.5f;
+        // Fundos (-Z): faixa inteira, sem portão.
+        AddBox(depot, new Vector3(0f, y, -mid), new Vector3(half * 2f, CurbHeight, w), _sidewalkMaterial);
+        // Frente (+Z) e laterais (±X): duas faixas, uma de cada lado do portão.
+        foreach (float sgn in new[] { -1f, 1f })
+        {
+            AddBox(depot, new Vector3(sgn * off, y, mid), new Vector3(run, CurbHeight, w), _sidewalkMaterial);
+            AddBox(depot, new Vector3(mid, y, sgn * off), new Vector3(w, CurbHeight, run), _sidewalkMaterial);
+            AddBox(depot, new Vector3(-mid, y, sgn * off), new Vector3(w, CurbHeight, run), _sidewalkMaterial);
+        }
+    }
+
     // ------------------------------------------------------------------ postes
 
     private void BuildStreetLamps()
@@ -1703,7 +1769,7 @@ public partial class CityGenerator : Node3D
     {
         float edge = BlockSize * 0.5f - 0.7f;
         Vector3 c = BlockCenter(bx, bz);
-        float y = (bx == 0 && bz == 0) ? 0f : CurbHeight;
+        float y = CurbHeight; // o depósito também tem calçada (v0.10.1)
         // Lado +X (ilumina a rua vertical) e lado +Z (ilumina a avenida).
         BuildLamp(c + new Vector3(edge, y, -BlockSize * 0.25f), Vector3.Right);
         BuildLamp(c + new Vector3(-BlockSize * 0.25f, y, edge), Vector3.Back);
@@ -1721,6 +1787,7 @@ public partial class CityGenerator : Node3D
         AddBox(lamp, armCenter, armSize, _darkMetal, false);
         Vector3 headPos = towardRoad * 1.5f + new Vector3(0f, height - 0.25f, 0f);
         AddBox(lamp, headPos, new Vector3(0.6f, 0.15f, 0.6f), _lampHead, false);
+        AddPoleFlyer(lamp, basePos, towardRoad);
         (_activeChunkRoot ?? _staticRoot).AddChild(lamp);
 
         var light = new OmniLight3D

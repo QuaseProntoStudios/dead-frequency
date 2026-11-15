@@ -63,7 +63,9 @@ public partial class PhoneBooth : Area3D, IInteractable
     };
 
     private AudioStreamPlayer3D _sound;
-    private double _cooldown;
+    // Fim da espera em ms (Time.GetTicksMsec): sem _Process por orelhão só para descontar o tempo.
+    private ulong _busyUntilMs;
+    private bool Busy => Time.GetTicksMsec() < _busyUntilMs;
     private static readonly RandomNumberGenerator Rng = new();
 
     public override void _Ready()
@@ -202,7 +204,8 @@ public partial class PhoneBooth : Area3D, IInteractable
 
     private static StandardMaterial3D OuterMaterial(PhoneBrand brand, string color)
     {
-        string key = $"{BrandName(brand).ToLowerInvariant()}_{color}";
+        // Nome do arquivo sem acento (phone_shell_telefobica_lime.png); BrandName tem "Telefóbica" com acento.
+        string key = $"{brand.ToString().ToLowerInvariant()}_{color}";
         if (Outer.TryGetValue(key, out StandardMaterial3D m))
             return m;
         string path = $"res://Assets/Textures/phone_shell_{key}.png";
@@ -217,12 +220,6 @@ public partial class PhoneBooth : Area3D, IInteractable
 
     private static StandardMaterial3D InnerMaterial() =>
         _inner ??= new StandardMaterial3D { AlbedoColor = new Color(0.72f, 0.72f, 0.7f), Roughness = 0.8f, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
-
-    public override void _Process(double delta)
-    {
-        if (_cooldown > 0)
-            _cooldown -= delta;
-    }
 
     /// <summary>Cor da marca (minimapa e mensagens).</summary>
     public static Color BrandColor(PhoneBrand brand) => brand switch
@@ -255,13 +252,13 @@ public partial class PhoneBooth : Area3D, IInteractable
     }
 
     public string GetInteractionPrompt(PlayerController player) =>
-        _cooldown > 0 ? "Orelhão (ocupado...)" : Disabled ? "[E] Tentar o orelhão da Telefóbica (desativado)" : $"[E] Usar o orelhão da {BrandName(Brand)}";
+        Busy ? "Orelhão (ocupado...)" : Disabled ? "[E] Tentar o orelhão da Telefóbica (desativado)" : $"[E] Usar o orelhão da {BrandName(Brand)}";
 
-    public bool CanInteract(PlayerController player) => _cooldown <= 0;
+    public bool CanInteract(PlayerController player) => !Busy;
 
     public void Interact(PlayerController player)
     {
-        _cooldown = 6.0;
+        _busyUntilMs = Time.GetTicksMsec() + 6000;
         if (Disabled)
         {
             GameHud.Toast(this, "ORELHÃO TELEFÓBICA: " + DeadLineCalls[Rng.RandiRange(0, DeadLineCalls.Length - 1)], new Color(0.8f, 0.9f, 0.4f), 5.0);

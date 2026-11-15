@@ -36,6 +36,8 @@ public partial class CharacterModel : Node3D
     };
     private int _variant;
     private string _meshyName;
+    /// <summary>Tipo de morador (npc_senhor, npc_moca...), ou null no jogador. Escolhe as falas com voz.</summary>
+    public string NpcKind => _player ? null : _meshyName;
     /// <summary>Os modelos vêm com ~5,2 unidades de altura; 0,34 deixa com ~1,77 m.</summary>
     private const float ModelScale = 0.34f;
 
@@ -64,6 +66,7 @@ public partial class CharacterModel : Node3D
 
     // Modelo animado
     private Skeleton3D _skeleton;
+    private BreathModifier _breath;
     private AnimationPlayer _anim;
     private string _idle, _walk, _run, _work, _jump, _carry;
     /// <summary>Modelo do Meshy (jogador): já vem na altura certa e de tênis.</summary>
@@ -159,6 +162,9 @@ public partial class CharacterModel : Node3D
                 _boneSpine = _skeleton.FindBone(_meshy ? "Spine" : "Spine2");
                 _boneFootL = _skeleton.FindBone("LeftFoot");
                 _boneFootR = _skeleton.FindBone("RightFoot");
+                // Idle respirando (v0.10.1): primeiro modificador do esqueleto, antes do IK.
+                _breath = new BreathModifier { Name = "Breath" };
+                _skeleton.AddChild(_breath);
             }
         }
         else
@@ -291,6 +297,28 @@ public partial class CharacterModel : Node3D
 
     private bool _seated;
     private string _sit;
+    private Vector3 _seatOffset;
+
+    /// <summary>Ajuste do corpo sentado para o banco de cada veículo (VanController.RiderSeatOffset).</summary>
+    public Vector3 SeatOffset
+    {
+        get => _seatOffset;
+        set
+        {
+            if (_seatOffset == value)
+                return;
+            _seatOffset = value;
+            ApplySeatPosition();
+        }
+    }
+
+    private void ApplySeatPosition()
+    {
+        if (GetNodeOrNull<Node3D>("Body") is not Node3D body)
+            return;
+        Vector3 basePos = _straddle ? Vector3.Zero : new(0f, _seated && _sit == null ? -0.45f : (_seated ? 0.05f : 0f), _seated ? 0.1f : 0f);
+        body.Position = basePos + (_seated ? _seatOffset : Vector3.Zero);
+    }
 
     /// <summary>Sentado num banco (motorista/carona): pose de sentado ou, sem ela, o corpo afunda no banco.</summary>
     public void SetSeated(bool seated)
@@ -298,11 +326,36 @@ public partial class CharacterModel : Node3D
         if (_seated == seated)
             return;
         _seated = seated;
-        if (GetNodeOrNull<Node3D>("Body") is Node3D body)
-            body.Position = new Vector3(0f, seated && _sit == null ? -0.45f : (seated ? 0.05f : 0f), seated ? 0.1f : 0f);
-        if (seated && _sit != null)
+        ApplySeatPosition();
+        PlaySeatPose();
+    }
+
+    private bool _straddle;
+
+    /// <summary>
+    /// Montado (moto): em vez da pose de cadeira (que atrapalha o IK dos braços), usa a pose parada com o
+    /// quadril no banco; braços e pernas vêm do IK (manoplas e pedaleiras).
+    /// </summary>
+    public bool Straddle
+    {
+        get => _straddle;
+        set
+        {
+            if (_straddle == value)
+                return;
+            _straddle = value;
+            ApplySeatPosition();
+            PlaySeatPose();
+        }
+    }
+
+    private void PlaySeatPose()
+    {
+        if (_seated && _straddle)
+            Play(_idle, 0.2f);
+        else if (_seated && _sit != null)
             Play(_sit, 0.2f);
-        else if (!seated)
+        else if (!_seated)
             Play(_idle, 0.2f);
     }
 
@@ -321,6 +374,8 @@ public partial class CharacterModel : Node3D
         }
         if (_anim == null)
             return;
+        if (_breath != null)
+            _breath.Resting = _seated || (speed < 0.25f && !Airborne && _current != _work);
         if (_seated)
             return;
         if (Airborne && _jump != null)
@@ -353,6 +408,26 @@ public partial class CharacterModel : Node3D
         }
     }
 
+    private bool _far;
+
+    /// <summary>Esqueleto congelado por estar longe demais (ver SetFar).</summary>
+    public bool IsFar => _far;
+
+    /// <summary>
+    /// Longe demais para ver (a neblina esconde): congela o AnimationPlayer e o idle respirando,
+    /// que custam por osso, por quadro. Volta sozinho quando far = false.
+    /// </summary>
+    public void SetFar(bool far)
+    {
+        if (_far == far || _boxModel)
+            return;
+        _far = far;
+        if (_anim != null)
+            _anim.Active = !far;
+        if (_breath != null)
+            _breath.Active = !far;
+    }
+
     public void SetHeadPitch(float pitch)
     {
         _headPitch = Mathf.Clamp(pitch, -0.8f, 0.8f);
@@ -362,6 +437,7 @@ public partial class CharacterModel : Node3D
 
     public override void _Process(double delta)
     {
+        UpdateIK((float)delta);
         if (Chatty)
             UpdateTalk((float)delta);
         if (!_boxModel && (_equipment.Count > 0 || _leftFoot != null || !_mountsReady))
@@ -386,8 +462,16 @@ public partial class CharacterModel : Node3D
         _talkCooldown = (float)GD.RandRange(18.0, 35.0);
         if (GD.Randf() > 0.7f)
             return; // às vezes a pessoa só passa calada
-        string line = Lines != null && Lines.Length > 0 && GD.Randf() < 0.6f ? Lines[GD.Randi() % (uint)Lines.Length] : SidewalkTalk.LineFor(player);
-        SidewalkTalk.Say(this, line, 2.05f * Scale.Y);
+        if (Lines != null && Lines.Length > 0 && GD.Randf() < 0.6f)
+        {
+            SidewalkTalk.Say(this, Lines[GD.Randi() % (uint)Lines.Length], 2.05f * Scale.Y);
+            return;
+        }
+        // Metade das vezes, uma das falas com voz do tipo de morador; senão, as frases de calçada (só balão).
+        if (GD.Randf() < 0.5f && SidewalkTalk.TryKindLine(NpcKind, out int index, out string text))
+            SidewalkTalk.SayVoiced(this, NpcKind, index, text, 2.05f * Scale.Y);
+        else
+            SidewalkTalk.Say(this, SidewalkTalk.LineFor(player), 2.05f * Scale.Y);
     }
 
     /// <summary>Leva os pontos de encaixe para onde os ossos estão neste quadro.</summary>

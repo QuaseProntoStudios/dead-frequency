@@ -4,10 +4,18 @@
 # se houver versão nova, baixa sozinho (ou pergunta, se as automáticas estiverem desligadas).
 # Barra de progresso no download e na instalação, botão JOGAR e engrenagem com as configurações.
 # Configurações em user://launcher.cfg; a versão instalada fica em <pasta>/version.txt.
+# Canal de atualização: estável (releases públicos da main) ou pré-release (builds vX.Y.Z.N-pre da Internal,
+# instáveis e não testados; a pessoa confirma um aviso antes de ligar).
+# Autoatualização: cada release publica launcher-version.txt. Se o número for maior que LAUNCHER_VERSION,
+# o launcher baixa o executável novo, confere o SHA256 (SHA256SUMS.txt), troca o próprio arquivo e reabre.
+# Suba LAUNCHER_VERSION só quando mudar o launcher: sem mudança, o CI reaproveita o launcher da release anterior.
 extends Control
 
 const REPO := "dieguesmosken/dead-frequency"
+## Versão do launcher (inteiro). Suba quando mudar este app: é o que faz os launchers antigos se atualizarem.
+const LAUNCHER_VERSION := 2
 const API := "https://api.github.com/repos/%s/releases/latest" % REPO
+const API_ALL := "https://api.github.com/repos/%s/releases?per_page=20" % REPO
 const RELEASES := "https://github.com/%s/releases" % REPO
 const CFG := "user://launcher.cfg"
 
@@ -21,6 +29,8 @@ const BG := Color(0.03, 0.06, 0.05)
 var cfg := ConfigFile.new()
 var install_dir := ""
 var auto_update := true
+## Recebe as pré-releases da Internal (instáveis).
+var prerelease := false
 var installed := ""
 var latest := ""
 var asset_url := ""
@@ -29,6 +39,11 @@ var notes := ""
 
 var http_api: HTTPRequest
 var http_dl: HTTPRequest
+var http_self: HTTPRequest
+var _self_step := ""
+var _self_url := ""
+var _self_sha := ""
+var _pending_release = null
 var downloading := false
 var dl_started := 0.0
 var installing := false
@@ -51,6 +66,7 @@ var settings_open := false
 func _ready() -> void:
 	get_window().title = "Dead Frequency Launcher"
 	_build_ui()
+	_cleanup_old_self()
 	_load_cfg()
 	_use_system_proxy()
 	if install_dir == "":
@@ -170,6 +186,11 @@ void fragment() {
 	http_dl.max_redirects = 10
 	http_dl.request_completed.connect(_on_download)
 	add_child(http_dl)
+	http_self = HTTPRequest.new()
+	http_self.max_redirects = 10
+	http_self.timeout = 120
+	http_self.request_completed.connect(_on_self)
+	add_child(http_self)
 
 
 ## Etiqueta amarela "ALPHA" ao lado da versão (o jogo está em alfa).
@@ -237,7 +258,7 @@ func _set_status(text: String, color := Color(0.75, 0.82, 0.8)) -> void:
 
 func _refresh_version() -> void:
 	installed = _read_installed()
-	version_label.text = installed if installed != "" else "não instalado"
+	version_label.text = (installed + ("  (pré-release)" if installed.ends_with("-pre") else "")) if installed != "" else "não instalado"
 	play.disabled = not _game_exists() or downloading or installing
 
 
@@ -288,6 +309,7 @@ func _load_cfg() -> void:
 	cfg.load(CFG)
 	install_dir = cfg.get_value("launcher", "install_dir", "")
 	auto_update = cfg.get_value("launcher", "auto_update", true)
+	prerelease = cfg.get_value("launcher", "prerelease", false)
 	_refresh_version()
 
 
@@ -295,6 +317,7 @@ func _save_cfg(save_auto := false) -> void:
 	cfg.set_value("launcher", "install_dir", install_dir)
 	if save_auto or cfg.has_section_key("launcher", "auto_update"):
 		cfg.set_value("launcher", "auto_update", auto_update)
+	cfg.set_value("launcher", "prerelease", prerelease)
 	cfg.save(CFG)
 
 
@@ -434,6 +457,19 @@ func _toggle_settings() -> void:
 		auto_update = v
 		_save_cfg(true))
 	dialog_box.add_child(auto)
+	var pre := CheckButton.new()
+	pre.text = "Receber pré-releases (instável)"
+	pre.button_pressed = prerelease
+	pre.add_theme_font_size_override("font_size", 16)
+	pre.add_theme_color_override("font_color", AMBER)
+	pre.toggled.connect(func(v):
+		if v:
+			_ask_prerelease()
+		else:
+			_set_prerelease(false))
+	dialog_box.add_child(pre)
+	if prerelease:
+		dialog_box.add_child(_label("⚠ Canal de pré-release ligado: builds de teste da Internal.", 13, AMBER))
 	var row1 := HBoxContainer.new()
 	row1.add_theme_constant_override("separation", 8)
 	var change := _button("Trocar pasta", 15, false)
@@ -466,13 +502,46 @@ func _toggle_settings() -> void:
 	_dialog_buttons([site, close])
 
 
+func _ask_prerelease() -> void:
+	settings_open = false
+	_open_dialog("⚠ Pré-releases: instável e não testado",
+		"As pré-releases são builds automáticas de cada mudança em desenvolvimento (canal Internal). "
+		+ "Elas NÃO foram testadas: podem travar, perder o save, quebrar o online ou nem abrir. "
+		+ "Faça backup do seu save antes. Para voltar, desligue esta opção: o launcher reinstala a versão estável.")
+	var no := _button("Cancelar", 16, false)
+	no.pressed.connect(func():
+		_close_dialog()
+		_toggle_settings())
+	var yes := _button("Entendi, quero testar", 16)
+	yes.add_theme_color_override("font_color", AMBER)
+	yes.pressed.connect(func():
+		_close_dialog()
+		_set_prerelease(true))
+	_dialog_buttons([no, yes])
+
+
+func _set_prerelease(value: bool) -> void:
+	prerelease = value
+	_save_cfg(true)
+	_close_dialog()
+	if value:
+		_set_status("Canal de pré-release ligado (instável).", AMBER)
+		_check()
+	elif installed.ends_with("-pre"):
+		# Estava numa pré-release: volta para a estável mais nova.
+		_set_status("Voltando para a versão estável...", AMBER)
+		_check(true)
+	else:
+		_set_status("Canal estável.", GREEN)
+
+
 # ================================================================ GitHub
 
 func _check(force_download := false) -> void:
 	_refresh_version()
 	_set_status("Procurando atualizações...")
 	bar.value = 0
-	var err := http_api.request(API, ["User-Agent: DeadFrequencyLauncher", "Accept: application/vnd.github+json"])
+	var err := http_api.request(API_ALL if prerelease else API, ["User-Agent: DeadFrequencyLauncher", "Accept: application/vnd.github+json"])
 	if err != OK:
 		_offline("Não deu para procurar atualizações (%s)." % error_string(err))
 	set_meta("force", force_download)
@@ -491,9 +560,17 @@ func _on_api(result: int, code: int, _headers: PackedStringArray, body: PackedBy
 		_offline("Sem conexão com o GitHub.")
 		return
 	var data = JSON.parse_string(body.get_string_from_utf8())
+	if typeof(data) == TYPE_ARRAY:
+		data = _pick_release(data)
 	if typeof(data) != TYPE_DICTIONARY:
 		_offline("Resposta estranha do GitHub.")
 		return
+	if _start_self_update(data):
+		return # depois de ver o launcher novo (ou desistir), continua em _handle_release
+	_handle_release(data)
+
+
+func _handle_release(data: Dictionary) -> void:
 	latest = str(data.get("tag_name", ""))
 	notes = str(data.get("body", "")).split("\n---")[0].strip_edges().left(420)
 	asset_url = ""
@@ -524,15 +601,134 @@ func _on_api(result: int, code: int, _headers: PackedStringArray, body: PackedBy
 	_refresh_version()
 
 
+## Canal de pré-release: a release mais nova da lista (pré ou estável), sem rascunhos.
+func _pick_release(list: Array):
+	var best = null
+	for r in list:
+		if typeof(r) != TYPE_DICTIONARY or r.get("draft", false):
+			continue
+		if best == null or _compare(str(r.get("tag_name", "")), str(best.get("tag_name", ""))) > 0:
+			best = r
+	return best
+
+
+## Compara vX.Y.Z[.N-pre]: a estável conta como build 0, então v0.10.0.5-pre > v0.10.0 e v0.10.1 > v0.10.0.9-pre.
 func _compare(a: String, b: String) -> int:
-	var x := a.trim_prefix("v").split(".")
-	var y := b.trim_prefix("v").split(".")
-	for i in 3:
+	var x := a.trim_prefix("v").trim_suffix("-pre").split(".")
+	var y := b.trim_prefix("v").trim_suffix("-pre").split(".")
+	for i in 4:
 		var xi := int(x[i]) if i < x.size() else 0
 		var yi := int(y[i]) if i < y.size() else 0
 		if xi != yi:
 			return 1 if xi > yi else -1
 	return 0
+
+
+# ================================================================ autoatualização do launcher
+
+func _self_exe() -> String:
+	return OS.get_executable_path()
+
+
+## Começa a conferência do launcher novo. false = nada a fazer (segue direto para o jogo).
+func _start_self_update(data: Dictionary) -> bool:
+	if OS.has_feature("editor") or _self_step != "":
+		return false
+	var want := "DeadFrequencyLauncher-windows.exe" if OS.get_name() == "Windows" else "DeadFrequencyLauncher-linux"
+	var ver_url := ""
+	var sums_url := ""
+	_self_url = ""
+	for a in data.get("assets", []):
+		var n := str(a.get("name", ""))
+		var u := str(a.get("browser_download_url", ""))
+		if n == "launcher-version.txt":
+			ver_url = u
+		elif n == "SHA256SUMS.txt":
+			sums_url = u
+		elif n == want:
+			_self_url = u
+	if ver_url == "" or sums_url == "" or _self_url == "":
+		return false
+	_pending_release = data
+	set_meta("sums_url", sums_url)
+	_self_step = "version"
+	if http_self.request(ver_url, ["User-Agent: DeadFrequencyLauncher"]) != OK:
+		_self_done()
+	return true
+
+
+func _on_self(result: int, code: int, _h: PackedStringArray, body: PackedByteArray) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
+		_self_done()
+		return
+	match _self_step:
+		"version":
+			var remote := int(body.get_string_from_utf8().strip_edges())
+			if remote <= LAUNCHER_VERSION:
+				_self_done()
+				return
+			_set_status("Atualizando o launcher (versão %d)..." % remote, CYAN)
+			_self_step = "sums"
+			http_self.request(str(get_meta("sums_url")), ["User-Agent: DeadFrequencyLauncher"])
+		"sums":
+			var want := _self_url.get_file()
+			_self_sha = ""
+			for line in body.get_string_from_utf8().split("\n"):
+				var parts := line.strip_edges().split(" ", false)
+				if parts.size() >= 2 and parts[parts.size() - 1].trim_prefix("*") == want:
+					_self_sha = parts[0].to_lower()
+			if _self_sha == "":
+				_self_done()
+				return
+			_self_step = "exe"
+			http_self.download_file = _self_exe() + ".new"
+			http_self.request(_self_url, ["User-Agent: DeadFrequencyLauncher"])
+		"exe":
+			http_self.download_file = ""
+			_swap_self()
+
+
+## Troca o executável: o atual vira .old (no Windows dá para renomear um .exe aberto), o novo assume e reabre.
+func _swap_self() -> void:
+	var exe := _self_exe()
+	var fresh := exe + ".new"
+	if FileAccess.get_sha256(fresh).to_lower() != _self_sha:
+		DirAccess.remove_absolute(fresh)
+		_set_status("Launcher novo veio corrompido; seguindo com este.", AMBER)
+		_self_done()
+		return
+	DirAccess.remove_absolute(exe + ".old")
+	if DirAccess.rename_absolute(exe, exe + ".old") != OK:
+		DirAccess.remove_absolute(fresh)
+		_set_status("Sem permissão para atualizar o launcher nesta pasta. Baixe o novo na página de releases.", AMBER)
+		_self_done()
+		return
+	if DirAccess.rename_absolute(fresh, exe) != OK:
+		DirAccess.rename_absolute(exe + ".old", exe)
+		_self_done()
+		return
+	if OS.get_name() != "Windows":
+		OS.execute("chmod", ["+x", exe])
+	OS.create_process(exe, [])
+	get_tree().quit()
+
+
+## Sem launcher novo (ou deu errado): continua o fluxo normal do jogo.
+func _self_done() -> void:
+	_self_step = "skip"
+	http_self.download_file = ""
+	if _pending_release != null:
+		var d = _pending_release
+		_pending_release = null
+		_handle_release(d)
+
+
+## Limpa o .old da atualização anterior.
+func _cleanup_old_self() -> void:
+	if not OS.has_feature("editor"):
+		var old := _self_exe() + ".old"
+		if FileAccess.file_exists(old):
+			DirAccess.remove_absolute(old)
 
 
 # ================================================================ download e instalação

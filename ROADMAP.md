@@ -127,9 +127,29 @@ streaming por chunks) estar na Internal.
 | ✅ **Carro do ovo (evento)** | Picape com bandejas de ovo e placa "OVO! 30 por R$ 5" que aparece alguns minutos a cada 15 (aviso na tela quando chega), dando a volta no anel do centro no sentido contrário ao ônibus. Com voz e filtro de alto-falante. |
 | ✅ **Dirigibilidade** | Carros bem mais difíceis de capotar: centro de massa mais baixo, estabilizador em código (barra estabilizadora "de jogo"), limite de rolagem/arfagem, menos esterço em alta velocidade e desvirar sozinho se ficar de lado parado. No teste de curva fechada a 94 km/h, Fusca e táxi capotavam; agora inclinam no máximo 7°. **Saída do carro:** o jogador procura um lugar livre com chão (porta, outro lado, atrás, frente, por cima) em vez de aparecer dentro do muro ou abaixo do chão. |
 | ✅ **Conforto (enjoo)** | Opções > Jogo > Conforto: **Reduzir movimento** (liga tudo de uma vez), câmera estável no carro, vinheta nas bordas com o carro rápido e ponto fixo no meio da tela. O balanço da câmera já vinha desligado. Baseado nas Game Accessibility Guidelines e Xbox Accessibility Guidelines. |
-| ✅ **Vozes da 96.6, dos carros e do Modo História** | 49 falas geradas com o Gemini 3.8 Flash TTS (AI Studio): 34 intervalos da 96.6 (comerciais, eventos, comunicados, vinhetas) tocando entre as músicas, ainda sincronizados pelo relógio; 4 falas do carro do ovo com filtro de megafone; 11 falas dos capítulos I e II, que a caixa de diálogo toca. Vozes e estilos em `docs/radio/VOZES.md`. Falta: 6 falas do capítulo II (limite diário do AI Studio). O `tools/tts/gerar_audios.py` (Amazon Polly) fica de reserva. Depois: vender ovo de verdade (item novo + preço no servidor). |
+| ✅ **Vozes da 96.6, dos carros e do Modo História** | 55 falas geradas com o Gemini 3.8 Flash TTS (AI Studio): 34 intervalos da 96.6 (comerciais, eventos, comunicados, vinhetas) tocando entre as músicas, ainda sincronizados pelo relógio; 4 falas do carro do ovo com filtro de megafone; 17 falas dos capítulos I e II, que a caixa de diálogo toca. Vozes e estilos em `docs/radio/VOZES.md`. As 6 falas do capítulo II foram geradas depois (Algenib e Mako). O `tools/tts/gerar_audios.py` (Amazon Polly) fica de reserva. Depois: vender ovo de verdade (item novo + preço no servidor). |
 | **Online entre PC e celular** | Mesmo servidor e protocolo (WebSocket): sem mudança no `server/`. Testar sala com PC e celular juntos. |
 | 🚧 **Distribuição** | O prerelease da Internal (`vX.Y.Z.N-pre`) traz o `DeadFrequency-…-android.apk`. **Atualizador no próprio jogo** (`AppUpdater`): no celular o menu confere o GitHub, mostra "Nova versão", baixa o APK com progresso e abre o instalador do Android (se não abrir, usa o navegador). Quem tem build da Internal recebe os `-pre`; quem tem o público, só os públicos. O CI grava o build exato em `application/config/version` (`GameVersion.Build`). Instalar por cima precisa da chave do Matheus (segredos `ANDROID_KEYSTORE_*`); com chave de debug, desinstale antes. Link no site e Play Store ficam para depois. |
+
+### v0.10.1 — Correções de interface, modelos e animações
+Versão de correção aberta também para ajustes pedidos antes e tarefas em andamento (ideias do documento "Roadmap Dead Frequency", 14/11/2026).
+| Ideia | Como funciona no jogo |
+|---|---|
+| ✅ **Tecla H esconde o quadro lateral** | O quadro de entregas/profissão (e a faixa do Modo História) ocupa espaço; H alterna mostrar/esconder. |
+| ✅ **Locutor: E toca os comerciais gravados** | Na mesa de som, ler o comercial no ar também toca o áudio gravado da 96.6. |
+| ✅ **Idle respirando** | Jogador e NPCs parados respiram em vez de ficar virando a cabeça. |
+| ✅ **Animações nos veículos** | Ajustar a pose do personagem pilotando a moto e dirigindo o táxi (a moto continua a mesma). |
+| 🚧 **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. Código pronto: cada tipo de morador (`npc_senhor`, `npc_rapaz`, `npc_escritorio`, `npc_moca`, `npc_dona`, `npc_senhora`) tem 3 falas próprias (`SidewalkTalk.KindLines`) que tocam `Audio/Street/<morador>_<n>.ogg` junto do balão, ouvidas até ~14 m; sem o áudio, só o balão. Roteiro em `docs/radio/falas_de_rua.csv`. Falta gravar as 18 falas no Google AI Studio (uma geração por morador, cortada com `tools/tts/cortar_falas.py`). |
+| ✅ **Cidade Brazilcore (Fase 1)** | Lombadas, lixeiras de grade, árvores caiadas, fios e cartazes nos postes, remendos no asfalto, bueiros abertos com galho e bocas de lobo nas guias. |
+| ✅ **Telas de carregamento** | Loading do Modo História e do offline mais bonito, no tema CRT verde. |
+| ✅ **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
+| ✅ **Painel da van** | Monitor CRT mais legível. |
+| ✅ **Orelhão da Telefóbica** | Textura com texto e detalhes, em vez de verde liso. |
+| ✅ **Rádio 96.6 por dentro** | O estúdio virou seis salas (`CityGenerator.RadioInterior.cs`): recepção com balcão, sofá e quadros; cabine do locutor com vidro para a recepção e para a gravação (a mesa de som continua no mesmo lugar, o trabalho de locutor não muda) e luz NO AR dos dois lados; sala de gravação com espuma, microfone com pop filter e gravador de rolo (luz GRAVANDO); discoteca com os 5 discos da programação e 6 fitas (vinheta e comerciais) que tocam ao mirar e apertar E (`RadioMediaInteractable`, um por vez); escritório com computadores de tubo e o quadro da programação; sala dos servidores com racks piscando. Texturas próprias: fachada de concreto azulado, muro com faixa vermelha e branca, parede interna com barrado e piso xadrez (`Assets/Textures/Radio/radio_textures.py.txt`). Sala de câmeras ficou para depois. |
+| ✅ **Calçadas** | Calçadas que faltam em volta da DF Entregas; corrigir a calçada estilo Copacabana que não aparece. |
+| ✅ **Janelas nas quinas** | Janelas dos prédios não podem ficar cortadas ao meio nas quinas. |
+| ✅ **Caixa d'água municipal** | Modelo novo e escada para subir e ver a cidade de cima. |
+| ✅ **Otimização (skills de gamedev)** | Medido antes com o teste de desempenho (`_autotest/perf.gd`, renderizador de compatibilidade): no celular cada luz desenha de novo os objetos que toca, então as luzes da cidade acendem até 30 m no celular (70 m no PC); letreiros pequenos (Label3D) somem a partir de 45 m. Avenida: ~1.800 → ~1.280 chamadas de desenho; dentro da rádio: ~450 → ~385. Rádios longe do jogador param de decodificar a música (voltam no ponto certo pelo relógio), rádios/TVs desligados e orelhões não rodam mais `_Process` a cada quadro (de 52 para 4 nós), e a barra de atalhos não cria strings por quadro. |
 
 ### v0.10.x — Praça Central
 | Ideia | Como funciona no jogo |
@@ -156,9 +176,20 @@ streaming por chunks) estar na Internal.
 | **Duno Mille (com escada)** | Hatch quadrado; com a escada de fibra no teto, ignora o limite de velocidade e anda mais rápido que a viatura. |
 | **Maré-Azar 20V** | Sedã esportivo com temperatura escondida: acelerador no talo na estrada de terra → fumaça preta e motor morto (som pronto). |
 
+### Fases extras (pós-campanha ou v0.13+)
+- **Águas Turvas:** margens do rio principal com mangue e mata fechada, pontes de madeira precárias e uma serraria antiga abandonada, acessadas por barco. Barcos de madeira e chatões para carga pesada, ligados ao sistema de veículos e entregas: combustível, correnteza e trechos estreitos (o "vilão" continua sendo o tempo e o equipamento velho).
+- **Vila do Olaria:** comunidade isolada que depende de suprimentos da cidade; entregas de equipamento de rádio e peças frágeis para restaurar a comunicação da vila e o sinal da 96.6, ligadas à história da rede de rádio do vale.
+
+### Divulgação (shorts)
+- Clima e nostalgia PS1: dia virando noite com neblina, chuva no para-brisa, locuções da 96.6.
+- Perrengues de entrega: carga frágil na estrada de barro, painel da caminhonete (fusíveis, temperatura, CRT) contra o relógio.
+- A vida em Sintonia: caramelo seguindo o espetinho, carro do ovo, capivaras e guarás.
+- Devlog rápido: antes e depois de mecânicas e teste do online PC + celular.
+
 ### Infraestrutura (em paralelo)
 | Tarefa | Detalhe |
 |---|---|
+| **Site oficial (sem prioridade)** | Revisar design e responsividade no celular e gerar uma capa nova com o visual atual. |
 | **Launcher menor** | Hoje o launcher leva o motor Godot inteiro dentro do .exe (~105 MB descompactado), por isso é maior que o zip do jogo (que é compactado). Dá para cortar para ~25–40 MB compilando um "template" do Godot só com o que o launcher usa (sem 3D e física) no CI. |
 | **Atualização incremental** | Em vez de baixar o zip inteiro a cada versão: publicar um manifesto com o hash de cada arquivo e o launcher baixar só o que mudou. O maior arquivo é o `.pck` (todos os assets); separar em um `.pck` base (modelos, sons, texturas — muda pouco) e um de patch (código e cenas) deixa a maioria das atualizações com poucos MB. |
 | **Arte gerada** | Texturas/sprites de muros e fachadas com o SpriteCook e um modelo de jogador novo com o Meshy, quando os conectores estiverem ligados na conversa (hoje não estão). |
@@ -294,7 +325,7 @@ A rádio deve anunciar os próprios estabelecimentos e acontecimentos do mundo d
 Documentação completa em [`docs/README_PARA_IAS.md`](docs/README_PARA_IAS.md). Tom: cotidiano e aventura leve, **sem terror**.
 
 ### Em andamento — Mundo e polimento (foco atual)
-- [ ] **Fase 1 · Cidade (ambientação Brazilcore):** lombadas com física de suspensão, asfalto remendado/bueiros, postes com fios e cartazes, orelhões, lixeiras de grade, calçadas irregulares e árvores com a base pintada de branco.
+- [x] **Fase 1 · Cidade (ambientação Brazilcore):** feita na v0.10.1: lombadas com colisão em rampa (`CityGenerator.SpeedBumps.cs`), lixeiras de grade (`TrashBins`), árvores com a base caiada (`AddWhitewash`), fios e cartazes nos postes (`PoleWires`), remendos, valetas e bueiros abertos com galho (`RoadPatches`), bocas de lobo corrigidas (`Drainage`) e orelhões. Calçadas irregulares ficaram de fora por decisão do Matheus.
 - [ ] **Fase 2 · Rancho (reconstrução):** estradas de terra vermelha em circuito, sítios, *packing house* de banana/palmito, lago com pesqueiro e sinalização rústica.
 
 ### Próximas — Imersão e novos cenários (cenas isoladas)

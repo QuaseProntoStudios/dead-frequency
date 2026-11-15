@@ -1,0 +1,103 @@
+# Texturas da Rádio 96.6 (v0.10.1): fachada, muro, parede interna e piso. Estilo PS1, sem filtro.
+# Rodar dentro de Assets/Textures/Radio:  python3 radio_textures.py.txt
+import numpy as np
+from PIL import Image, ImageDraw
+
+R = np.random.RandomState(966)
+
+
+def noisy(w, h, color, amount=8):
+    a = np.zeros((h, w, 3), np.float32) + np.array(color, np.float32)
+    a += R.randint(-amount, amount + 1, (h, w, 1))
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+
+
+def darken(px, x, y, f):
+    r, g, b = px[x, y]
+    px[x, y] = (int(r * f), int(g * f), int(b * f))
+
+
+# Fachada do estúdio (4 m x 2 m): concreto pintado de azul-ardósia, painéis de 1 m com friso e manchas de chuva.
+def fachada():
+    W, H = 256, 128
+    img = noisy(W, H, (62, 72, 92), 6)
+    px = img.load()
+    d = ImageDraw.Draw(img)
+    for x in range(0, W, 64):
+        d.line([(x, 0), (x, H)], fill=(36, 42, 56))
+        d.line([(x + 1, 0), (x + 1, H)], fill=(84, 96, 118))
+    d.line([(0, 0), (W, 0)], fill=(36, 42, 56))
+    d.line([(0, H - 2), (W, H - 2)], fill=(36, 42, 56))
+    for _ in range(30):
+        x = R.randint(0, W); ln = R.randint(10, 70); wd = R.randint(1, 3)
+        for y in range(ln):
+            for k in range(wd):
+                darken(px, (x + k) % W, y, 1 - 0.20 * (1 - y / ln))
+    for y in range(H - 14, H):  # sujeira no pé
+        for x in range(W):
+            darken(px, x, y, 0.8 + 0.2 * (H - y) / 14)
+    img.save("fachada.png")
+
+
+# Muro do terreno (4 m x 2 m; o muro tem 1 m, então valem as linhas de baixo): reboco claro com faixa vermelha e branca.
+def muro():
+    W, H = 256, 128
+    img = noisy(W, H, (196, 192, 182), 7)
+    px = img.load()
+    d = ImageDraw.Draw(img)
+    for _ in range(22):
+        x = R.randint(0, W); ln = R.randint(10, 40); wd = R.randint(1, 4)
+        for y in range(64, 64 + ln):
+            for k in range(wd):
+                darken(px, (x + k) % W, y, 1 - 0.16 * (1 - (y - 64) / ln))
+    d.rectangle([0, 62, W, 68], fill=(200, 28, 22))   # faixa vermelha no topo do muro
+    d.rectangle([0, 69, W, 73], fill=(236, 234, 228))
+    d.rectangle([0, 74, W, 79], fill=(200, 28, 22))
+    band = noisy(W, 34, (46, 52, 66), 6)               # barrado escuro no pé
+    img.paste(band, (0, 94))
+    d.line([(0, 93), (W, 93)], fill=(228, 224, 214))
+    for x in range(0, W, 64):
+        d.line([(x, 80), (x, 93)], fill=(150, 146, 138))
+    img.save("muro.png")
+
+
+# Parede interna (2 m x 2 m): reboco creme, rodapé de lambri verde-água com friso (parte de baixo da imagem).
+def interna():
+    S = 128
+    img = noisy(S, S, (214, 204, 182), 6)
+    px = img.load()
+    d = ImageDraw.Draw(img)
+    lam = noisy(S, 54, (52, 110, 108), 7)
+    img.paste(lam, (0, 74))
+    for x in range(0, S, 8):
+        d.line([(x, 74), (x, S)], fill=(38, 86, 86))
+    d.rectangle([0, 70, S, 73], fill=(236, 230, 214))
+    d.rectangle([0, 74, S, 75], fill=(30, 70, 70))
+    for _ in range(6):
+        x = R.randint(0, S); ln = R.randint(8, 30)
+        for y in range(ln):
+            darken(px, x % S, y, 1 - 0.10 * (1 - y / ln))
+    img.save("parede_interna.png")
+
+
+# Piso (2 m x 2 m): ladrilho de 0,5 m xadrez cinza e bege, rejunte escuro e riscos de sapato.
+def piso():
+    S = 128
+    img = Image.new("RGB", (S, S))
+    t = 32
+    for ty in range(4):
+        for tx in range(4):
+            base = (122, 120, 116) if (tx + ty) % 2 == 0 else (178, 168, 146)
+            img.paste(noisy(t, t, base, 5), (tx * t, ty * t))
+    d = ImageDraw.Draw(img)
+    for i in range(0, S, t):
+        d.line([(i, 0), (i, S)], fill=(60, 58, 56))
+        d.line([(0, i), (S, i)], fill=(60, 58, 56))
+    for _ in range(14):
+        x, y = R.randint(0, S - 12), R.randint(0, S)
+        d.line([(x, y), (x + R.randint(4, 12), y + R.randint(-1, 2))], fill=(96, 92, 86))
+    img.save("piso.png")
+
+
+fachada(); muro(); interna(); piso()
+print("ok")

@@ -26,7 +26,7 @@ public partial class CityGenerator
                 Vector3 blockCenter = BlockCenter(bx, bz);
                 int hash = AssetProps.Hash(blockCenter, 53);
 
-                if (hash % 2 == 0)
+                if (hash / 7 % 2 == 0) // não usar hash % 2: com este sal o hash é sempre ímpar e nenhuma boca de lobo era criada
                 {
                     int sideIndex = hash / 3 % 4;
                     Vector3 outward = sideIndex switch
@@ -72,7 +72,7 @@ public partial class CityGenerator
 
         Vector3 blockCenter = BlockCenter(bx, bz);
         int hash = AssetProps.Hash(blockCenter, 53);
-        if (hash % 2 == 0)
+        if (hash / 7 % 2 == 0) // não usar hash % 2: com este sal o hash é sempre ímpar e nenhuma boca de lobo era criada
         {
             int sideIndex = hash / 3 % 4;
             Vector3 outward = sideIndex switch
@@ -132,6 +132,7 @@ public partial class CityGenerator
 
         var sound = new AudioStreamPlayer3D
         {
+            Name = "BocaDeLoboSom",
             Stream = waterFlow,
             Bus = AudioManager.SfxBus,
             UnitSize = 3f,

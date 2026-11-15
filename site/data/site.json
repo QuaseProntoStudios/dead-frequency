@@ -1,6 +1,46 @@
 {
- "version": "0.10.0",
+ "version": "0.10.1",
  "changelog": [
+  {
+   "version": "0.10.1",
+   "date": "15/11/2026",
+   "title": "Cidade viva e rádio por dentro",
+   "changes": [
+    "Rádio 96.6 por dentro: o estúdio virou seis salas (recepção, cabine do locutor com luz NO AR, gravação, discoteca, escritório). Na discoteca, os discos e as fitas tocam ao mirar e apertar E, e na mesa de som o locutor também toca os comerciais gravados.",
+    "Falas de rua com voz: os moradores da calçada (senhor, rapaz, moça, senhora, dona e o do escritório) falam de verdade, umas três falas cada, quando você passa perto.",
+    "Cidade mais viva: lombadas nas ruas, lixeiras de grade, árvores com a base caiada, cartazes de lambe-lambe e fios nos postes, remendos no asfalto, bueiros abertos sinalizados com galho de árvore e bocas de lobo nas guias (que nunca apareciam por um erro de sorteio).",
+    "Personagens parados respiram em vez de ficar virando a cabeça, e o personagem do menu não gira mais. Mãos na caixa, no volante e na escada, e pés em degrau e meio-fio, acompanham o que você faz.",
+    "Escada da caixa d'água municipal para ver a cidade de cima, ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário novos, calçadas que faltavam em volta da central e janelas sem corte nas quinas dos prédios.",
+    "Painel da van com monitor CRT mais legível, telas de carregamento no tema CRT verde, orelhão da Telefóbica com texto e tecla H para esconder o quadro lateral.",
+    "Mais leve: as luzes da cidade acendem até 30 m no celular (70 m no PC), letreiros pequenos somem de longe, rádios e pedestres distantes pausam o que não dá para ver e rádios, TVs e orelhões desligados não gastam mais processamento."
+   ],
+   "shots": [
+    {
+     "src": "assets/shots/v0.10.1/arvore_caiada.jpg",
+     "caption": "Árvores das praças com a base do tronco caiada"
+    },
+    {
+     "src": "assets/shots/v0.10.1/lombada.jpg",
+     "caption": "Lombada amarela com faixa preta atravessando a rua"
+    },
+    {
+     "src": "assets/shots/v0.10.1/lixeira_grade.jpg",
+     "caption": "Lixeira de grade na calçada de pedra portuguesa"
+    },
+    {
+     "src": "assets/shots/v0.10.1/poste_cartaz.jpg",
+     "caption": "Poste de luz com cartaz de lambe-lambe e fios"
+    },
+    {
+     "src": "assets/shots/v0.10.1/bueiro_galho.jpg",
+     "caption": "Bueiro aberto sinalizado com um galho de árvore"
+    },
+    {
+     "src": "assets/shots/v0.10.1/boca_de_lobo.jpg",
+     "caption": "Boca de lobo na guia da calçada"
+    }
+   ]
+  },
   {
    "version": "0.10.0",
    "date": "13/11/2026",
@@ -678,6 +718,22 @@
    "caption": "Menu principal com as novidades da versão"
   },
   {
+   "src": "assets/shots/v0.10.1/arvore_caiada.jpg",
+   "caption": "Árvores das praças com a base do tronco caiada"
+  },
+  {
+   "src": "assets/shots/v0.10.1/lombada.jpg",
+   "caption": "Lombada amarela com faixa preta atravessando a rua"
+  },
+  {
+   "src": "assets/shots/v0.10.1/lixeira_grade.jpg",
+   "caption": "Lixeira de grade na calçada de pedra portuguesa"
+  },
+  {
+   "src": "assets/shots/v0.10.1/poste_cartaz.jpg",
+   "caption": "Poste de luz com cartaz de lambe-lambe e fios"
+  },
+  {
    "src": "assets/shots/v0.10.0/historia_waldir.jpg",
    "caption": "Modo História: o Seu Waldir pede ajuda pela 96.6 quando a meta do capítulo I é cumprida"
   },
@@ -724,22 +780,6 @@
   {
    "src": "assets/shots/v0.9.8/delegacia.jpg",
    "caption": "Delegacia com policiais, viaturas e meio-fio amarelo na frente"
-  },
-  {
-   "src": "assets/shots/v0.9.6/personagem.jpg",
-   "caption": "Novo menu Personagem: homem ou mulher e as cores"
-  },
-  {
-   "src": "assets/shots/v0.9.6/sitio_muro.jpg",
-   "caption": "O fim do sítio agora tem muro de pedra e a serra"
-  },
-  {
-   "src": "assets/shots/v0.9.6/van_carona.jpg",
-   "caption": "Banco do carona, chão na cabine e o volante com raios"
-  },
-  {
-   "src": "assets/shots/v0.9.6/menu.jpg",
-   "caption": "Etiqueta ALPHA ao lado da versão"
   }
  ],
  "pix": "00020126700014br.gov.bcb.pix0124contato@badwolf3d.com.br0220Apoio Dead Frequency5204000053039865802BR5914DEAD FREQUENCY6006BRASIL62120508DEADFREQ6304D998"

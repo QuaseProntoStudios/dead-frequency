@@ -7,6 +7,7 @@ Janela pequena (feita em Godot, só GDScript) que instala e mantém o jogo atual
 3. **Jogo não instalado:** pergunta se quer baixar agora. **Versão nova:** baixa sozinho (ou pergunta, se as automáticas estiverem desligadas).
 4. Barra de progresso no download (MB e velocidade) e na instalação, depois o botão **JOGAR**.
 5. A **engrenagem** troca a pasta, liga/desliga as automáticas, abre a pasta, verifica agora e reinstala.
+6. **Pré-releases (instável):** na engrenagem, "Receber pré-releases" passa a baixar as builds `vX.Y.Z.N-pre` da `Internal`. Antes de ligar aparece um aviso de que são instáveis e não testadas; ao desligar, o launcher volta para a versão estável mais nova.
 
 Configuração em `user://launcher.cfg` (no Windows: `%APPDATA%\Godot\app_userdata\Dead Frequency Launcher`).
 A versão instalada fica em `<pasta>/version.txt`. Os saves do jogo ficam na pasta de usuário do jogo, então
@@ -27,3 +28,13 @@ godot --headless --path launcher/app --export-release "Linux" ../../out/DeadFreq
 ```
 
 O GitHub Actions (`.github/workflows/release.yml`) já faz isso e anexa os dois no release.
+
+## Autoatualização do launcher
+
+- Cada release publica `launcher-version.txt` (o `LAUNCHER_VERSION` do `launcher.gd`).
+- Ao abrir, se o número da release for maior que o do launcher, ele baixa o executável novo, confere o SHA256
+  no `SHA256SUMS.txt`, troca o próprio arquivo (o antigo vira `.old` e é apagado na próxima abertura) e reabre.
+  Se a pasta não deixar gravar, avisa e segue com o atual.
+- **Mudou o launcher? Suba `LAUNCHER_VERSION`.** Sem mudança, o CI (release e pré-release) reaproveita os
+  executáveis do launcher da release anterior, sem recompilar nem reassinar.
+- Os launchers antigos (antes da versão 2) não têm isso: quem estiver com um deles precisa baixar o novo uma última vez.
