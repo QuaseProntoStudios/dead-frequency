@@ -175,7 +175,7 @@ public partial class AnnouncerCar : Node3D
 
         _voice = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 14f, MaxDistance = 90f, VolumeDb = 2f, Position = new Vector3(0f, size.Y + 0.3f, 0f) };
         _car.AddChild(_voice);
-        _engine = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 6f, VolumeDb = -10f, PitchScale = 0.55f, Position = new Vector3(0f, 0.8f, -1.5f) };
+        _engine = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 6f, MaxDistance = 32f, VolumeDb = -10f, PitchScale = 0.55f, Position = new Vector3(0f, 0.8f, -1.5f) };
         if (ResourceLoader.Exists("res://Audio/SFX/engine_loop.wav"))
             _engine.Stream = AudioManager.MakeLooping(GD.Load<AudioStream>("res://Audio/SFX/engine_loop.wav"));
         _car.AddChild(_engine);

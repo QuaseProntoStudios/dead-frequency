@@ -137,7 +137,7 @@ public partial class CityGenerator
             Bus = AudioManager.SfxBus,
             UnitSize = 3f,
             MaxDistance = 11f,
-            VolumeDb = -17f,
+            VolumeDb = -21f,
             Position = position + Vector3.Up * 0.3f,
         };
         parent.AddChild(sound);

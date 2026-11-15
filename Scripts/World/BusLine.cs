@@ -217,7 +217,7 @@ public partial class BusLine : Node3D
             _impact.Stream = GD.Load<AudioStream>("res://Audio/SFX/crash_heavy.wav");
         _bus.AddChild(_impact);
 
-        _engine = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 9f, VolumeDb = -6f, Position = new Vector3(0f, 1f, 4f) };
+        _engine = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 9f, MaxDistance = 45f, VolumeDb = -6f, Position = new Vector3(0f, 1f, 4f) };
         if (ResourceLoader.Exists("res://Audio/SFX/engine_loop.wav"))
         {
             _engine.Stream = AudioManager.MakeLooping(GD.Load<AudioStream>("res://Audio/SFX/engine_loop.wav"));
