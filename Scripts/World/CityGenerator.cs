@@ -1464,9 +1464,13 @@ public partial class CityGenerator : Node3D
         {
             foreach (WorldParkTreePlan treePlan in blockPlan.ParkTrees)
             {
-                if (NatureKit.Spawn(block, treePlan.Model, treePlan.Position, treePlan.RotationY,
-                    treePlan.Scale * 0.7f, 0.25f) != null)
+                Node3D planned = NatureKit.Spawn(block, treePlan.Model, treePlan.Position, treePlan.RotationY,
+                    treePlan.Scale * 0.7f, 0.25f);
+                if (planned != null)
+                {
+                    AddWhitewash(planned, treePlan.Scale * 0.7f);
                     continue;
+                }
 
                 var fallbackTree = new StaticBody3D
                 {
@@ -1502,8 +1506,12 @@ public partial class CityGenerator : Node3D
             float scale = _rng.RandfRange(0.8f, 1.4f);
             // Árvore da Quaternius (Stylized Nature); se o modelo faltar, volta para a de cones.
             string model = NatureKit.CommonTrees[AssetProps.Hash(pos, 4) % NatureKit.CommonTrees.Length];
-            if (NatureKit.Spawn(block, model, pos, AssetProps.Hash(pos, 7) % 628 / 100f, scale * 0.7f, 0.25f) != null)
+            Node3D spawned = NatureKit.Spawn(block, model, pos, AssetProps.Hash(pos, 7) % 628 / 100f, scale * 0.7f, 0.25f);
+            if (spawned != null)
+            {
+                AddWhitewash(spawned, scale * 0.7f);
                 continue;
+            }
             var tree = new StaticBody3D { Position = pos, CollisionLayer = 1, CollisionMask = 0 };
             tree.AddChild(new CollisionShape3D { Shape = new CylinderShape3D { Radius = 0.25f, Height = 3f }, Position = new Vector3(0f, 1.5f, 0f) });
             AddCylinder(tree, new Vector3(0f, 1.2f * scale, 0f), 0.18f * scale, 2.4f * scale, _trunk);
