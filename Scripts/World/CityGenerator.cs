@@ -358,6 +358,7 @@ public partial class CityGenerator : Node3D
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetLampForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildBikeLanesForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetDrainageForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildSpeedBumpsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildParkedCarsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetSignsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildPhoneBoothsForBlock(x, z));
@@ -424,6 +425,7 @@ public partial class CityGenerator : Node3D
         BuildStreetLampForBlock(bx, bz);
         BuildBikeLanesForBlock(bx, bz);
         BuildStreetDrainageForBlock(bx, bz);
+        BuildSpeedBumpsForBlock(bx, bz);
         BuildParkedCarsForBlock(bx, bz);
         BuildStreetSignsForBlock(bx, bz);
         BuildPhoneBoothsForBlock(bx, bz);
@@ -756,6 +758,7 @@ public partial class CityGenerator : Node3D
             BuildCurbMarkings();
             BuildBikeLanes();
             BuildStreetDrainage();
+            BuildSpeedBumps();
             BuildStreetLamps();
             BuildStreetSigns();
             BuildPhoneBooths();
