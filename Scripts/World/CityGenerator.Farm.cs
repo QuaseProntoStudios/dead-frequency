@@ -119,6 +119,7 @@ public partial class CityGenerator
         }
 
         BuildRoadLamps();
+        BuildFarmElectricalNetwork();
         BuildRoadSigns();
         BuildFarmPhones();
 
@@ -949,9 +950,9 @@ public partial class CityGenerator
         const float height = 6.2f;
         var lamp = new Node3D { Position = basePos };
         (_activeChunkRoot ?? _staticRoot).AddChild(lamp);
-        AddCylinder(lamp, new Vector3(0f, height * 0.5f, 0f), 0.12f, height, _trunk);
+        AddCylinder(lamp, new Vector3(0f, height * 0.5f, 0f), 0.12f, height, GetWeatheredWoodPoleMaterial());
         Vector3 arm = towardRoad.Normalized();
-        AddBox(lamp, arm * 0.7f + new Vector3(0f, height - 0.2f, 0f), new Vector3(Mathf.Abs(arm.X) * 1.4f + 0.08f, 0.08f, Mathf.Abs(arm.Z) * 1.4f + 0.08f), _trunk, false);
+        AddBox(lamp, arm * 0.7f + new Vector3(0f, height - 0.2f, 0f), new Vector3(Mathf.Abs(arm.X) * 1.4f + 0.08f, 0.08f, Mathf.Abs(arm.Z) * 1.4f + 0.08f), GetWeatheredWoodPoleMaterial(), false);
         AddBox(lamp, arm * 1.35f + new Vector3(0f, height - 0.35f, 0f), new Vector3(0.45f, 0.14f, 0.45f), _lampHead, false);
         AddShape(new CylinderShape3D { Radius = 0.15f, Height = height }, new Transform3D(Basis.Identity, basePos + new Vector3(0f, height * 0.5f, 0f)));
         ActiveLightsRoot.AddChild(new OmniLight3D

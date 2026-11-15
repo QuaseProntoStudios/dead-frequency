@@ -1,7 +1,5 @@
 // Scripts/World/CityGenerator.Electrical.cs
-// Rede de distribuição elétrica da área urbana comercial.
-// Os postes e componentes repetidos usam MultiMesh; transformadores e cartazes são variações pontuais.
-// Os três condutores existentes continuam sendo gerados por CityGenerator.PoleWires.cs.
+// Rede de distribuição elétrica urbana e componentes visuais dos postes.
 using Godot;
 using System.Collections.Generic;
 
@@ -11,9 +9,14 @@ public partial class CityGenerator
 {
     private StandardMaterial3D _electricalTransformerMaterial;
     private StandardMaterial3D _electricalInsulatorMaterial;
+    private ShaderMaterial _weatheredWoodPoleMaterial;
+    private CylinderMesh _woodUtilityPoleMesh;
 
-    private const float ElectricalPoleHeight = 7.2f;
-    private const float ElectricalWireHeight = 6.3f;
+    private const float ElectricalPoleHeight = 8f;
+    private const float ElectricalWireHeight = 7.22f;
+    private const float ElectricalSecondaryWireHeight = 6.57f;
+    private const float ElectricalPrimaryArmHeight = 6.84f;
+    private const float ElectricalSecondaryArmHeight = 6.25f;
 
     private void BuildElectricalPoles()
     {
@@ -38,30 +41,65 @@ public partial class CityGenerator
         var root = new Node3D { Name = $"ElectricalPoles_{bx}_{bz}" };
         (_activeChunkRoot ?? _staticRoot).AddChild(root);
 
-        var poleTransforms = new List<Transform3D>(2);
-        var baseTransforms = new List<Transform3D>(2);
-        var armTransforms = new List<Transform3D>(2);
-        var insulatorTransforms = new List<Transform3D>(6);
+        var concreteShafts = new List<Transform3D>(2);
+        var concreteBases = new List<Transform3D>(2);
+        var concreteArms = new List<Transform3D>(4);
+        var woodShafts = new List<Transform3D>(2);
+        var woodArms = new List<Transform3D>(4);
+        var insulatorTransforms = new List<Transform3D>(10);
 
-        AddElectricalPoleVisuals(poleA, 0f, poleTransforms, baseTransforms, armTransforms, insulatorTransforms);
-        AddElectricalPoleVisuals(poleB, Mathf.Pi * 0.5f, poleTransforms, baseTransforms, armTransforms, insulatorTransforms);
+        bool woodA = ShouldUseWoodenCityPole(bx, bz, poleA);
+        bool woodB = ShouldUseWoodenCityPole(bx, bz, poleB);
+        AddElectricalPoleVisuals(poleA, 0f, woodA,
+            concreteShafts, concreteBases, concreteArms, woodShafts, woodArms, insulatorTransforms);
+        AddElectricalPoleVisuals(poleB, Mathf.Pi * 0.5f, woodB,
+            concreteShafts, concreteBases, concreteArms, woodShafts, woodArms, insulatorTransforms);
 
-        // Geometria repetida em MultiMesh: 1 chamada por tipo de peça em cada chunk/quarteirão.
-        AddElectricalMultiMesh(root, "ConcreteShafts", _unitCylinder, _concrete, poleTransforms);
-        AddElectricalMultiMesh(root, "ConcreteBases", _unitCylinder, _concrete, baseTransforms);
-        AddElectricalMultiMesh(root, "ElectricalCrossarms", _unitBox, _darkMetal, armTransforms);
+        AddElectricalMultiMesh(root, "ConcreteShafts", _unitCylinder, _concrete, concreteShafts);
+        AddElectricalMultiMesh(root, "ConcreteBases", _unitCylinder, _concrete, concreteBases);
+        AddElectricalMultiMesh(root, "ConcreteCrossarms", _unitBox, _darkMetal, concreteArms);
+        AddElectricalMultiMesh(root, "WoodenShafts", GetWoodUtilityPoleMesh(), GetWeatheredWoodPoleMaterial(), woodShafts);
+        AddElectricalMultiMesh(root, "WoodenCrossarms", _unitBox, GetWeatheredWoodPoleMaterial(), woodArms);
         AddElectricalMultiMesh(root, "ElectricalInsulators", _unitCylinder, GetElectricalInsulatorMaterial(), insulatorTransforms);
 
-        AddElectricalPoleDetails(root, poleA, Vector3.Right);
-        AddElectricalPoleDetails(root, poleB, Vector3.Back);
+        // Um transformador por aproximadamente cinco quarteirões, em posição fixa na malha.
+        // Se a posição preferencial estiver bloqueada por uma garagem, usa o outro poste do bloco.
+        bool transformerBlock = Mathf.PosMod(bx * 2 + bz * 3, 5) == 0;
+        bool transformerA = false;
+        bool transformerB = false;
+        if (transformerBlock)
+        {
+            bool preferA = AssetProps.Hash(poleA, 883) % 2 == 0;
+            if (preferA && !IsKeepClearAt(poleA))
+                transformerA = true;
+            else if (!IsKeepClearAt(poleB))
+                transformerB = true;
+            else if (!IsKeepClearAt(poleA))
+                transformerA = true;
+        }
+
+        AddElectricalPoleDetails(root, poleA, Vector3.Right, woodA, transformerA);
+        AddElectricalPoleDetails(root, poleB, Vector3.Back, woodB, transformerB);
+    }
+
+    private bool ShouldUseWoodenCityPole(int bx, int bz, Vector3 position)
+    {
+        // Postes antigos de madeira aparecem mais nas bordas e em trechos menos centrais.
+        int ring = Mathf.Max(Mathf.Abs(bx), Mathf.Abs(bz));
+        int outerRing = Radius > 1 ? Radius - 1 : 1;
+        int chance = ring >= outerRing ? 24 : 6;
+        return AssetProps.Hash(position, 887) % 100 < chance;
     }
 
     private void AddElectricalPoleVisuals(
         Vector3 basePosition,
         float yaw,
-        List<Transform3D> shafts,
-        List<Transform3D> bases,
-        List<Transform3D> arms,
+        bool wooden,
+        List<Transform3D> concreteShafts,
+        List<Transform3D> concreteBases,
+        List<Transform3D> concreteArms,
+        List<Transform3D> woodShafts,
+        List<Transform3D> woodArms,
         List<Transform3D> insulators)
     {
         if (IsKeepClearAt(basePosition))
@@ -69,23 +107,58 @@ public partial class CityGenerator
 
         RegisterObstacle(basePosition);
         Basis rotation = new(Vector3.Up, yaw);
-        shafts.Add(new Transform3D(
-            rotation * Basis.FromScale(new Vector3(0.29f, ElectricalPoleHeight, 0.29f)),
-            basePosition + new Vector3(0f, ElectricalPoleHeight * 0.5f, 0f)));
-        bases.Add(new Transform3D(
-            rotation * Basis.FromScale(new Vector3(0.38f, 1.35f, 0.38f)),
-            basePosition + new Vector3(0f, 0.72f, 0f)));
-        arms.Add(new Transform3D(
-            rotation * Basis.FromScale(new Vector3(1.15f, 0.12f, 0.16f)),
-            basePosition + new Vector3(0f, ElectricalWireHeight, 0f)));
+        Vector3 poleCenter = basePosition + new Vector3(0f, ElectricalPoleHeight * 0.5f, 0f);
 
-        foreach (float offset in new[] { -0.14f, 0f, 0.14f })
+        if (wooden)
         {
-            Vector3 position = basePosition + rotation * new Vector3(offset, ElectricalWireHeight + 0.13f, 0f);
+            // Tronco cônico de madeira, sem sapata de concreto.
+            woodShafts.Add(new Transform3D(
+                rotation * Basis.FromScale(new Vector3(1f, ElectricalPoleHeight, 1f)),
+                poleCenter));
+            AddCrossarmTransform(woodArms, rotation, basePosition, ElectricalPrimaryArmHeight, 2.2f, 0.14f);
+            AddCrossarmTransform(woodArms, rotation, basePosition, ElectricalSecondaryArmHeight, 1.25f, 0.12f);
+        }
+        else
+        {
+            concreteShafts.Add(new Transform3D(
+                rotation * Basis.FromScale(new Vector3(0.29f, ElectricalPoleHeight, 0.29f)),
+                poleCenter));
+            concreteBases.Add(new Transform3D(
+                rotation * Basis.FromScale(new Vector3(0.38f, 1.35f, 0.38f)),
+                basePosition + new Vector3(0f, 0.72f, 0f)));
+            AddCrossarmTransform(concreteArms, rotation, basePosition, ElectricalPrimaryArmHeight, 2.2f, 0.14f);
+            AddCrossarmTransform(concreteArms, rotation, basePosition, ElectricalSecondaryArmHeight, 1.25f, 0.12f);
+        }
+
+        // Três isoladores no braço superior e dois no braço inferior.
+        foreach (float offset in new[] { -0.62f, 0f, 0.62f })
+        {
+            Vector3 position = basePosition + rotation * new Vector3(offset, ElectricalWireHeight - 0.18f, 0f);
+            insulators.Add(new Transform3D(
+                rotation * Basis.FromScale(new Vector3(0.14f, 0.32f, 0.14f)),
+                position));
+        }
+
+        foreach (float offset in new[] { -0.24f, 0.24f })
+        {
+            Vector3 position = basePosition + rotation * new Vector3(offset, ElectricalSecondaryWireHeight - 0.12f, 0f);
             insulators.Add(new Transform3D(
                 rotation * Basis.FromScale(new Vector3(0.11f, 0.22f, 0.11f)),
                 position));
         }
+    }
+
+    private void AddCrossarmTransform(
+        List<Transform3D> destination,
+        Basis rotation,
+        Vector3 basePosition,
+        float height,
+        float width,
+        float depth)
+    {
+        destination.Add(new Transform3D(
+            rotation * Basis.FromScale(new Vector3(width, 0.12f, depth)),
+            basePosition + new Vector3(0f, height, 0f)));
     }
 
     private void AddElectricalMultiMesh(
@@ -116,70 +189,152 @@ public partial class CityGenerator
         });
     }
 
-    private void AddElectricalPoleDetails(Node3D root, Vector3 basePosition, Vector3 roadDirection)
+    private void AddElectricalPoleDetails(
+        Node3D root,
+        Vector3 basePosition,
+        Vector3 roadDirection,
+        bool wooden,
+        bool hasTransformer)
     {
         if (IsKeepClearAt(basePosition))
             return;
 
-        // A colisão continua individual, mas a geometria principal é compartilhada por MultiMesh.
+        float poleWidth = wooden ? 0.42f : 0.34f;
         var body = new StaticBody3D
         {
-            Name = "ConcreteUtilityPoleCollision",
+            Name = wooden ? "WoodUtilityPoleCollision" : "ConcreteUtilityPoleCollision",
             Position = basePosition,
             CollisionLayer = 1,
             CollisionMask = 0,
         };
         body.AddChild(new CollisionShape3D
         {
-            Shape = new BoxShape3D { Size = new Vector3(0.34f, ElectricalPoleHeight, 0.34f) },
+            Shape = new BoxShape3D { Size = new Vector3(poleWidth, ElectricalPoleHeight, poleWidth) },
             Position = new Vector3(0f, ElectricalPoleHeight * 0.5f, 0f),
         });
         root.AddChild(body);
 
-        Node3D details = null;
-        int hash = AssetProps.Hash(basePosition, 883);
-        if (hash % 100 < 14)
-        {
-            details = new Node3D { Name = "TransformerDetails", Position = basePosition };
-            AddElectricalTransformer(details, roadDirection == Vector3.Right ? Vector3.Right : Vector3.Back);
-            root.AddChild(details);
-        }
+        int hash = AssetProps.Hash(basePosition, 71);
+        bool hasFlyer = hash % 100 < 65;
+        if (!hasTransformer && !hasFlyer)
+            return;
 
-        if (AssetProps.Hash(basePosition, 71) % 100 < 65)
+        var details = new Node3D
         {
-            details ??= new Node3D { Name = "PoleDetails", Position = basePosition };
-            if (details.GetParent() == null)
-                root.AddChild(details);
-            AddPoleFlyer(details, basePosition, roadDirection);
-        }
+            Name = "PoleDetails",
+            Position = basePosition,
+        };
+        if (hasTransformer)
+            AddElectricalTransformer(details, roadDirection);
+        if (hasFlyer)
+            AddPoleFlyer(details, basePosition, roadDirection, wooden ? 0.21f : 0.16f);
+        root.AddChild(details);
     }
 
     private StandardMaterial3D GetElectricalInsulatorMaterial()
     {
-        _electricalInsulatorMaterial ??= Flat(new Color(0.16f, 0.18f, 0.17f), 0.72f);
+        _electricalInsulatorMaterial ??= Flat(new Color(0.18f, 0.2f, 0.19f), 0.78f);
         return _electricalInsulatorMaterial;
+    }
+
+    private ShaderMaterial GetWeatheredWoodPoleMaterial()
+    {
+        _weatheredWoodPoleMaterial ??= new ShaderMaterial
+        {
+            Shader = GD.Load<Shader>("res://Shaders/weathered_wood_pole.gdshader"),
+        };
+        return _weatheredWoodPoleMaterial;
+    }
+
+    private CylinderMesh GetWoodUtilityPoleMesh()
+    {
+        _woodUtilityPoleMesh ??= new CylinderMesh
+        {
+            TopRadius = 0.18f,
+            BottomRadius = 0.25f,
+            Height = 1f,
+            RadialSegments = 8,
+            CapTop = true,
+            CapBottom = true,
+        };
+        return _woodUtilityPoleMesh;
     }
 
     private void AddElectricalTransformer(Node3D pole, Vector3 crossarmAxis)
     {
-        _electricalTransformerMaterial ??= Flat(new Color(0.48f, 0.5f, 0.49f), 0.82f);
-        AddBox(pole, new Vector3(0f, 5.35f, 0f),
-            new Vector3(0.78f, 0.78f, 0.72f), _electricalTransformerMaterial, false);
-
+        _electricalTransformerMaterial ??= Flat(new Color(0.52f, 0.54f, 0.53f), 0.9f);
         Vector3 axis = crossarmAxis.Normalized();
-        for (int i = -1; i <= 1; i++)
+        Vector3 tankCenter = axis * 0.5f + new Vector3(0f, 5.48f, 0f);
+
+        var tankMesh = new CylinderMesh
         {
-            Vector3 offset = axis * (i * 0.29f);
-            AddBox(pole, offset + new Vector3(0f, 5.35f, 0f),
-                new Vector3(Mathf.Abs(axis.X) > 0.5f ? 0.08f : 0.62f, 0.62f,
-                    Mathf.Abs(axis.Z) > 0.5f ? 0.08f : 0.62f), _darkMetal, false);
+            TopRadius = 0.34f,
+            BottomRadius = 0.34f,
+            Height = 0.92f,
+            RadialSegments = 10,
+            CapTop = true,
+            CapBottom = true,
+        };
+        pole.AddChild(new MeshInstance3D
+        {
+            Name = "TransformerTank",
+            Mesh = tankMesh,
+            Position = tankCenter,
+            MaterialOverride = _electricalTransformerMaterial,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
+
+        // Suporte metálico e duas cintas deixam o transformador claramente separado do poste.
+        Basis bracketRotation = new Basis(Vector3.Up, Mathf.Atan2(-axis.Z, axis.X));
+        pole.AddChild(new MeshInstance3D
+        {
+            Name = "TransformerBracket",
+            Mesh = _unitBox,
+            Transform = new Transform3D(
+                bracketRotation * Basis.FromScale(new Vector3(0.96f, 0.12f, 0.16f)),
+                axis * 0.42f + new Vector3(0f, 5.0f, 0f)),
+            MaterialOverride = _darkMetal,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
+
+        var bandMesh = new CylinderMesh
+        {
+            TopRadius = 0.355f,
+            BottomRadius = 0.355f,
+            Height = 0.055f,
+            RadialSegments = 10,
+            CapTop = true,
+            CapBottom = true,
+        };
+        foreach (float offset in new[] { -0.25f, 0.25f })
+        {
+            pole.AddChild(new MeshInstance3D
+            {
+                Mesh = bandMesh,
+                Position = tankCenter + new Vector3(0f, offset, 0f),
+                MaterialOverride = _darkMetal,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            });
         }
 
-        foreach (float offset in new[] { -0.2f, 0.2f })
+        var bushingMesh = new CylinderMesh
         {
-            Vector3 p = axis * offset;
-            AddCylinder(pole, new Vector3(p.X, 5.83f, p.Z), 0.055f, 0.2f,
-                GetElectricalInsulatorMaterial());
+            TopRadius = 0.075f,
+            BottomRadius = 0.09f,
+            Height = 0.2f,
+            RadialSegments = 8,
+            CapTop = true,
+            CapBottom = true,
+        };
+        foreach (float offset in new[] { -0.17f, 0f, 0.17f })
+        {
+            pole.AddChild(new MeshInstance3D
+            {
+                Mesh = bushingMesh,
+                Position = tankCenter + axis * offset + new Vector3(0f, 0.55f, 0f),
+                MaterialOverride = GetElectricalInsulatorMaterial(),
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            });
         }
     }
 }

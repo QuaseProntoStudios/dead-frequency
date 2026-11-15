@@ -1,9 +1,8 @@
 // Scripts/World/CityGenerator.PoleWires.cs
-// Fase 1 · Cidade (ambientação Brazilcore): fios caindo entre os postes de luz (três fios com a barriga da catenária)
-// e cartazes de "lambe-lambe" colados nos postes (VENDE-SE, CONSERTA TV, CACHORRO PERDIDO...). Os fios são uma malha
-// só, compartilhada; os cartazes são um quadrinho de papel com Label3D (os Label3D somem a partir de 45 m).
-// Escolha por AssetProps.Hash da posição do poste: não mexe nos sorteios da cidade (layout igual no online).
+// Fase 1 · Cidade: condutores com espaçamento de rede de distribuição e cartazes colados ao redor dos postes.
+// A malha continua compartilhada e a escolha de cartazes permanece determinística por posição.
 using Godot;
+using System.Collections.Generic;
 
 namespace DeadFrequency;
 
@@ -11,8 +10,8 @@ public partial class CityGenerator
 {
     private ArrayMesh _wireMesh;
     private StandardMaterial3D _wireMaterial;
-    private QuadMesh _flyerMesh;
-    private readonly System.Collections.Generic.Dictionary<int, StandardMaterial3D> _flyerPapers = new();
+    private CylinderMesh _flyerWrapMesh;
+    private readonly Dictionary<int, ShaderMaterial> _flyerPapers = new();
 
     private static readonly string[] FlyerTexts =
     {
@@ -34,7 +33,7 @@ public partial class CityGenerator
     private void BuildPoleWires()
     {
         if (_useLogicalBlockPlans)
-            return; // Os fios acompanham o chunk.
+            return;
 
         var root = new Node3D { Name = "PoleWires" };
         _staticRoot.AddChild(root);
@@ -52,7 +51,7 @@ public partial class CityGenerator
         AddPoleWiresForBlock(root, bx, bz);
     }
 
-    /// <summary>Fios do poste A (lado +X) do bloco até o poste A do bloco ao lado em +Z, e do poste B (lado +Z) até o B em +X.</summary>
+    /// <summary>Conecta o poste A ao bloco +Z e o poste B ao bloco +X.</summary>
     private void AddPoleWiresForBlock(Node3D root, int bx, int bz)
     {
         EnsureWireMesh();
@@ -61,8 +60,6 @@ public partial class CityGenerator
         Vector3 poleA = c + new Vector3(edge, CurbHeight, -BlockSize * 0.25f);
         Vector3 poleB = c + new Vector3(-BlockSize * 0.25f, CurbHeight, edge);
 
-        // Cada trecho termina em outro poste existente. Em acessos de garagem, o trecho
-        // é omitido junto com o poste para evitar fios suspensos atravessando a entrada.
         if (bz < Radius)
         {
             Vector3 nextPoleA = BlockCenter(bx, bz + 1)
@@ -95,74 +92,129 @@ public partial class CityGenerator
         }
     }
 
-    /// <summary>Três fios com a barriga da catenária, de z = 0 até z = Period, saindo do topo do poste (altura 6,5 m).</summary>
+    private StandardMaterial3D GetPoleWireMaterial()
+    {
+        _wireMaterial ??= Flat(new Color(0.025f, 0.025f, 0.025f), 1f);
+        return _wireMaterial;
+    }
+
+    /// <summary>
+    /// Cinco condutores: três fases espaçadas no braço superior e dois cabos secundários no braço inferior.
+    /// </summary>
     private void EnsureWireMesh()
     {
         if (_wireMesh != null)
             return;
-        _wireMaterial = Flat(new Color(0.03f, 0.03f, 0.03f), 1f);
+
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
-        st.SetMaterial(_wireMaterial);
-        const int segments = 10;
+        st.SetMaterial(GetPoleWireMaterial());
+
+        const int segments = 12;
         float length = Period;
-        float[] sideOffsets = { -0.14f, 0f, 0.14f };
-        float[] topHeights = { 6.2f, 6.35f, 6.2f };
-        float[] sag = { 0.8f, 0.65f, 0.9f };
-        for (int w = 0; w < 3; w++)
+        float[] sideOffsets = { -0.62f, 0f, 0.62f, -0.24f, 0.24f };
+        float[] topHeights =
+        {
+            ElectricalWireHeight, ElectricalWireHeight + 0.04f, ElectricalWireHeight,
+            ElectricalSecondaryWireHeight, ElectricalSecondaryWireHeight,
+        };
+        float[] sag = { 0.55f, 0.48f, 0.55f, 0.72f, 0.72f };
+
+        for (int wire = 0; wire < sideOffsets.Length; wire++)
         {
             Vector3 previous = Vector3.Zero;
             for (int i = 0; i <= segments; i++)
             {
                 float t = i / (float)segments;
-                var p = new Vector3(sideOffsets[w], topHeights[w] - 4f * sag[w] * t * (1f - t), t * length);
+                var point = new Vector3(
+                    sideOffsets[wire],
+                    topHeights[wire] - 4f * sag[wire] * t * (1f - t),
+                    t * length);
+
                 if (i > 0)
                 {
-                    Vector3 delta = p - previous;
-                    var box = new BoxMesh { Size = new Vector3(0.03f, 0.03f, delta.Length() + 0.02f) };
+                    Vector3 delta = point - previous;
+                    var box = new BoxMesh { Size = new Vector3(0.028f, 0.028f, delta.Length() + 0.02f) };
                     Basis basis = Basis.LookingAt(delta.Normalized(), Vector3.Up);
-                    st.AppendFrom(box, 0, new Transform3D(basis, (p + previous) * 0.5f));
+                    st.AppendFrom(box, 0, new Transform3D(basis, (point + previous) * 0.5f));
                 }
-                previous = p;
+                previous = point;
             }
         }
+
         st.GenerateNormals();
         _wireMesh = st.Commit();
     }
 
-    /// <summary>Cartaz de lambe-lambe colado no poste, virado para quem anda pela calçada (a rua corre perpendicular a towardRoad).</summary>
-    private void AddPoleFlyer(Node3D pole, Vector3 basePos, Vector3 towardRoad)
+    private ShaderMaterial GetFlyerPaperMaterial(int colorIndex)
+    {
+        if (_flyerPapers.TryGetValue(colorIndex, out ShaderMaterial paper))
+            return paper;
+
+        paper = new ShaderMaterial
+        {
+            Shader = GD.Load<Shader>("res://Shaders/poster_wrap.gdshader"),
+        };
+        paper.SetShaderParameter("paper_color", FlyerColors[colorIndex]);
+        _flyerPapers[colorIndex] = paper;
+        return paper;
+    }
+
+    /// <summary>Faixa de papel curva ao redor do poste; o texto fica na face voltada à calçada.</summary>
+    private void AddPoleFlyer(Node3D pole, Vector3 basePos, Vector3 towardRoad, float poleRadius)
     {
         int hash = AssetProps.Hash(basePos, 71);
         if (hash % 100 >= 65)
             return;
-        _flyerMesh ??= new QuadMesh { Size = new Vector2(0.42f, 0.55f) };
-        int colorIndex = hash / 100 % FlyerColors.Length;
-        if (!_flyerPapers.TryGetValue(colorIndex, out StandardMaterial3D paper))
+
+        _flyerWrapMesh ??= new CylinderMesh
         {
-            paper = Flat(FlyerColors[colorIndex], 1f);
-            paper.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
-            _flyerPapers[colorIndex] = paper;
-        }
-        // Plano do cartaz paralelo à rua: normal ao longo do eixo da rua (perpendicular a towardRoad).
+            TopRadius = 0.5f,
+            BottomRadius = 0.5f,
+            Height = 1f,
+            RadialSegments = 12,
+            CapTop = false,
+            CapBottom = false,
+        };
+
+        int colorIndex = hash / 100 % FlyerColors.Length;
+        float wrapRadius = poleRadius + 0.025f;
+        float bandHeight = 0.58f;
         bool streetAlongX = Mathf.Abs(towardRoad.Z) > 0.5f;
         float yaw = streetAlongX ? Mathf.Pi * 0.5f : 0f;
         Vector3 normal = streetAlongX ? Vector3.Right : Vector3.Back;
         float side = hash / 1000 % 2 == 0 ? 1f : -1f;
-        Vector3 pos = normal * side * 0.095f + new Vector3(0f, 1.9f + hash / 10000 % 4 * 0.1f, 0f);
         float faceYaw = yaw + (side > 0f ? 0f : Mathf.Pi);
-        var flyer = new Node3D { Name = "Cartaz", Position = pos, Rotation = new Vector3(0f, faceYaw, 0f) };
-        flyer.AddChild(new MeshInstance3D { Mesh = _flyerMesh, MaterialOverride = paper, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+
+        var flyer = new Node3D
+        {
+            Name = "Cartaz",
+            Position = new Vector3(0f, 1.9f + hash / 10000 % 4 * 0.1f, 0f),
+            Rotation = new Vector3(0f, faceYaw, 0f),
+        };
+        flyer.AddChild(new MeshInstance3D
+        {
+            Name = "PapelCurvo",
+            Mesh = _flyerWrapMesh,
+            Scale = new Vector3(wrapRadius * 2f, bandHeight, wrapRadius * 2f),
+            MaterialOverride = GetFlyerPaperMaterial(colorIndex),
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        });
+
+        // O plano do texto é estreito e fica ligeiramente à frente da superfície curva.
+        float labelWidth = Mathf.Clamp(wrapRadius * 1.75f, 0.23f, 0.34f);
         flyer.AddChild(new Label3D
         {
             Text = FlyerTexts[hash / 7 % FlyerTexts.Length],
-            FontSize = 28,
-            PixelSize = 0.0021f,
+            FontSize = 24,
+            PixelSize = 0.0017f,
+            Width = 220f,
             Modulate = new Color(0.08f, 0.07f, 0.06f),
             OutlineSize = 0,
             Shaded = false,
             DoubleSided = false,
-            Position = new Vector3(0f, 0f, 0.004f),
+            Position = new Vector3(0f, 0f, wrapRadius + 0.008f),
+            Scale = new Vector3(labelWidth / 0.34f, 1f, 1f),
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         });
         pole.AddChild(flyer);

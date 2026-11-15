@@ -1825,7 +1825,7 @@ public partial class CityGenerator : Node3D
         AddBox(lamp, armCenter, armSize, _darkMetal, false);
         Vector3 headPos = towardRoad * 1.5f + new Vector3(0f, height - 0.25f, 0f);
         AddBox(lamp, headPos, new Vector3(0.6f, 0.15f, 0.6f), _lampHead, false);
-        AddPoleFlyer(lamp, basePos, towardRoad);
+        AddPoleFlyer(lamp, basePos, towardRoad, 0.09f);
         (_activeChunkRoot ?? _staticRoot).AddChild(lamp);
 
         var light = new OmniLight3D
