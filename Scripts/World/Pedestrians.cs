@@ -204,6 +204,10 @@ public partial class Pedestrians : Node3D
         float dt = (float)delta;
         if (_player == null || !IsInstanceValid(_player))
             _player = GetTree().CurrentScene?.GetNodeOrNull<PlayerController>("Player");
+        // Referência de distância para o LOD de animação: a câmera (vale a pé e de carro).
+        Camera3D cam = GetViewport()?.GetCamera3D();
+        bool hasCam = cam != null;
+        Vector3 camPos = hasCam ? cam.GlobalPosition : Vector3.Zero;
         Vector3 playerPos = _player != null && _player.State == PlayerState.Walking ? _player.GlobalPosition : new Vector3(1e6f, 0f, 1e6f);
 
         foreach (Walker w in _walkers)
@@ -226,6 +230,12 @@ public partial class Pedestrians : Node3D
             Vector3 facing = forward * w.Speed + outward * ((w.Offset - previous) / Mathf.Max(dt, 0.001f));
             float targetYaw = Mathf.Atan2(-facing.X, -facing.Z);
             w.Model.Rotation = new Vector3(0f, Mathf.LerpAngle(w.Model.Rotation.Y, targetYaw, 1f - Mathf.Exp(-10f * dt)), 0f);
+            // Longe da câmera (histerese 55/65 m): esqueleto parado, só a posição segue o percurso.
+            if (hasCam)
+            {
+                float d2 = camPos.DistanceSquaredTo(w.Model.GlobalPosition);
+                w.Model.SetFar(w.Model.IsFar ? d2 > 55f * 55f : d2 > 65f * 65f);
+            }
             w.Model.Animate(dt, w.Speed);
         }
     }

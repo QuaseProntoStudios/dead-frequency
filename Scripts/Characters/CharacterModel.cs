@@ -408,6 +408,26 @@ public partial class CharacterModel : Node3D
         }
     }
 
+    private bool _far;
+
+    /// <summary>Esqueleto congelado por estar longe demais (ver SetFar).</summary>
+    public bool IsFar => _far;
+
+    /// <summary>
+    /// Longe demais para ver (a neblina esconde): congela o AnimationPlayer e o idle respirando,
+    /// que custam por osso, por quadro. Volta sozinho quando far = false.
+    /// </summary>
+    public void SetFar(bool far)
+    {
+        if (_far == far || _boxModel)
+            return;
+        _far = far;
+        if (_anim != null)
+            _anim.Active = !far;
+        if (_breath != null)
+            _breath.Active = !far;
+    }
+
     public void SetHeadPitch(float pitch)
     {
         _headPitch = Mathf.Clamp(pitch, -0.8f, 0.8f);
