@@ -265,9 +265,11 @@ public partial class GameHud : CanvasLayer
             var slot = new Button
             {
                 ToggleMode = true,
-                CustomMinimumSize = new Vector2(128, 52),
+                CustomMinimumSize = new Vector2(72, 52),
                 MouseFilter = Control.MouseFilterEnum.Stop,
                 FocusMode = Control.FocusModeEnum.None,
+                ExpandIcon = false,
+                IconAlignment = HorizontalAlignment.Left,
             };
             slot.Pressed += () => PlayerInventory.Instance?.SelectHotbar(index);
             _hotbarSlots[i] = slot;
@@ -861,6 +863,45 @@ public partial class GameHud : CanvasLayer
 
     private void OnItemActionMessage(string message) => ShowToast(message, UiStyle.Phosphor, 3.0);
 
+    // Ícones da hotbar: os PNGs são adicionados em Assets/Textures/Items/Hotbar/.
+    // O nome do arquivo é estável e documentado junto aos assets.
+    private static readonly System.Collections.Generic.Dictionary<string, string> HotbarIconPaths = new()
+    {
+        [ItemCatalog.Radar] = "res://Assets/Textures/Items/Hotbar/radar.png",
+        [ItemCatalog.Backpack] = "res://Assets/Textures/Items/Hotbar/backpack.png",
+        [ItemCatalog.Gloves] = "res://Assets/Textures/Items/Hotbar/gloves.png",
+        [ItemCatalog.NightVision] = "res://Assets/Textures/Items/Hotbar/night_vision.png",
+        [ItemCatalog.EnergyDrink] = "res://Assets/Textures/Items/Hotbar/energy_drink.png",
+        [ItemCatalog.Guarana] = "res://Assets/Textures/Items/Hotbar/guarana.png",
+        [ItemCatalog.RepairKit] = "res://Assets/Textures/Items/Hotbar/repair_kit.png",
+        [ItemCatalog.DuctTape] = "res://Assets/Textures/Items/Hotbar/duct_tape.png",
+        [ItemCatalog.Coffee] = "res://Assets/Textures/Items/Hotbar/coffee.png",
+        [ItemCatalog.Marmitex] = "res://Assets/Textures/Items/Hotbar/marmitex.png",
+        [ItemCatalog.Skewer] = "res://Assets/Textures/Items/Hotbar/skewer.png",
+        [ItemCatalog.Slippers] = "res://Assets/Textures/Items/Hotbar/slippers.png",
+        [ItemCatalog.Nail] = "res://Assets/Textures/Items/Hotbar/nail.png",
+        [ItemCatalog.SteelWool] = "res://Assets/Textures/Items/Hotbar/steel_wool.png",
+        [ItemCatalog.Repellent] = "res://Assets/Textures/Items/Hotbar/repellent.png",
+        [ItemCatalog.StrongFlashlight] = "res://Assets/Textures/Items/Hotbar/flashlight.png",
+        [ItemCatalog.Fuse] = "res://Assets/Textures/Items/Hotbar/fuse.png",
+        [ItemCatalog.JerryCan] = "res://Assets/Textures/Items/Hotbar/jerrycan.png",
+    };
+
+    private readonly System.Collections.Generic.Dictionary<string, Texture2D> _hotbarIconCache = new();
+
+    private Texture2D GetHotbarIcon(string itemId)
+    {
+        if (_hotbarIconCache.TryGetValue(itemId, out Texture2D cached))
+            return cached;
+
+        Texture2D texture = null;
+        if (HotbarIconPaths.TryGetValue(itemId, out string path) && ResourceLoader.Exists(path))
+            texture = GD.Load<Texture2D>(path);
+
+        _hotbarIconCache[itemId] = texture;
+        return texture;
+    }
+
     private void RefreshHotbar()
     {
         PlayerInventory inventory = PlayerInventory.Instance;
@@ -873,7 +914,10 @@ public partial class GameHud : CanvasLayer
                 continue;
             string itemId = inventory.HotbarItem(i);
             ItemDef def = itemId == null ? null : ItemCatalog.Get(itemId);
-            slot.Text = def == null ? $"{i + 1}\n—" : $"{i + 1}  {def.Name}";
+            slot.Text = $"{i + 1}";
+            slot.Icon = def == null ? null : GetHotbarIcon(itemId);
+            slot.TooltipText = def?.Name ?? "";
+            slot.AddThemeConstantOverride("icon_max_width", 30);
             slot.Disabled = def == null;
             slot.ButtonPressed = inventory.SelectedHotbarIndex == i;
             slot.AddThemeColorOverride("font_color", def?.Color ?? UiStyle.PhosphorDim);
