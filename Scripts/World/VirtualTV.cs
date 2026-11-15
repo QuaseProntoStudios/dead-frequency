@@ -109,6 +109,7 @@ public partial class VirtualTV : StaticBody3D, IInteractable
     private void SetChannel(int ch)
     {
         _channel = ch;
+        SetProcess(ch != 0); // TV desligada não precisa rodar a cada quadro
         // Chuvisco rapidinho na troca, como TV de tubo.
         _mat.SetShaderParameter("mode", ch == 0 ? 0 : 5);
         _text.Text = "";

@@ -40,6 +40,7 @@ public partial class RadioPlayer : Node3D
         _player.Finished += () => Resync(true);
         _hiss = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = UnitSize, MaxDistance = MaxDistance, VolumeDb = -60f, Stream = MakeHiss() };
         AddChild(_hiss);
+        SetProcess(On); // rádio desligado (TVs, casas) não roda _Process a cada quadro
     }
 
     public void Toggle() => SetOn(!On);
@@ -47,6 +48,7 @@ public partial class RadioPlayer : Node3D
     public void SetOn(bool on)
     {
         On = on;
+        SetProcess(on);
         if (!IsInsideTree() || _player == null)
             return;
         if (on)
@@ -83,6 +85,17 @@ public partial class RadioPlayer : Node3D
         if (_checkTimer > 0)
             return;
         _checkTimer = 1.0;
+        // Longe demais para ouvir: para de decodificar o Ogg. Quando o jogador volta, Resync acha o ponto certo
+        // pelo relógio da rádio, então a música continua "no ar" como se nunca tivesse parado.
+        Camera3D cam = GetViewport()?.GetCamera3D();
+        bool far = cam != null && cam.GlobalPosition.DistanceSquaredTo(GlobalPosition) > (MaxDistance + 12f) * (MaxDistance + 12f);
+        if (far)
+        {
+            if (_player.Playing)
+                _player.Stop();
+            _index = -1;
+            return;
+        }
         (int i, RadioStation.Segment _, float _) = RadioStation.Now();
         if (!_player.Playing || i != _index)
             Resync(false);

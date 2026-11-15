@@ -288,6 +288,9 @@ public partial class PlayerController : CharacterBody3D
     }
 
     /// <summary>Balanço da câmera ao andar (Opções > Controles).</summary>
+    // Nomes das ações em cache: montar a string (e o StringName) a cada quadro gerava lixo para o coletor.
+    private static readonly StringName[] HotbarActions = { "hotbar_1", "hotbar_2", "hotbar_3", "hotbar_4" };
+
     public override void _Process(double delta)
     {
         if (_camera == null)
@@ -382,7 +385,7 @@ public partial class PlayerController : CharacterBody3D
 
         for (int i = 0; i < 4; i++)
         {
-            if (!Input.IsActionJustPressed($"hotbar_{i + 1}"))
+            if (!Input.IsActionJustPressed(HotbarActions[i]))
                 continue;
             if (PlayerInventory.Instance?.SelectHotbar(i) != true)
                 ItemActionMessage?.Invoke($"Espaço {i + 1} vazio.");

@@ -923,12 +923,35 @@ public partial class CityGenerator : Node3D
     /// <summary>Otimização (v0.9.7): peça pequena (banco, placa, ar-condicionado, lixeira...) some além de
     /// 90 m e média além de 170 m, dentro da neblina; luz de poste apaga suave além de 70 m. Prédios e
     /// chão ficam sempre. Quem já tem distância própria (capim, árvores) não é mexido.</summary>
+    /// <summary>
+    /// Até onde as luzes (postes, holofotes, lâmpadas) acendem. No renderizador de compatibilidade (celular) cada luz
+    /// que toca um objeto desenha esse objeto de novo: no teste da avenida, encurtar de 70 m para 30 m cortou ~40% das
+    /// chamadas de desenho. No PC (Forward+) as luzes são baratas e continuam até 70 m.
+    /// </summary>
+    private static float LightFadeBegin =>
+        _lightFadeBegin > 0f ? _lightFadeBegin
+            : _lightFadeBegin = RenderingServer.GetCurrentRenderingMethod() == "gl_compatibility" ? 30f : 70f;
+    private static float _lightFadeBegin;
+
     public static void OptimizeVisibility(Node root)
     {
         foreach (Node n in root.FindChildren("*", "", true, false))
         {
             switch (n)
             {
+                // Letreiros pequenos (Label3D) não dão para ler de longe e cada um custa 1–2 chamadas de desenho
+                // (texto + contorno): somem a partir de 45 m.
+                case Label3D lab when lab.VisibilityRangeEnd <= 0f && lab.Billboard == BaseMaterial3D.BillboardModeEnum.Disabled:
+                {
+                    Vector3 size = lab.GetAabb().Size * lab.GlobalTransform.Basis.Scale;
+                    if (Mathf.Max(size.X, Mathf.Max(size.Y, size.Z)) < 2f)
+                    {
+                        lab.VisibilityRangeEnd = 45f;
+                        lab.VisibilityRangeEndMargin = 5f;
+                        lab.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+                    }
+                    break;
+                }
                 case GeometryInstance3D g when g.VisibilityRangeEnd <= 0f && g is not MultiMeshInstance3D:
                 {
                     Aabb box = g is VisualInstance3D v ? v.GetAabb() : new Aabb();
@@ -950,8 +973,8 @@ public partial class CityGenerator : Node3D
                     if (!l.DistanceFadeEnabled)
                     {
                         l.DistanceFadeEnabled = true;
-                        l.DistanceFadeBegin = 70f;
-                        l.DistanceFadeLength = 20f;
+                        l.DistanceFadeBegin = LightFadeBegin;
+                        l.DistanceFadeLength = LightFadeBegin * 0.3f;
                         l.DistanceFadeShadow = 30f;
                     }
                     break;

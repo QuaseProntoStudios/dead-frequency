@@ -135,19 +135,20 @@ streaming por chunks) estar na Internal.
 Versão de correção aberta também para ajustes pedidos antes e tarefas em andamento (ideias do documento "Roadmap Dead Frequency", 14/11/2026).
 | Ideia | Como funciona no jogo |
 |---|---|
-| **Tecla H esconde o quadro lateral** | O quadro de entregas/profissão (e a faixa do Modo História) ocupa espaço; H alterna mostrar/esconder. |
-| **Locutor: E toca os comerciais gravados** | Na mesa de som, ler o comercial no ar também toca o áudio gravado da 96.6. |
-| **Idle respirando** | Jogador e NPCs parados respiram em vez de ficar virando a cabeça. |
-| **Animações nos veículos** | Ajustar a pose do personagem pilotando a moto e dirigindo o táxi (a moto continua a mesma). |
+| ✅ **Tecla H esconde o quadro lateral** | O quadro de entregas/profissão (e a faixa do Modo História) ocupa espaço; H alterna mostrar/esconder. |
+| ✅ **Locutor: E toca os comerciais gravados** | Na mesa de som, ler o comercial no ar também toca o áudio gravado da 96.6. |
+| ✅ **Idle respirando** | Jogador e NPCs parados respiram em vez de ficar virando a cabeça. |
+| ✅ **Animações nos veículos** | Ajustar a pose do personagem pilotando a moto e dirigindo o táxi (a moto continua a mesma). |
 | **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. |
-| **Telas de carregamento** | Loading do Modo História e do offline mais bonito, no tema CRT verde. |
-| **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
-| **Painel da van** | Monitor CRT mais legível. |
-| **Orelhão da Telefóbica** | Textura com texto e detalhes, em vez de verde liso. |
+| ✅ **Telas de carregamento** | Loading do Modo História e do offline mais bonito, no tema CRT verde. |
+| ✅ **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
+| ✅ **Painel da van** | Monitor CRT mais legível. |
+| ✅ **Orelhão da Telefóbica** | Textura com texto e detalhes, em vez de verde liso. |
 | ✅ **Rádio 96.6 por dentro** | O estúdio virou seis salas (`CityGenerator.RadioInterior.cs`): recepção com balcão, sofá e quadros; cabine do locutor com vidro para a recepção e para a gravação (a mesa de som continua no mesmo lugar, o trabalho de locutor não muda) e luz NO AR dos dois lados; sala de gravação com espuma, microfone com pop filter e gravador de rolo (luz GRAVANDO); discoteca com os 5 discos da programação e 6 fitas (vinheta e comerciais) que tocam ao mirar e apertar E (`RadioMediaInteractable`, um por vez); escritório com computadores de tubo e o quadro da programação; sala dos servidores com racks piscando. Texturas próprias: fachada de concreto azulado, muro com faixa vermelha e branca, parede interna com barrado e piso xadrez (`Assets/Textures/Radio/radio_textures.py.txt`). Sala de câmeras ficou para depois. |
-| **Calçadas** | Calçadas que faltam em volta da DF Entregas; corrigir a calçada estilo Copacabana que não aparece. |
-| **Janelas nas quinas** | Janelas dos prédios não podem ficar cortadas ao meio nas quinas. |
-| **Caixa d'água municipal** | Modelo novo e escada para subir e ver a cidade de cima. |
+| ✅ **Calçadas** | Calçadas que faltam em volta da DF Entregas; corrigir a calçada estilo Copacabana que não aparece. |
+| ✅ **Janelas nas quinas** | Janelas dos prédios não podem ficar cortadas ao meio nas quinas. |
+| ✅ **Caixa d'água municipal** | Modelo novo e escada para subir e ver a cidade de cima. |
+| ✅ **Otimização (skills de gamedev)** | Medido antes com o teste de desempenho (`_autotest/perf.gd`, renderizador de compatibilidade): no celular cada luz desenha de novo os objetos que toca, então as luzes da cidade acendem até 30 m no celular (70 m no PC); letreiros pequenos (Label3D) somem a partir de 45 m. Avenida: ~1.800 → ~1.280 chamadas de desenho; dentro da rádio: ~450 → ~385. Rádios longe do jogador param de decodificar a música (voltam no ponto certo pelo relógio), rádios/TVs desligados e orelhões não rodam mais `_Process` a cada quadro (de 52 para 4 nós), e a barra de atalhos não cria strings por quadro. |
 
 ### v0.10.x — Praça Central
 | Ideia | Como funciona no jogo |
