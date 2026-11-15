@@ -58,19 +58,41 @@ public partial class CityGenerator
         EnsureWireMesh();
         float edge = BlockSize * 0.5f - 0.7f;
         Vector3 c = BlockCenter(bx, bz);
-        root.AddChild(new MeshInstance3D
+        Vector3 poleA = c + new Vector3(edge, CurbHeight, -BlockSize * 0.25f);
+        Vector3 poleB = c + new Vector3(-BlockSize * 0.25f, CurbHeight, edge);
+
+        // Cada trecho termina em outro poste existente. Em acessos de garagem, o trecho
+        // é omitido junto com o poste para evitar fios suspensos atravessando a entrada.
+        if (bz < Radius)
         {
-            Mesh = _wireMesh,
-            Position = c + new Vector3(edge, CurbHeight, -BlockSize * 0.25f),
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        });
-        root.AddChild(new MeshInstance3D
+            Vector3 nextPoleA = BlockCenter(bx, bz + 1)
+                + new Vector3(edge, CurbHeight, -BlockSize * 0.25f);
+            if (!IsKeepClearAt(poleA) && !IsKeepClearAt(nextPoleA))
+            {
+                root.AddChild(new MeshInstance3D
+                {
+                    Mesh = _wireMesh,
+                    Position = poleA,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                });
+            }
+        }
+
+        if (bx < Radius)
         {
-            Mesh = _wireMesh,
-            Position = c + new Vector3(-BlockSize * 0.25f, CurbHeight, edge),
-            Rotation = new Vector3(0f, Mathf.Pi * 0.5f, 0f),
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        });
+            Vector3 nextPoleB = BlockCenter(bx + 1, bz)
+                + new Vector3(-BlockSize * 0.25f, CurbHeight, edge);
+            if (!IsKeepClearAt(poleB) && !IsKeepClearAt(nextPoleB))
+            {
+                root.AddChild(new MeshInstance3D
+                {
+                    Mesh = _wireMesh,
+                    Position = poleB,
+                    Rotation = new Vector3(0f, Mathf.Pi * 0.5f, 0f),
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                });
+            }
+        }
     }
 
     /// <summary>Três fios com a barriga da catenária, de z = 0 até z = Period, saindo do topo do poste (altura 6,5 m).</summary>
