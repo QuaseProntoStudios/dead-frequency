@@ -105,6 +105,8 @@ public partial class StoryDirector : Node
 
     private void OnChapterReady(int chapter)
     {
+        if (chapter == 1)
+            _city?.OpenEastExit();
         Refresh();
         StoryDialog.Play(this, StoryChapters.Get(chapter).Outro, $"story_c{chapter}_outro");
         GameHud.Toast(this, StoryManager.Instance?.NextChapterPlayable == true
@@ -118,12 +120,15 @@ public partial class StoryDirector : Node
         Refresh();
     }
 
-    /// <summary>Saída leste: avenida em z = Period/2 até o muro do limite. A zona fica 70 m antes do muro.</summary>
+    /// <summary>Saída leste: avenida em Z negativo; o gatilho fica antes da cancela e o marcador junto ao limite.</summary>
     private void BuildCityExit()
     {
         float limit = (_city.Radius + 1) * _city.Period;
-        float roadZ = _city.Period * 0.5f;
-        Vector3 start = _city.GlobalTransform * new Vector3(limit - 75f, 0f, roadZ);
+        // A captura da cidade confirma a avenida leste em Z negativo (rua no eixo X).
+        float roadZ = -_city.Period * 0.5f;
+        // A van percorre cerca de 35 m durante o banner; o gatilho fica perto o bastante
+        // para atravessar a cancela antes da troca de cena.
+        Vector3 start = _city.GlobalTransform * new Vector3(limit - 25f, 0f, roadZ);
         var zone = new ChapterTransitionZone
         {
             Name = "ExitToRanch",
@@ -138,8 +143,9 @@ public partial class StoryDirector : Node
         zone.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(6f, 4f, 16f) }, Position = new Vector3(0f, 2f, 0f) });
         GetParent().AddChild(zone);
 
-        // Marcador da saída (só aparece com a meta cumprida): feixe verde e placa.
-        _exitMarker = new Node3D { Name = "ExitMarker", Position = start };
+        // Marcador no próprio portão (só aparece com a meta cumprida).
+        Vector3 markerPosition = _city.GlobalTransform * new Vector3(limit - 5f, 0f, roadZ);
+        _exitMarker = new Node3D { Name = "ExitMarker", Position = markerPosition };
         GetParent().AddChild(_exitMarker);
         var beamMat = new StandardMaterial3D
         {
@@ -149,16 +155,6 @@ public partial class StoryDirector : Node
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
         };
         _exitMarker.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 1.2f, BottomRadius = 1.2f, Height = 40f, RadialSegments = 12 }, Position = new Vector3(0f, 20f, 0f), MaterialOverride = beamMat, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
-        _exitMarker.AddChild(new Label3D
-        {
-            Text = "ESTRADA DO RANCHO →",
-            FontSize = 96,
-            PixelSize = 0.02f,
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            Modulate = new Color(0.55f, 1f, 0.62f),
-            OutlineSize = 12,
-            Position = new Vector3(0f, 6f, 0f),
-        });
         _exitMarker.AddToGroup(MinimapView.MarkerGroup);
         _exitMarker.SetMeta("map_kind", "poi");
         _exitMarker.SetMeta("map_label", "→");

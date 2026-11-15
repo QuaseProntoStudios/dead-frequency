@@ -97,6 +97,9 @@ public partial class CityGenerator : Node3D
 
     private Node3D _staticRoot;
     private Node3D _lightsRoot;
+    private Node3D _eastExitGatePivot;
+    private CollisionShape3D _eastExitGateShape;
+    private bool _eastExitOpening;
     private bool _useLogicalWorldData;
     private bool _useLogicalServiceData;
     private bool _useLogicalBlockPlans;
@@ -2311,10 +2314,107 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
         const float h = 6f;
         // Textura provisória: grade 3D xadrez (Shaders/grid_3d.gdshader) em coordenadas de mundo.
         Material mat = BoundaryGridMaterial() ?? _concrete;
-        AddBox(_staticRoot, new Vector3(limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
+        StoryManager story = StoryManager.Instance;
+        bool hasStoryExit = Biome == WorldBiome.City && story?.Active == true && story.CurrentChapter == 1;
+        if (hasStoryExit)
+        {
+            // A avenida leste usada pela saída fica em Z negativo (ex.: -24 na grade padrão).
+            const float openingHalfWidth = 10f;
+            float roadZ = -Period * 0.5f;
+            float openingStart = roadZ - openingHalfWidth;
+            float openingEnd = roadZ + openingHalfWidth;
+            float leftLength = limit + openingStart;
+            float rightLength = limit - openingEnd;
+            if (leftLength > 0.5f)
+                AddBox(_staticRoot, new Vector3(limit, h * 0.5f, (-limit + openingStart) * 0.5f),
+                    new Vector3(1f, h, leftLength), mat);
+            if (rightLength > 0.5f)
+                AddBox(_staticRoot, new Vector3(limit, h * 0.5f, (openingEnd + limit) * 0.5f),
+                    new Vector3(1f, h, rightLength), mat);
+            BuildEastExitGate(limit, roadZ, openingHalfWidth);
+            if (story.CanAdvance)
+                OpenEastExit();
+        }
+        else
+        {
+            AddBox(_staticRoot, new Vector3(limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
+        }
+
         AddBox(_staticRoot, new Vector3(-limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
         AddBox(_staticRoot, new Vector3(0f, h * 0.5f, limit), new Vector3(length, h, 1f), mat);
         AddBox(_staticRoot, new Vector3(0f, h * 0.5f, -limit), new Vector3(length, h, 1f), mat);
+    }
+
+    private void BuildEastExitGate(float limit, float roadZ, float halfWidth)
+    {
+        // Pilares baixos e cancela física: a passagem só abre quando o capítulo I for concluído.
+        float postZ = halfWidth;
+        foreach (float side in new[] { -1f, 1f })
+        {
+            AddBox(_staticRoot,
+                new Vector3(limit, 2.8f, roadZ + side * postZ),
+                new Vector3(1.4f, 5.6f, 1.4f), _concrete);
+            AddBox(_staticRoot,
+                new Vector3(limit - 0.1f, 5.8f, roadZ + side * postZ),
+                new Vector3(1.8f, 0.25f, 1.8f), _darkMetal, false);
+        }
+
+        // Placa voltada para a avenida, legível na aproximação da van.
+        AddBox(_staticRoot, new Vector3(limit - 0.65f, 5.15f, roadZ),
+            new Vector3(0.25f, 1.15f, 8.5f), _signBlue, false);
+        var signText = new Label3D
+        {
+            Text = "ESTRADA DO RANCHO",
+            FontSize = 72,
+            PixelSize = 0.012f,
+            Billboard = BaseMaterial3D.BillboardModeEnum.Disabled,
+            OutlineSize = 8,
+            Rotation = new Vector3(0f, -Mathf.Pi * 0.5f, 0f),
+            Modulate = new Color(0.95f, 0.88f, 0.62f),
+            Position = new Vector3(limit - 0.8f, 5.15f, roadZ),
+        };
+        _staticRoot.AddChild(signText);
+
+        _eastExitGatePivot = new Node3D
+        {
+            Name = "EastExitGatePivot",
+            Position = new Vector3(limit - 0.15f, 1.05f, roadZ - halfWidth),
+        };
+        _staticRoot.AddChild(_eastExitGatePivot);
+        var gateBody = new StaticBody3D { Name = "EastExitGateBody", CollisionLayer = 1, CollisionMask = 0 };
+        _eastExitGatePivot.AddChild(gateBody);
+        _eastExitGateShape = new CollisionShape3D
+        {
+            Shape = new BoxShape3D { Size = new Vector3(0.5f, 0.38f, halfWidth * 2f) },
+            Position = new Vector3(0f, 0f, halfWidth),
+        };
+        gateBody.AddChild(_eastExitGateShape);
+
+        AddBox(_eastExitGatePivot, new Vector3(0f, 0f, halfWidth),
+            new Vector3(0.35f, 0.28f, halfWidth * 2f), _stopRed, false);
+        for (int i = 1; i < 5; i++)
+        {
+            float z = i * (halfWidth * 2f / 5f);
+            AddBox(_eastExitGatePivot, new Vector3(-0.02f, 0.16f, z),
+                new Vector3(0.38f, 0.06f, 0.12f), _signWhite, false);
+        }
+
+        // A cancela é a única barreira visual e física da passagem.
+
+    }
+
+    /// <summary>Abre a cancela da saída leste após a conclusão do primeiro capítulo.</summary>
+    public void OpenEastExit()
+    {
+        if (_eastExitGatePivot == null || _eastExitOpening)
+            return;
+        _eastExitOpening = true;
+        if (_eastExitGateShape != null)
+            _eastExitGateShape.SetDeferred(CollisionShape3D.PropertyName.Disabled, true);
+        CreateTween().BindNode(this)
+            .TweenProperty(_eastExitGatePivot, "rotation:x", -Mathf.Pi * 0.5f, 1.4)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
     }
 
     private Material _boundaryMaterial;

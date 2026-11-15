@@ -142,6 +142,8 @@ public partial class PlayerController : CharacterBody3D
     private Node _returnParent;
     private Node3D _exitMarker;
     private bool _inTransition;
+    private Vector3 _spawnPosition;
+    private float _spawnYaw;
 
     public override void _Ready()
     {
@@ -203,6 +205,8 @@ public partial class PlayerController : CharacterBody3D
         GetAimCamera().AddChild(_flashlight);
 
         Input.MouseMode = Input.MouseModeEnum.Captured;
+        _spawnPosition = GlobalPosition;
+        _spawnYaw = Rotation.Y;
     }
 
     public override void _EnterTree() => Local = this;
@@ -337,6 +341,12 @@ public partial class PlayerController : CharacterBody3D
 
     public override void _PhysicsProcess(double delta)
     {
+        if (State == PlayerState.Walking && GlobalPosition.Y < -100f)
+        {
+            RecoverFromFall();
+            return;
+        }
+
         float dt = (float)delta;
 
         if (State == PlayerState.Walking && !_inTransition && IsClimbing)
@@ -406,6 +416,14 @@ public partial class PlayerController : CharacterBody3D
             else
                 UseSelectedItem();
         }
+    }
+
+    private void RecoverFromFall()
+    {
+        if (IsHolding)
+            DropHeld();
+        Teleport(_spawnPosition + Vector3.Up * 0.15f, _spawnYaw);
+        GameHud.Toast(this, "Você caiu para fora do mapa. Voltou ao ponto inicial.", UiStyle.Warning, 4.0);
     }
 
     private float _knockbackLeft;
