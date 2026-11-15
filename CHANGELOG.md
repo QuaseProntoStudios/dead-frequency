@@ -2,6 +2,14 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.10.3 — Acessos e guias corretos  (15/11/2026)
+
+- Faixas amarelas e brancas do meio-fio deixam livres as rampas de entrada e saída, inclusive nos cantos dos quarteirões.
+- Postes e placas próximos aos acessos são reposicionados quando há espaço seguro ou omitidos para não bloquear as rampas.
+- Bocas de lobo e tampas de bueiro não são geradas nas áreas abertas de entrada e saída de veículos.
+- Textos ENTRADA e SAÍDA no piso usam pintura discreta, sem brilho artificial.
+
+
 ## v0.10.2 — Hotbar com ícones  (15/11/2026)
 
 - Barra rápida com ícones próprios para os itens, substituindo os nomes longos e mantendo a identificação completa no tooltip.
