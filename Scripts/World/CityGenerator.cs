@@ -2309,9 +2309,23 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
         float limit = (Radius + 1) * Period;
         float length = limit * 2f;
         const float h = 6f;
-        AddBox(_staticRoot, new Vector3(limit, h * 0.5f, 0f), new Vector3(1f, h, length), _concrete);
-        AddBox(_staticRoot, new Vector3(-limit, h * 0.5f, 0f), new Vector3(1f, h, length), _concrete);
-        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, limit), new Vector3(length, h, 1f), _concrete);
-        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, -limit), new Vector3(length, h, 1f), _concrete);
+        // Textura provisória: grade 3D xadrez (Shaders/grid_3d.gdshader) em coordenadas de mundo.
+        Material mat = (Material)BoundaryGridMaterial() ?? _concrete;
+        AddBox(_staticRoot, new Vector3(limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
+        AddBox(_staticRoot, new Vector3(-limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
+        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, limit), new Vector3(length, h, 1f), mat);
+        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, -limit), new Vector3(length, h, 1f), mat);
+    }
+
+    private ShaderMaterial _boundaryGrid;
+
+    private ShaderMaterial BoundaryGridMaterial()
+    {
+        if (_boundaryGrid != null)
+            return _boundaryGrid;
+        if (!ResourceLoader.Exists("res://Shaders/grid_3d.gdshader"))
+            return null;
+        _boundaryGrid = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/grid_3d.gdshader") };
+        return _boundaryGrid;
     }
 }
