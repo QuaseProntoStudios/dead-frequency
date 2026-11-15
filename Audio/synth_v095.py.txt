@@ -1,5 +1,5 @@
-"""Sons da v0.9.5, gerados por código (livres de direitos): chinelo (ploc), latido do caramelo,
-pernilongo, vazamento do botijão, chapa do churrasquinho e o motor do Maré-Azar fervendo.
+"""Sons da v0.9.5, gerados por código (livres de direitos): chinelo (ploc), vazamento do botijão,
+chapa do churrasquinho e o motor do Maré-Azar fervendo.
 Uso: python3 Audio/synth_v095.py.txt Audio/SFX"""
 import math, random, struct, sys, wave
 OUT = sys.argv[1] if len(sys.argv) > 1 else "."
@@ -27,24 +27,7 @@ for v, f in ((1, 900), (2, 1150)):
     s = [(random.uniform(-1, 1) * math.exp(-i / 60) * 0.7 + math.sin(2 * math.pi * f * i / SR) * math.exp(-i / 300) * 0.8) for i in range(n)]
     save(f"chinelo_{v}", s)
 
-# Latido: duas sílabas "au-au" com formantes e ruído.
-def bark(f0, dur):
-    n = int(SR * dur); out = []; ph = 0.0
-    for i in range(n):
-        t = i / n
-        f = f0 * (1.25 - 0.45 * t)
-        ph += 2 * math.pi * f / SR
-        src = (ph / math.pi % 2 - 1)  # dente de serra
-        out.append((src * 0.6 + random.uniform(-1, 1) * 0.35) * math.sin(math.pi * t) ** 0.6)
-    return lowpass(out, 0.35)
-for v, f0 in ((1, 420), (2, 520)):
-    s = bark(f0, 0.16) + [0.0] * int(SR * 0.08) + bark(f0 * 0.92, 0.14)
-    save(f"latido_{v}", [x * 1.4 for x in s])
-
-# Pernilongo: zumbido agudo com vibrato (loop de 2 s).
-n = SR * 2
-save("pernilongo", [0.25 * math.sin(2 * math.pi * (620 + 25 * math.sin(2 * math.pi * 7 * i / SR)) * i / SR + 0.6 * math.sin(2 * math.pi * 1240 * i / SR))
-                    * (0.7 + 0.3 * math.sin(2 * math.pi * 0.5 * i / SR)) for i in range(n)])
+# Latido e pernilongo: efeitos desativados; não gerar novamente.
 
 # Vazamento de gás: chiado (ruído agudo) em loop.
 n = SR * 2
