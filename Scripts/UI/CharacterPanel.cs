@@ -97,19 +97,18 @@ public partial class CharacterPanel : VBoxContainer
         _preview?.QueueFree();
         CharacterLook look = CharacterLook.Local;
         _preview = look.Build();
-        _preview.Rotation = new Vector3(0f, _spin, 0f);
+        _preview.Rotation = new Vector3(0f, PreviewYaw, 0f);
         _viewport.AddChild(_preview);
         _summary.Text = $"{(look.Woman ? "Mulher" : "Homem")} · cabelo {CharacterLook.HairNames[look.Hair].ToLowerInvariant()}";
     }
 
-    private float _spin = 0.4f;
+    private const float PreviewYaw = 0.35f; // fixo, sem girar: personagem de frente, levemente de lado
 
     public override void _Process(double delta)
     {
         if (!IsVisibleInTree() || _preview == null)
             return;
-        _spin += (float)delta * 0.6f;
-        _preview.Rotation = new Vector3(0f, _spin, 0f);
+        _preview.Rotation = new Vector3(0f, PreviewYaw, 0f);
         _preview.Animate((float)delta, 0f);
     }
 }
