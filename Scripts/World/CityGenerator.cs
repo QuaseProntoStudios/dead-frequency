@@ -356,6 +356,7 @@ public partial class CityGenerator : Node3D
             int x = chunk.Coordinate.X;
             int z = chunk.Coordinate.Z;
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetLampForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildPoleWiresForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildBikeLanesForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetDrainageForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildParkedCarsForBlock(x, z));
@@ -421,6 +422,7 @@ public partial class CityGenerator : Node3D
         int bx = coordinate.X;
         int bz = coordinate.Z;
         BuildStreetLampForBlock(bx, bz);
+        BuildPoleWiresForBlock(bx, bz);
         BuildBikeLanesForBlock(bx, bz);
         BuildStreetDrainageForBlock(bx, bz);
         BuildParkedCarsForBlock(bx, bz);
@@ -755,6 +757,7 @@ public partial class CityGenerator : Node3D
             BuildBikeLanes();
             BuildStreetDrainage();
             BuildStreetLamps();
+            BuildPoleWires();
             BuildStreetSigns();
             BuildPhoneBooths();
             BuildHydrants();
@@ -1775,6 +1778,7 @@ public partial class CityGenerator : Node3D
         AddBox(lamp, armCenter, armSize, _darkMetal, false);
         Vector3 headPos = towardRoad * 1.5f + new Vector3(0f, height - 0.25f, 0f);
         AddBox(lamp, headPos, new Vector3(0.6f, 0.15f, 0.6f), _lampHead, false);
+        AddPoleFlyer(lamp, basePos, towardRoad);
         (_activeChunkRoot ?? _staticRoot).AddChild(lamp);
 
         var light = new OmniLight3D
