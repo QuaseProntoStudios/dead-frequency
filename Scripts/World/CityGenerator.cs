@@ -99,8 +99,6 @@ public partial class CityGenerator : Node3D
     private Node3D _lightsRoot;
     private Node3D _eastExitGatePivot;
     private CollisionShape3D _eastExitGateShape;
-    private MeshInstance3D _eastExitSealMesh;
-    private CollisionShape3D _eastExitSealShape;
     private bool _eastExitOpening;
     private bool _useLogicalWorldData;
     private bool _useLogicalServiceData;
@@ -2333,7 +2331,7 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
             if (rightLength > 0.5f)
                 AddBox(_staticRoot, new Vector3(limit, h * 0.5f, (openingEnd + limit) * 0.5f),
                     new Vector3(1f, h, rightLength), mat);
-            BuildEastExitGate(limit, roadZ, openingHalfWidth, h, mat);
+            BuildEastExitGate(limit, roadZ, openingHalfWidth);
             if (story.CanAdvance)
                 OpenEastExit();
         }
@@ -2347,7 +2345,7 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
         AddBox(_staticRoot, new Vector3(0f, h * 0.5f, -limit), new Vector3(length, h, 1f), mat);
     }
 
-    private void BuildEastExitGate(float limit, float roadZ, float halfWidth, float wallHeight, Material wallMaterial)
+    private void BuildEastExitGate(float limit, float roadZ, float halfWidth)
     {
         // Pilares baixos e cancela física: a passagem só abre quando o capítulo I for concluído.
         float postZ = halfWidth;
@@ -2371,7 +2369,7 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
             PixelSize = 0.012f,
             Billboard = BaseMaterial3D.BillboardModeEnum.Disabled,
             OutlineSize = 8,
-            Rotation = new Vector3(0f, Mathf.Pi * 0.5f, 0f),
+            Rotation = new Vector3(0f, -Mathf.Pi * 0.5f, 0f),
             Modulate = new Color(0.95f, 0.88f, 0.62f),
             Position = new Vector3(limit - 0.8f, 5.15f, roadZ),
         };
@@ -2401,28 +2399,8 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
                 new Vector3(0.38f, 0.06f, 0.12f), _signWhite, false);
         }
 
-        // Parede física atrás da cancela: ninguém atravessa a abertura antes da liberação.
-        _eastExitSealMesh = new MeshInstance3D
-        {
-            Name = "EastExitClosedWallVisual",
-            Mesh = new BoxMesh { Size = new Vector3(1f, wallHeight, halfWidth * 2f) },
-            MaterialOverride = wallMaterial,
-            Position = new Vector3(limit + 0.65f, wallHeight * 0.5f, roadZ),
-        };
-        _staticRoot.AddChild(_eastExitSealMesh);
-        var sealBody = new StaticBody3D
-        {
-            Name = "EastExitClosedWallBody",
-            Position = _eastExitSealMesh.Position,
-            CollisionLayer = 1,
-            CollisionMask = 0,
-        };
-        _staticRoot.AddChild(sealBody);
-        _eastExitSealShape = new CollisionShape3D
-        {
-            Shape = new BoxShape3D { Size = new Vector3(1f, wallHeight, halfWidth * 2f) },
-        };
-        sealBody.AddChild(_eastExitSealShape);
+        // A cancela é a única barreira visual e física da passagem.
+
     }
 
     /// <summary>Abre a cancela da saída leste após a conclusão do primeiro capítulo.</summary>
@@ -2433,10 +2411,6 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
         _eastExitOpening = true;
         if (_eastExitGateShape != null)
             _eastExitGateShape.SetDeferred(CollisionShape3D.PropertyName.Disabled, true);
-        if (_eastExitSealShape != null)
-            _eastExitSealShape.SetDeferred(CollisionShape3D.PropertyName.Disabled, true);
-        if (_eastExitSealMesh != null)
-            _eastExitSealMesh.Visible = false;
         CreateTween().BindNode(this)
             .TweenProperty(_eastExitGatePivot, "rotation:x", -Mathf.Pi * 0.5f, 1.4)
             .SetTrans(Tween.TransitionType.Sine)
