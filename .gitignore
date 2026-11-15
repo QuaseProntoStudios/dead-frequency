@@ -2,6 +2,8 @@
 .godot/
 /android/
 *.translation
+*.uid
+*.import
 
 # .NET
 .mono/
