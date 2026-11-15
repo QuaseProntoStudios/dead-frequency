@@ -139,7 +139,7 @@ Versão de correção aberta também para ajustes pedidos antes e tarefas em and
 | ✅ **Locutor: E toca os comerciais gravados** | Na mesa de som, ler o comercial no ar também toca o áudio gravado da 96.6. |
 | ✅ **Idle respirando** | Jogador e NPCs parados respiram em vez de ficar virando a cabeça. |
 | ✅ **Animações nos veículos** | Ajustar a pose do personagem pilotando a moto e dirigindo o táxi (a moto continua a mesma). |
-| 🚧 **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. Código pronto: cada tipo de morador (`npc_senhor`, `npc_rapaz`, `npc_escritorio`, `npc_moca`, `npc_dona`, `npc_senhora`) tem 3 falas próprias (`SidewalkTalk.KindLines`) que tocam `Audio/Street/<morador>_<n>.ogg` junto do balão, ouvidas até ~14 m; sem o áudio, só o balão. Roteiro em `docs/radio/falas_de_rua.csv`. Falta gravar as 18 falas no Google AI Studio (uma geração por morador, cortada com `tools/tts/cortar_falas.py`). |
+| ✅ **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. Código pronto: cada tipo de morador (`npc_senhor`, `npc_rapaz`, `npc_escritorio`, `npc_moca`, `npc_dona`, `npc_senhora`) tem 3 falas próprias (`SidewalkTalk.KindLines`) que tocam `Audio/Street/<morador>_<n>.ogg` junto do balão, ouvidas até ~14 m; sem o áudio, só o balão. Roteiro em `docs/radio/falas_de_rua.csv`. As 18 falas foram gravadas no Google AI Studio (uma geração por morador) e cortadas por silêncio, ainda sem conferir de ouvido: ouvir principalmente `npc_senhora_*` e `npc_escritorio_*`. |
 | ✅ **Telas de carregamento** | Loading do Modo História e do offline mais bonito, no tema CRT verde. |
 | ✅ **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
 | ✅ **Painel da van** | Monitor CRT mais legível. |
@@ -328,7 +328,7 @@ Documentação completa em [`docs/README_PARA_IAS.md`](docs/README_PARA_IAS.md).
 - [ ] **Fase 2 · Rancho (reconstrução):** estradas de terra vermelha em circuito, sítios, *packing house* de banana/palmito, lago com pesqueiro e sinalização rústica.
 
 ### Próximas — Imersão e novos cenários (cenas isoladas)
-- [ ] **IK nos personagens:** `TwoBoneIK3D` para mãos na caixa/saco/volante e `LookAtModifier3D` para NPCs olharem o jogador.
+- [x] **IK nos personagens:** `TwoBoneIK3D` para mãos na caixa/saco/volante (feito). O `LookAtModifier3D` dos NPCs olhando o jogador foi desligado na v0.10.1: bugava a animação dos parados.
 - [ ] **Otimização de renderização:** `MultiMeshInstance3D` para vegetação/postes e *occlusion culling*.
 - [ ] **Fase 3 · O Bananal (`Bananal.tscn`):** navegação pelo sinal da 96.6 (radar sonoro).
 - [ ] **Fase 4 · Gruta da Estática (`Gruta.tscn`):** caverna de calcário com salas modulares, lanterna e visão noturna.
