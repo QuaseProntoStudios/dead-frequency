@@ -22,6 +22,12 @@ O AI Studio tem limite diário: quando aparece "Quota limit reached", para e con
 - Comerciais, eventos, comunicados e vinhetas: `Audio/Radio/Ads/<id>.ogg` (ids em `anuncios_966.csv`).
   A 96.6 toca um por intervalo entre as músicas (`RadioStation.Spots`); o carro de som usa os mesmos.
 - Carro do ovo: `Audio/Street/ovo_0N.ogg` (`carros_de_rua.csv`).
+- Falas de calçada (pedestres, v0.10.1): `Audio/Street/Calcada/<id>_m.ogg` (homem) e `<id>_f.ogg` (mulher), ids em
+  `falas_de_rua.csv` (os mesmos de `Scripts/Characters/SidewalkTalk.cs`). Cada pedestre tem 3 frases do dia a dia
+  suas, mais as de contexto (carga, caramelo, chinelo, madrugada). Ouve-se só de perto (até ~14 m); se faltar uma
+  das vozes, usa a outra; sem nenhuma, só o balão. As frases com o nome da carga ficam sem voz.
+  No `gerar_audios.py` os locutores `rua_homem`/`rua_mulher` usam Thiago e Vitória (neurais); também dá para
+  gerar no VoiceStudio (abaixo), com um perfil de homem e um de mulher adultos, tom de conversa.
 - Modo História: `Audio/Story/story_c<capítulo>_<intro|outro|broken>_<n>.ogg`, na ordem das falas de
   `Scripts/Story/StoryChapters.cs` (n começa em 1). Sem o arquivo, a caixa de diálogo só mostra o texto.
 

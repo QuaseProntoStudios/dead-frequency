@@ -59,6 +59,8 @@ public partial class CharacterModel : Node3D
     public bool Chatty { get; set; }
     /// <summary>Frases próprias (ex.: o comerciante oferecendo produtos); vazio = frases da calçada.</summary>
     public string[] Lines { get; set; }
+    /// <summary>As três frases do dia a dia deste pedestre (com voz), sorteadas na primeira fala.</summary>
+    private SidewalkTalk.Line[] _ownLines;
     private float _talkCheck, _talkCooldown;
     private bool _mountsReady;
 
@@ -440,8 +442,13 @@ public partial class CharacterModel : Node3D
         _talkCooldown = (float)GD.RandRange(18.0, 35.0);
         if (GD.Randf() > 0.7f)
             return; // às vezes a pessoa só passa calada
-        string line = Lines != null && Lines.Length > 0 && GD.Randf() < 0.6f ? Lines[GD.Randi() % (uint)Lines.Length] : SidewalkTalk.LineFor(player);
-        SidewalkTalk.Say(this, line, 2.05f * Scale.Y);
+        if (Lines != null && Lines.Length > 0 && GD.Randf() < 0.6f)
+        {
+            SidewalkTalk.Say(this, Lines[GD.Randi() % (uint)Lines.Length], 2.05f * Scale.Y);
+            return;
+        }
+        _ownLines ??= SidewalkTalk.PickOwnLines(GetInstanceId());
+        SidewalkTalk.Say(this, SidewalkTalk.PickLine(player, _ownLines), IsWoman, 2.05f * Scale.Y);
     }
 
     /// <summary>Leva os pontos de encaixe para onde os ossos estão neste quadro.</summary>

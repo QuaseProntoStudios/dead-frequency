@@ -5,6 +5,7 @@ Gera os áudios falados do Dead Frequency com o Amazon Polly (AWS).
 Lê as planilhas de roteiro e cria um .ogg por linha, no caminho da coluna "arquivo":
   - docs/radio/anuncios_966.csv  -> Audio/Radio/Ads/<id>.ogg  (Rádio 96.6 e carro de som)
   - docs/radio/carros_de_rua.csv -> Audio/Street/<id>.ogg     (carro do ovo)
+  - docs/radio/falas_de_rua.csv  -> Audio/Street/Calcada/<id>.ogg  (pedestres; _m = homem, _f = mulher)
 
 Uso (no PC, na pasta do projeto):
   python tools/tts/gerar_audios.py --simular          # só mostra o que vai gerar e quantos caracteres (não chama a AWS)
@@ -32,7 +33,11 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 RAIZ = Path(__file__).resolve().parents[2]
-PLANILHAS = [RAIZ / "docs/radio/anuncios_966.csv", RAIZ / "docs/radio/carros_de_rua.csv"]
+PLANILHAS = [
+    RAIZ / "docs/radio/anuncios_966.csv",
+    RAIZ / "docs/radio/carros_de_rua.csv",
+    RAIZ / "docs/radio/falas_de_rua.csv",
+]
 
 # Locutor da planilha -> (voz, motor preferido, velocidade em %, tom em semitons). Se o motor falhar, tenta o "neural".
 # Vozes pt-BR do Polly: generativas Camila, Carolina, Leo (as mais naturais); neurais Camila, Vitória, Thiago;
@@ -46,6 +51,8 @@ VOZES = {
     "toninho": ("Leo", "generative", 106, 1.5),      # humor, mais leve
     "ovo": ("Leo", "generative", 110, 0.5),          # carro do ovo, empolgado
     "locutor": ("Leo", "generative", 100, -0.5),     # locutor genérico da rádio
+    "rua_homem": ("Thiago", "neural", 100, 0.0),     # pedestre (falas de calçada), voz diferente dos locutores
+    "rua_mulher": ("Vitoria", "neural", 100, 0.0),   # pedestre (falas de calçada)
 }
 RESERVA = {"Leo": "Thiago", "Carolina": "Vitoria"}  # vozes generativas sem versão neural
 
@@ -61,6 +68,7 @@ PRONUNCIA = {
     "Shello": "Xélo",
     "R$ 0,89": "oitenta e nove centavos",
     "R$ 5": "cinco reais",
+    "ônibus 966": "ônibus nove meia meia",
 }
 
 PRECO_POR_MILHAO = {"standard": 4.0, "neural": 16.0, "generative": 30.0}

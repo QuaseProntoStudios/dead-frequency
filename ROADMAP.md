@@ -139,7 +139,7 @@ Versão de correção aberta também para ajustes pedidos antes e tarefas em and
 | ✅ **Locutor: E toca os comerciais gravados** | Na mesa de som, ler o comercial no ar também toca o áudio gravado da 96.6. |
 | ✅ **Idle respirando** | Jogador e NPCs parados respiram em vez de ficar virando a cabeça. |
 | ✅ **Animações nos veículos** | Ajustar a pose do personagem pilotando a moto e dirigindo o táxi (a moto continua a mesma). |
-| **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. |
+| 🚧 **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. Código pronto: cada pedestre tem 3 frases do dia a dia suas (mais as de contexto) e toca `Audio/Street/Calcada/<id>_m|_f.ogg` pela voz do NPC, ouvida até ~14 m; sem o áudio, só o balão. Roteiro em `docs/radio/falas_de_rua.csv` (23 falas × 2 vozes). Falta gerar os 46 áudios (`tools/tts/gerar_audios.py` ou VoiceStudio). |
 | ✅ **Telas de carregamento** | Loading do Modo História e do offline mais bonito, no tema CRT verde. |
 | ✅ **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
 | ✅ **Painel da van** | Monitor CRT mais legível. |
