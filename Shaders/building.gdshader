@@ -6,6 +6,8 @@ render_mode diffuse_lambert, specular_schlick_ggx;
 instance uniform vec4 wall_color : source_color = vec4(0.45, 0.42, 0.38, 1.0);
 instance uniform float light_seed = 0.0;
 instance uniform float lit_ratio = 0.3;
+instance uniform float building_base_y = 0.0;
+instance uniform float building_height = 20.0;
 /** Acabamento da fachada (v0.9.7): 0 reboco, 1 tijolo, 2 pastilha, 3 chapisco. */
 instance uniform float wall_kind = 0.0;
 
@@ -23,6 +25,7 @@ uniform vec3 cold_light : source_color = vec3(0.55, 0.85, 1.0);
 varying vec3 world_pos;
 varying vec3 world_normal;
 varying vec3 local_pos;
+varying vec3 local_pos;
 varying vec3 local_normal;
 /** Meia largura da caixa (BoxMesh sem subdivisão: os 4 vértices de cada face têm o mesmo |x| e |z|). */
 varying vec2 half_ext;
@@ -34,6 +37,7 @@ float hash(vec2 p) {
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	local_pos = VERTEX;
 }
 
 void fragment() {
@@ -57,20 +61,24 @@ void fragment() {
 		col += grain * 0.5;
 		// Janelas repetidas em espaçamento fixo no mundo: mantém várias divisões
 		// pequenas em cada fachada, independentemente da escala do BoxMesh.
-		vec2 cell = vec2(u / window_spacing, world_pos.y / floor_height);
+		float relative_y = world_pos.y - building_base_y;
+		vec2 cell = vec2(u / window_spacing, relative_y / floor_height);
 		vec2 f = fract(cell);
 		vec2 id = floor(cell);
 		// Faixa entre andares.
 		if (f.y < 0.08) {
 			col *= 0.75;
 		}
-		bool window_area = f.x > 0.2 && f.x < 0.8 && f.y > 0.32 && f.y < 0.82 && id.y >= 1.0;
+		float window_top = (id.y + 0.82) * floor_height;
+		bool complete_window = window_top <= building_height - 0.25;
+		bool window_area = f.x > 0.2 && f.x < 0.8 && f.y > 0.32 && f.y < 0.82 && id.y >= 1.0 && complete_window;
 		// Peitoril claro embaixo da janela.
 		if (id.y >= 1.0 && f.x > 0.17 && f.x < 0.83 && f.y > 0.28 && f.y < 0.32) {
 			col = vec3(0.62, 0.6, 0.56);
 		}
 		if (window_area) {
-			float h = hash(id + vec2(light_seed, light_seed * 1.7) + sign(world_normal.x + world_normal.z) * 13.0);
+			// Sorteio compartilhado por andar: fachadas adjacentes não divergem na quina.
+			float h = hash(vec2(id.y + light_seed, light_seed * 1.7));
 			col = vec3(0.05, 0.06, 0.07);
 			rough = 0.25;
 			float ratio = lit_ratio * mix(0.08, 1.0, night);
