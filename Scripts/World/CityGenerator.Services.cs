@@ -271,22 +271,16 @@ public partial class CityGenerator
                 AddBox(st, new Vector3(x0 - 0.15f, -CurbHeight * 0.5f + 0.002f, edge - 0.3f - i * 0.6f), new Vector3(0.3f, CurbHeight + 0.01f, 0.3f), i % 2 == 0 ? yellow : _darkMetal, false);
                 AddBox(st, new Vector3(x1 + 0.15f, -CurbHeight * 0.5f + 0.002f, edge - 0.3f - i * 0.6f), new Vector3(0.3f, CurbHeight + 0.01f, 0.3f), i % 2 == 0 ? yellow : _darkMetal, false);
             }
-            // Texto aplicado como tinta gasta no piso, usando o mesmo padrão de desgaste das guias.
-            var groundPaint = new ShaderMaterial
-            {
-                Shader = GD.Load<Shader>("res://Shaders/curb_paint.gdshader"),
-            };
-            groundPaint.SetShaderParameter("paint_color", new Color(0.84f, 0.83f, 0.78f));
-            groundPaint.SetShaderParameter("curb_height", CurbHeight);
+            // Texto pintado no piso. Mantém o material padrão do Label3D para preservar
+            // a textura dos glifos; o shader de guia não pode substituir essa textura.
             st.AddChild(new Label3D
             {
                 Text = label,
                 FontSize = 64,
                 PixelSize = 0.01f,
-                Modulate = Colors.White,
+                Modulate = new Color(0.78f, 0.77f, 0.72f),
                 OutlineSize = 0,
                 Shaded = true,
-                MaterialOverride = groundPaint,
                 Position = new Vector3((x0 + x1) * 0.5f, 0.03f, edge - 2.6f),
                 Rotation = new Vector3(-Mathf.Pi * 0.5f, 0f, 0f),
             });
