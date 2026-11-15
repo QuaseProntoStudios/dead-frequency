@@ -366,6 +366,7 @@ public partial class CityGenerator : Node3D
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStrayDogsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildNoParkingSignsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildCurbMarkingsForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildTrashBinsForBlock(x, z));
 
             StaticBatcher.Merge(root);
             OptimizeVisibility(root);
@@ -431,6 +432,7 @@ public partial class CityGenerator : Node3D
         BuildStrayDogsForBlock(bx, bz);
         BuildNoParkingSignsForBlock(bx, bz);
         BuildCurbMarkingsForBlock(bx, bz);
+        BuildTrashBinsForBlock(bx, bz);
     }
 
     /// <summary>Descarta apenas a geometria do chunk; os dados lógicos permanecem na memória.</summary>
@@ -758,6 +760,7 @@ public partial class CityGenerator : Node3D
             BuildStreetSigns();
             BuildPhoneBooths();
             BuildHydrants();
+            BuildTrashBins();
             BuildStreetProps();
             BuildStrayDogs();
             BuildParkedCars();
