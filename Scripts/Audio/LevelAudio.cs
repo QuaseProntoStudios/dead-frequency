@@ -9,7 +9,7 @@ public partial class LevelAudio : Node
 {
     [Export(PropertyHint.File, "*.wav,*.ogg")] public string MusicPath { get; set; } = "res://Audio/Music/music_world.wav";
     [Export(PropertyHint.File, "*.wav,*.ogg")] public string DayMusicPath { get; set; } = "res://Audio/Music/music_day.wav";
-    [Export(PropertyHint.File, "*.wav,*.ogg")] public string AmbiencePath { get; set; } = "res://Audio/Music/ambience_city.wav";
+    [Export(PropertyHint.File, "*.wav,*.ogg")] public string AmbiencePath { get; set; } = ""; // Ambiente desativado até existir uma mixagem aprovada.
 
     private bool? _dayMusic;
     private double _check;
@@ -17,7 +17,10 @@ public partial class LevelAudio : Node
     public override void _Ready()
     {
         AudioManager.Instance?.SetMuffled(false);
-        AudioManager.Instance?.PlayAmbience(AmbiencePath, 3f);
+        if (string.IsNullOrWhiteSpace(AmbiencePath))
+            AudioManager.Instance?.StopAmbience(0.5f);
+        else
+            AudioManager.Instance?.PlayAmbience(AmbiencePath, 3f);
         // A primeira música sai no fim do frame, depois do DayNightController calcular a hora.
         Callable.From(() => UpdateMusic(3f)).CallDeferred();
     }

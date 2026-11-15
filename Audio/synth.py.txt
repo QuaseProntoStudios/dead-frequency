@@ -169,26 +169,8 @@ beeps = bp(beeps, 700, 1600) * 0.06
 world += echo(beeps, 0.5, 0.4, 0.7)
 save("music_world", make_loop(world, 4.0))
 
-# ---------------- Ambiente da cidade (40 s) ----------------
-t = t_axis(44.0)
-brown = np.cumsum(rng.standard_normal(len(t)))
-brown = hp(brown, 20)
-brown = lp(brown, 400) / np.std(brown)
-wind = brown * (0.5 + 0.35 * np.sin(2 * np.pi * 0.05 * t) + 0.15 * np.sin(2 * np.pi * 0.13 * t))
-hum = sum(np.sin(2 * np.pi * 60 * k * t) / k for k in (1, 2, 3, 5)) * 0.04
-cars = np.zeros_like(t)
-for start in (6.0, 19.0, 31.0):
-    n = int(5 * SR)
-    tt = np.arange(n) / SR
-    swell = np.sin(np.pi * tt / 5) ** 3
-    eng = (lp(rng.standard_normal(n), 300) + 0.5 * bp(rng.standard_normal(n), 300, 700) * swell) * swell
-    s0 = int(start * SR)
-    cars[s0:s0 + n] += eng * 0.8
-static = bp(rng.standard_normal(len(t)), 2000, 6000)
-gate = (rng.random(len(t) // 2205 + 1) > 0.93).repeat(2205)[: len(t)]
-static *= lp(gate.astype(float), 8) * 0.15
-amb = wind * 0.6 + hum + cars + static
-save("ambience_city", make_loop(amb, 4.0))
+# O antigo ambience_city.wav foi mantido no repositório, mas não é mais gerado nem reproduzido.
+# Uma nova mixagem urbana será adicionada depois de uma revisão auditiva.
 
 # ---------------- UI ----------------
 def blip(f, dur, wave_="square", decay=30.0):

@@ -81,18 +81,29 @@ public partial class FarmAnimal : Node3D
 
     private void Bark()
     {
+        const string path = "res://Audio/SFX/dog_bark_cc0.mp3";
+        if (!ResourceLoader.Exists(path))
+        {
+            _barkTimer = _rng.RandfRange(6f, 14f);
+            return;
+        }
+
         if (_bark == null)
         {
-            _bark = new AudioStreamPlayer3D { Bus = AudioManager.SfxBus, UnitSize = 5f, Position = new Vector3(0f, 0.6f, 0f) };
+            _bark = new AudioStreamPlayer3D
+            {
+                Bus = AudioManager.SfxBus,
+                UnitSize = 5f,
+                VolumeDb = -4f,
+                Position = new Vector3(0f, 0.6f, 0f),
+            };
             AddChild(_bark);
         }
-        string path = $"res://Audio/SFX/latido_{_rng.RandiRange(1, 2)}.wav";
-        if (!ResourceLoader.Exists(path))
-            return;
+
         _bark.Stream = GD.Load<AudioStream>(path);
-        _bark.PitchScale = _rng.RandfRange(0.9f, 1.15f);
+        _bark.PitchScale = _rng.RandfRange(0.94f, 1.07f);
         _bark.Play();
-        _barkTimer = _rng.RandfRange(6f, 14f);
+        _barkTimer = _rng.RandfRange(7f, 14f);
     }
 
     /// <summary>Segue o jogador a uns 2 m, correndo se ficar para trás. Volta a passear quando o tempo acaba.</summary>

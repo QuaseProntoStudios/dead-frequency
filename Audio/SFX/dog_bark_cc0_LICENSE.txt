@@ -1,0 +1,11 @@
+Barking Inez 2 — Freesound sound effect
+
+Title: Barking Inez 2
+Author: wateenfotos
+Original source: https://freesound.org/people/wateenfotos/sounds/749351/
+License: Creative Commons CC0 1.0 Universal (public-domain dedication)
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+
+The original recording is described by its author as two Portuguese dogs from Casa Valvida barking, recorded with a DJI microphone. The Freesound page identifies the work as CC0 1.0. This repository contains a redistributable MP3 copy of that recording.
+
+Credit is retained in README.md and docs/ASSETS_E_SONS.md even though CC0 does not require attribution.

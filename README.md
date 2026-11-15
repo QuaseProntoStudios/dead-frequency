@@ -141,6 +141,7 @@ qualquer versão distribuída continue com o código aberto e sob a mesma licen�
 - [Quaternius](https://quaternius.com): personagens animados, animais, prédios da fazenda, natureza e viaturas (CC0).
 - [GGBot](https://ggbot.itch.io/psx-style-cars): táxi do pacote PSX Style Cars (CC0).
 - Músicas, efeitos, letreiros e anúncios: gerados por código (`Audio/*.py.txt`, `Assets/Textures/Stores/*.py.txt`).
+- Latido do Caramelo: “Barking Inez 2”, por [wateenfotos](https://freesound.org/people/wateenfotos/sounds/749351/) (Freesound, CC0 1.0).
 - Rádio 96.6: cinco músicas originais de bandas fictícias, geradas por `Audio/synth_radio.py.txt` (livres de direitos autorais).
 - Siga [twitch.tv/teuzin0dev](https://twitch.tv/teuzin0dev) · [github.com/dieguesmosken](https://github.com/dieguesmosken) · [recadin.com.br](https://recadin.com.br)
 - Lojas, bancos e marcas do jogo são **paródias** e não têm relação com empresas reais.
