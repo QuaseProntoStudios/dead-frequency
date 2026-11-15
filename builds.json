@@ -2,6 +2,62 @@
   "descricao": "Histórico completo das builds do Dead Frequency (gerado pelos workflows).",
   "builds": [
     {
+      "tag": "v0.10.1",
+      "canal": "estavel",
+      "versao": "0.10.1",
+      "build": null,
+      "titulo": "v0.10.1 — Cidade viva e rádio por dentro",
+      "data": "2026-11-15T13:54:15Z",
+      "commit": "795f070da72ea50baf6f052263b5e75201923c55",
+      "pr": {
+        "numero": 84,
+        "titulo": "v0.10.1 — Cidade viva e rádio por dentro",
+        "branch": "Internal",
+        "url": "https://github.com/QuaseProntoStudios/dead-frequency/pull/84"
+      },
+      "notas": "![Dead Frequency](https://raw.githubusercontent.com/dieguesmosken/dead-frequency/main/site/assets/shots/hero.jpg)\n\n## v0.10.1 — Cidade viva e rádio por dentro\n*15/11/2026*\n\n- Rádio 96.6 por dentro: o estúdio virou seis salas (recepção, cabine do locutor com luz NO AR, gravação, discoteca, escritório). Na discoteca, os discos e as fitas tocam ao mirar e apertar E, e na mesa de som o locutor também toca os comerciais gravados.\n- Falas de rua com voz: os moradores da calçada (senhor, rapaz, moça, senhora, dona e o do escritório) falam de verdade, umas três falas cada, quando você passa perto.\n- Cidade mais viva: lombadas nas ruas, lixeiras de grade, árvores com a base caiada, cartazes de lambe-lambe e fios nos postes, remendos no asfalto, bueiros abertos sinalizados com galho de árvore e bocas de lobo nas guias (que nunca apareciam por um erro de sorteio).\n- Personagens parados respiram em vez de ficar virando a cabeça, e o personagem do menu não gira mais. Mãos na caixa, no volante e na escada, e pés em degrau e meio-fio, acompanham o que você faz.\n- Escada da caixa d'água municipal para ver a cidade de cima, ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário novos, calçadas que faltavam em volta da central e janelas sem corte nas quinas dos prédios.\n- Painel da van com monitor CRT mais legível, telas de carregamento no tema CRT verde, orelhão da Telefóbica com texto e tecla H para esconder o quadro lateral.\n- Mais leve: as luzes da cidade acendem até 30 m no celular (70 m no PC), letreiros pequenos somem de longe, rádios e pedestres distantes pausam o que não dá para ver e rádios, TVs e orelhões desligados não gastam mais processamento.\n\n### Fotos desta versão\n\n<p><img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/main/site/assets/shots/v0.10.1/arvore_caiada.jpg\" width=\"32%\" alt=\"Árvores das praças com a base do tronco caiada\" title=\"Árvores das praças com a base do tronco caiada\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/main/site/assets/shots/v0.10.1/lombada.jpg\" width=\"32%\" alt=\"Lombada amarela com faixa preta atravessando a rua\" title=\"Lombada amarela com faixa preta atravessando a rua\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/main/site/assets/shots/v0.10.1/lixeira_grade.jpg\" width=\"32%\" alt=\"Lixeira de grade na calçada de pedra portuguesa\" title=\"Lixeira de grade na calçada de pedra portuguesa\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/main/site/assets/shots/v0.10.1/poste_cartaz.jpg\" width=\"32%\" alt=\"Poste de luz com cartaz de lambe-lambe e fios\" title=\"Poste de luz com cartaz de lambe-lambe e fios\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/main/site/assets/shots/v0.10.1/bueiro_galho.jpg\" width=\"32%\" alt=\"Bueiro aberto sinalizado com um galho de árvore\" title=\"Bueiro aberto sinalizado com um galho de árvore\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/main/site/assets/shots/v0.10.1/boca_de_lobo.jpg\" width=\"32%\" alt=\"Boca de lobo na guia da calçada\" title=\"Boca de lobo na guia da calçada\"></p>\n\n### Baixar\n\n| | Arquivo |\n|---|---|\n| **Recomendado (Windows)** — instala e atualiza sozinho | [DeadFrequencyLauncher-windows.exe](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1/DeadFrequencyLauncher-windows.exe) |\n| Launcher Linux (`chmod +x` e abrir) | [DeadFrequencyLauncher-linux](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1/DeadFrequencyLauncher-linux) |\n| Jogo completo Windows (extraia e abra `DeadFrequency.exe`) | [DeadFrequency-v0.10.1-windows.zip](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1/DeadFrequency-v0.10.1-windows.zip) |\n| Jogo completo Linux (extraia e rode `./DeadFrequency.x86_64`) | [DeadFrequency-v0.10.1-linux.zip](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1/DeadFrequency-v0.10.1-linux.zip) |\n\n### Verificar o download\n\n- Confira o SHA-256 com o [SHA256SUMS.txt](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1/SHA256SUMS.txt) (no Windows: `certutil -hashfile ARQUIVO SHA256`).\n- A partir da v0.9.5, os arquivos têm atestado de build do GitHub (prova que saíram do GitHub Actions deste repositório): `gh attestation verify ARQUIVO --repo dieguesmosken/dead-frequency`.\n\n🌐 Site: https://www.teuzin.com.br/dead-frequency/ · 📜 [Histórico completo](https://www.teuzin.com.br/dead-frequency/#novidades) · 💚 [Apoie o projeto (Pix)](https://www.teuzin.com.br/dead-frequency/#apoie)\n",
+      "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/tag/v0.10.1",
+      "downloads": [
+        {
+          "nome": "DeadFrequency-v0.10.1-linux.zip",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1/DeadFrequency-v0.10.1-linux.zip",
+          "tamanho": 105002241
+        },
+        {
+          "nome": "DeadFrequency-v0.10.1-windows.zip",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1/DeadFrequency-v0.10.1-windows.zip",
+          "tamanho": 114569030
+        },
+        {
+          "nome": "DeadFrequencyLauncher-linux",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1/DeadFrequencyLauncher-linux",
+          "tamanho": 73690552
+        },
+        {
+          "nome": "DeadFrequencyLauncher-windows.exe",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1/DeadFrequencyLauncher-windows.exe",
+          "tamanho": 109439624
+        },
+        {
+          "nome": "launcher-version.txt",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1/launcher-version.txt",
+          "tamanho": 2
+        },
+        {
+          "nome": "SHA256SUMS.txt",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1/SHA256SUMS.txt",
+          "tamanho": 479
+        }
+      ],
+      "estado": "publicada",
+      "historico": [
+        {
+          "quando": "2026-11-15T13:54:15Z",
+          "evento": "publicada"
+        }
+      ]
+    },
+    {
       "tag": "v0.10.1.1-pre",
       "canal": "interna",
       "versao": "0.10.1",
@@ -59,8 +115,13 @@
         {
           "quando": "2026-11-15T13:51:41Z",
           "evento": "publicada"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
-      ]
+      ],
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.30-pre",
@@ -120,8 +181,13 @@
         {
           "quando": "2026-11-15T13:37:38Z",
           "evento": "publicada"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
-      ]
+      ],
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.29-pre",
@@ -181,8 +247,13 @@
         {
           "quando": "2026-11-15T13:34:03Z",
           "evento": "publicada"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
-      ]
+      ],
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.28-pre",
@@ -242,8 +313,13 @@
         {
           "quando": "2026-11-15T13:31:45Z",
           "evento": "publicada"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
-      ]
+      ],
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.27-pre",
@@ -303,8 +379,13 @@
         {
           "quando": "2026-11-15T13:24:41Z",
           "evento": "publicada"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
-      ]
+      ],
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.26-pre",
@@ -368,9 +449,14 @@
         {
           "quando": "2026-11-15T13:51:45Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:51:45Z"
+      "removida_em": "2026-11-15T13:51:45Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.25-pre",
@@ -434,9 +520,14 @@
         {
           "quando": "2026-11-15T13:37:42Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:37:42Z"
+      "removida_em": "2026-11-15T13:37:42Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.24-pre",
@@ -500,9 +591,14 @@
         {
           "quando": "2026-11-15T13:34:06Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:34:06Z"
+      "removida_em": "2026-11-15T13:34:06Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.23-pre",
@@ -566,9 +662,14 @@
         {
           "quando": "2026-11-15T13:31:49Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:31:49Z"
+      "removida_em": "2026-11-15T13:31:49Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.22-pre",
@@ -632,9 +733,14 @@
         {
           "quando": "2026-11-15T13:24:47Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:24:47Z"
+      "removida_em": "2026-11-15T13:24:47Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.21-pre",
@@ -698,9 +804,14 @@
         {
           "quando": "2026-11-15T13:21:49Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:21:49Z"
+      "removida_em": "2026-11-15T13:21:49Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.20-pre",
@@ -764,9 +875,14 @@
         {
           "quando": "2026-11-15T13:16:11Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:16:11Z"
+      "removida_em": "2026-11-15T13:16:11Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.19-pre",
@@ -830,9 +946,14 @@
         {
           "quando": "2026-11-15T13:08:06Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T13:08:06Z"
+      "removida_em": "2026-11-15T13:08:06Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.18-pre",
@@ -896,9 +1017,14 @@
         {
           "quando": "2026-11-15T12:48:08Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T12:48:08Z"
+      "removida_em": "2026-11-15T12:48:08Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.17-pre",
@@ -962,9 +1088,14 @@
         {
           "quando": "2026-11-15T12:44:22Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T12:44:22Z"
+      "removida_em": "2026-11-15T12:44:22Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.16-pre",
@@ -1028,9 +1159,14 @@
         {
           "quando": "2026-11-15T12:41:44Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T12:41:44Z"
+      "removida_em": "2026-11-15T12:41:44Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.15-pre",
@@ -1094,9 +1230,14 @@
         {
           "quando": "2026-11-15T01:59:07Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T01:59:07Z"
+      "removida_em": "2026-11-15T01:59:07Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.14-pre",
@@ -1160,9 +1301,14 @@
         {
           "quando": "2026-11-15T01:49:26Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T01:49:26Z"
+      "removida_em": "2026-11-15T01:49:26Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.13-pre",
@@ -1226,9 +1372,14 @@
         {
           "quando": "2026-11-15T00:22:46Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-15T00:22:46Z"
+      "removida_em": "2026-11-15T00:22:46Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.12-pre",
@@ -1292,9 +1443,14 @@
         {
           "quando": "2026-11-14T20:51:02Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T20:51:02Z"
+      "removida_em": "2026-11-14T20:51:02Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.11-pre",
@@ -1358,9 +1514,14 @@
         {
           "quando": "2026-11-14T20:34:35Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T20:34:35Z"
+      "removida_em": "2026-11-14T20:34:35Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.10-pre",
@@ -1424,9 +1585,14 @@
         {
           "quando": "2026-11-14T18:44:26Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T18:44:26Z"
+      "removida_em": "2026-11-14T18:44:26Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.9-pre",
@@ -1490,9 +1656,14 @@
         {
           "quando": "2026-11-14T18:41:52Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T18:41:52Z"
+      "removida_em": "2026-11-14T18:41:52Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.8-pre",
@@ -1556,9 +1727,14 @@
         {
           "quando": "2026-11-14T15:52:49Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T15:52:49Z"
+      "removida_em": "2026-11-14T15:52:49Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.7-pre",
@@ -1617,9 +1793,14 @@
         {
           "quando": "2026-11-14T13:03:18Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T13:03:18Z"
+      "removida_em": "2026-11-14T13:03:18Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.6-pre",
@@ -1678,9 +1859,14 @@
         {
           "quando": "2026-11-14T12:51:20Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T12:51:20Z"
+      "removida_em": "2026-11-14T12:51:20Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.5-pre",
@@ -1739,9 +1925,14 @@
         {
           "quando": "2026-11-14T12:47:11Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T12:47:11Z"
+      "removida_em": "2026-11-14T12:47:11Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.4-pre",
@@ -1800,9 +1991,14 @@
         {
           "quando": "2026-11-14T12:43:17Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T12:43:17Z"
+      "removida_em": "2026-11-14T12:43:17Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.3-pre",
@@ -1861,9 +2057,14 @@
         {
           "quando": "2026-11-14T12:43:18Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T12:43:18Z"
+      "removida_em": "2026-11-14T12:43:18Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0.2-pre",
@@ -1922,9 +2123,14 @@
         {
           "quando": "2026-11-14T12:43:19Z",
           "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
+        },
+        {
+          "quando": "2026-11-15T13:54:19Z",
+          "evento": "mesclada na main: entrou na release v0.10.1"
         }
       ],
-      "removida_em": "2026-11-14T12:43:19Z"
+      "removida_em": "2026-11-14T12:43:19Z",
+      "incluida_em": "v0.10.1"
     },
     {
       "tag": "v0.10.0",
@@ -5018,5 +5224,5 @@
       ]
     }
   ],
-  "atualizado": "2026-11-15T13:51:45Z"
+  "atualizado": "2026-11-15T13:54:19Z"
 }
