@@ -105,6 +105,8 @@ public partial class StoryDirector : Node
 
     private void OnChapterReady(int chapter)
     {
+        if (chapter == 1)
+            _city?.OpenEastExit();
         Refresh();
         StoryDialog.Play(this, StoryChapters.Get(chapter).Outro, $"story_c{chapter}_outro");
         GameHud.Toast(this, StoryManager.Instance?.NextChapterPlayable == true
@@ -122,8 +124,11 @@ public partial class StoryDirector : Node
     private void BuildCityExit()
     {
         float limit = (_city.Radius + 1) * _city.Period;
-        float roadZ = _city.Period * 0.5f;
-        Vector3 start = _city.GlobalTransform * new Vector3(limit - 75f, 0f, roadZ);
+        // A captura da cidade confirma a avenida leste em Z negativo (rua no eixo X).
+        float roadZ = -_city.Period * 0.5f;
+        // A van percorre cerca de 35 m durante o banner; o gatilho fica perto o bastante
+        // para atravessar a cancela antes da troca de cena.
+        Vector3 start = _city.GlobalTransform * new Vector3(limit - 32f, 0f, roadZ);
         var zone = new ChapterTransitionZone
         {
             Name = "ExitToRanch",
