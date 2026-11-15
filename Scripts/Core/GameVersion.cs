@@ -7,13 +7,19 @@ namespace DeadFrequency;
 
 public static class GameVersion
 {
-    public const string Current = "0.10.1";
+    public const string Current = "0.10.2";
     public const string Display = Current;
 
     public readonly record struct Release(string Version, string Date, string Title, string[] Changes);
 
     public static readonly Release[] Changelog =
     {
+        new("0.10.2", "15/11/2026", "Hotbar com ícones", new[]
+        {
+            "Barra rápida com ícones próprios para os itens, substituindo os nomes longos e mantendo a identificação completa no tooltip.",
+            "Pacote com 18 ícones: radar, mochila, luvas, visão noturna, energético, guaraná, kit de reparo, fita isolante, café, marmitex, espetinho, chinelos, repelente, lanterna, prego, lã de aço, fusível e galão de gasolina.",
+            "Texturas carregadas por item e reutilizadas em cache para evitar recriar recursos a cada atualização da interface.",
+        }),
         new("0.10.1", "15/11/2026", "Cidade viva e rádio por dentro", new[]
         {
             "Rádio 96.6 por dentro: o estúdio virou seis salas (recepção, cabine do locutor com luz NO AR, gravação, discoteca, escritório). Na discoteca, os discos e as fitas tocam ao mirar e apertar E, e na mesa de som o locutor também toca os comerciais gravados.",
