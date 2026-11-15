@@ -2,6 +2,67 @@
   "descricao": "Histórico completo das builds do Dead Frequency (gerado pelos workflows).",
   "builds": [
     {
+      "tag": "v0.10.2.1-pre",
+      "canal": "interna",
+      "versao": "0.10.2",
+      "build": 1,
+      "titulo": "v0.10.2.1-pre — Internal",
+      "data": "2026-11-15T18:11:13Z",
+      "commit": "747e94c6d210d3ea68d7441d0bdf707a666c7d1d",
+      "pr": {
+        "numero": 87,
+        "titulo": "feat: hotbar com ícones de itens",
+        "branch": "feature/hotbar-item-icons",
+        "url": "https://github.com/QuaseProntoStudios/dead-frequency/pull/87"
+      },
+      "notas": "![Dead Frequency](https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/hero.jpg)\n\n## v0.10.2 — Hotbar com ícones\n*15/11/2026*\n\n- Barra rápida com ícones próprios para os itens, substituindo os nomes longos e mantendo a identificação completa no tooltip.\n- Pacote com 18 ícones: radar, mochila, luvas, visão noturna, energético, guaraná, kit de reparo, fita isolante, café, marmitex, espetinho, chinelos, repelente, lanterna, prego, lã de aço, fusível e galão de gasolina.\n- Texturas carregadas por item e reutilizadas em cache para evitar recriar recursos a cada atualização da interface.\n\n### Baixar\n\n| | Arquivo |\n|---|---|\n| **Recomendado (Windows)** — instala e atualiza sozinho | [DeadFrequencyLauncher-windows.exe](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequencyLauncher-windows.exe) |\n| Launcher Linux (`chmod +x` e abrir) | [DeadFrequencyLauncher-linux](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequencyLauncher-linux) |\n| Jogo completo Windows (extraia e abra `DeadFrequency.exe`) | [DeadFrequency-v0.10.2-windows.zip](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequency-v0.10.2-windows.zip) |\n| Jogo completo Linux (extraia e rode `./DeadFrequency.x86_64`) | [DeadFrequency-v0.10.2-linux.zip](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequency-v0.10.2-linux.zip) |\n\n### Verificar o download\n\n- Confira o SHA-256 com o [SHA256SUMS.txt](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.2.1-pre/SHA256SUMS.txt) (no Windows: `certutil -hashfile ARQUIVO SHA256`).\n- A partir da v0.9.5, os arquivos têm atestado de build do GitHub (prova que saíram do GitHub Actions deste repositório): `gh attestation verify ARQUIVO --repo dieguesmosken/dead-frequency`.\n\n🌐 Site: https://www.teuzin.com.br/dead-frequency/ · 📜 [Histórico completo](https://www.teuzin.com.br/dead-frequency/#novidades) · 💚 [Apoie o projeto (Pix)](https://www.teuzin.com.br/dead-frequency/#apoie)\n",
+      "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/tag/v0.10.2.1-pre",
+      "downloads": [
+        {
+          "nome": "DeadFrequency-v0.10.2.1-pre-android.apk",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequency-v0.10.2.1-pre-android.apk",
+          "tamanho": 145686781
+        },
+        {
+          "nome": "DeadFrequency-v0.10.2.1-pre-linux.zip",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequency-v0.10.2.1-pre-linux.zip",
+          "tamanho": 105048791
+        },
+        {
+          "nome": "DeadFrequency-v0.10.2.1-pre-windows.zip",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequency-v0.10.2.1-pre-windows.zip",
+          "tamanho": 114617684
+        },
+        {
+          "nome": "DeadFrequencyLauncher-linux",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequencyLauncher-linux",
+          "tamanho": 73690552
+        },
+        {
+          "nome": "DeadFrequencyLauncher-windows.exe",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.2.1-pre/DeadFrequencyLauncher-windows.exe",
+          "tamanho": 109439624
+        },
+        {
+          "nome": "launcher-version.txt",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.2.1-pre/launcher-version.txt",
+          "tamanho": 2
+        },
+        {
+          "nome": "SHA256SUMS.txt",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.2.1-pre/SHA256SUMS.txt",
+          "tamanho": 597
+        }
+      ],
+      "estado": "publicada",
+      "historico": [
+        {
+          "quando": "2026-11-15T18:11:13Z",
+          "evento": "publicada"
+        }
+      ]
+    },
+    {
       "tag": "v0.10.1.3-pre",
       "canal": "interna",
       "versao": "0.10.1",
@@ -364,7 +425,7 @@
           "tamanho": 600
         }
       ],
-      "estado": "publicada",
+      "estado": "removida",
       "historico": [
         {
           "quando": "2026-11-15T13:34:03Z",
@@ -373,9 +434,14 @@
         {
           "quando": "2026-11-15T13:54:19Z",
           "evento": "mesclada na main: entrou na release v0.10.1"
+        },
+        {
+          "quando": "2026-11-15T18:11:17Z",
+          "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
         }
       ],
-      "incluida_em": "v0.10.1"
+      "incluida_em": "v0.10.1",
+      "removida_em": "2026-11-15T18:11:17Z"
     },
     {
       "tag": "v0.10.0.28-pre",
@@ -5356,5 +5422,5 @@
       ]
     }
   ],
-  "atualizado": "2026-11-15T14:17:34Z"
+  "atualizado": "2026-11-15T18:11:17Z"
 }
