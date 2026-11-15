@@ -6,7 +6,6 @@ render_mode diffuse_lambert, specular_schlick_ggx;
 instance uniform vec4 wall_color : source_color = vec4(0.45, 0.42, 0.38, 1.0);
 instance uniform float light_seed = 0.0;
 instance uniform float lit_ratio = 0.3;
-instance uniform float building_base_y = 0.0;
 instance uniform float building_height = 20.0;
 /** Acabamento da fachada (v0.9.7): 0 reboco, 1 tijolo, 2 pastilha, 3 chapisco. */
 instance uniform float wall_kind = 0.0;
@@ -25,10 +24,6 @@ uniform vec3 cold_light : source_color = vec3(0.55, 0.85, 1.0);
 varying vec3 world_pos;
 varying vec3 world_normal;
 varying vec3 local_pos;
-varying vec3 local_pos;
-varying vec3 local_normal;
-/** Meia largura da caixa (BoxMesh sem subdivisão: os 4 vértices de cada face têm o mesmo |x| e |z|). */
-varying vec2 half_ext;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -61,7 +56,7 @@ void fragment() {
 		col += grain * 0.5;
 		// Janelas repetidas em espaçamento fixo no mundo: mantém várias divisões
 		// pequenas em cada fachada, independentemente da escala do BoxMesh.
-		float relative_y = world_pos.y - building_base_y;
+		float relative_y = (local_pos.y + 0.5) * building_height;
 		vec2 cell = vec2(u / window_spacing, relative_y / floor_height);
 		vec2 f = fract(cell);
 		vec2 id = floor(cell);
