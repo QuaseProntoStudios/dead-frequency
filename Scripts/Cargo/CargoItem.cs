@@ -43,6 +43,9 @@ public partial class CargoItem : RigidBody3D, IInteractable
 
     private AudioStreamPlayer3D _impactPlayer;
     private double _soundCooldownLeft;
+    private Vector3 _spawnPosition;
+    private Quaternion _spawnRotation = Quaternion.Identity;
+    private bool _recoveringFromFall;
 
     private float _defaultGravityScale;
     private float _defaultAngularDamp;
@@ -54,6 +57,8 @@ public partial class CargoItem : RigidBody3D, IInteractable
 
     public override void _Ready()
     {
+        _spawnPosition = GlobalPosition;
+        _spawnRotation = GlobalBasis.GetRotationQuaternion();
         if (Data == null)
             GD.PushWarning($"{Name}: CargoItem sem CargoData atribuído no Inspector.");
         else
@@ -81,6 +86,14 @@ public partial class CargoItem : RigidBody3D, IInteractable
 
     public override void _PhysicsProcess(double delta)
     {
+        if (!_recoveringFromFall && !IsHeld && !IsRemote && GlobalPosition.Y < -100f &&
+            (NetClient.Instance == null || !NetClient.Instance.IsOnline))
+        {
+            _recoveringFromFall = true;
+            Callable.From(RecoverAtOriginalPosition).CallDeferred();
+            return;
+        }
+
         if (IsRemote)
         {
             FollowRemote((float)delta);
@@ -95,6 +108,24 @@ public partial class CargoItem : RigidBody3D, IInteractable
             _damageCooldownLeft -= delta;
         if (_soundCooldownLeft > 0)
             _soundCooldownLeft -= delta;
+    }
+
+    private void RecoverAtOriginalPosition()
+    {
+        if (!IsInsideTree())
+            return;
+        GlobalPosition = _spawnPosition;
+        Quaternion = _spawnRotation;
+        LinearVelocity = Vector3.Zero;
+        AngularVelocity = Vector3.Zero;
+        Freeze = false;
+        Sleeping = false;
+        Integrity = 1f;
+        EmitSignal(SignalName.IntegrityChanged, Integrity);
+        _damageCooldownLeft = 0;
+        _soundCooldownLeft = 0;
+        ResetPhysicsInterpolation();
+        _recoveringFromFall = false;
     }
 
     // ---------------- Multiplayer ----------------
