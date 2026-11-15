@@ -1,10 +1,10 @@
 # Dead Frequency — roadmap da cidade simulada
 
-Atualizado em 15/11/2026 (v0.10.2 "Hotbar com ícones" em integração; v0.10.0 "Modo História" lançada; ideias novas do documento "Roadmap Dead Frequency"). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
+Atualizado em 15/11/2026 (v0.10.3 "Acessos e guias corretos" em preparação na Internal; v0.10.2 "Hotbar com ícones" integrada; v0.10.0 "Modo História" lançada; ideias novas do documento "Roadmap Dead Frequency"). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
 **cidade simulada na zona morta**: cada jogador escolhe uma profissão, ganha um apartamento, ouve a
 rádio 96.6 e ajuda a cidade a funcionar. Ordem sugerida: de cima para baixo; cada fase deixa o jogo jogável.
 
-## Onde estamos (v0.10.2)
+## Onde estamos (v0.10.3)
 
 | Área | O que já tem |
 |---|---|
@@ -136,6 +136,15 @@ Implementada e testada no jogo (15/11/2026).
 | Ideia | Como funciona no jogo |
 |---|---|
 | ✅ **Ícones na barra rápida** | Os nomes extensos dos itens foram substituídos por ícones próprios nos espaços da hotbar. O nome completo continua disponível no tooltip. Pacote com 18 texturas: radar, mochila, luvas, visão noturna, energético, guaraná, kit de reparo, fita isolante, café, marmitex, espetinho, chinelos, repelente, lanterna, prego, lã de aço, fusível e galão de gasolina. |
+
+### v0.10.3 — Acessos e guias corretos ✅
+Implementada e testada no jogo (15/11/2026).
+| Ideia | Como funciona no jogo |
+|---|---|
+| ✅ **Rampas sem pintura de estacionamento** | As faixas amarelas e brancas do meio-fio respeitam as rampas de entrada e saída, inclusive quando o acesso fica no canto do quarteirão. |
+| ✅ **Postes e placas sem bloquear acessos** | Elementos próximos às rampas são movidos para uma posição livre quando possível; sem espaço seguro, não são gerados naquele ponto. |
+| ✅ **Drenagem fora das entradas** | Bocas de lobo e tampas de bueiro não aparecem nas áreas abertas de acesso de veículos. |
+| ✅ **Pintura de ENTRADA/SAÍDA** | Textos no piso ficam com aparência de tinta discreta e sem brilho artificial. |
 
 ### v0.10.1 — Correções de interface, modelos e animações
 Versão de correção aberta também para ajustes pedidos antes e tarefas em andamento (ideias do documento "Roadmap Dead Frequency", 14/11/2026).
