@@ -1,0 +1,9 @@
+Animal Dog Bark And Growl 01 — Freesound
+
+Title: Animal Dog Bark And Growl 01.wav
+Author: abhisheky948
+Original source: https://freesound.org/people/abhisheky948/sounds/625501/
+License: Creative Commons CC0 1.0 Universal (public-domain dedication)
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+
+The original Freesound page identifies this as a dog bark and growl recording, 2.767 seconds long, published under CC0 1.0. The repository copy is a mono MP3 conversion of the Freesound preview, normalized and faded at the edges for in-game playback.

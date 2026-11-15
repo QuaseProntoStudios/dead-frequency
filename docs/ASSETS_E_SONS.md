@@ -24,6 +24,8 @@ Antes de usar um arquivo: abrir a página, confirmar a licença e anotar autor +
 | Asset | Obra / autor | Licença | Fonte |
 |---|---|---|---|
 | `Audio/SFX/dog_bark_cc0.mp3` | **Playful Dog Barking 41**, SFXMint (gerado por IA) | CC0 1.0 | [Página do efeito](https://sfxmint.com/sounds/animal-dog-bark-41) |
+| `Audio/SFX/dog_growl_cc0.mp3` | **Animal Dog Bark And Growl 01**, por abhisheky948 | CC0 1.0 | [Freesound #625501](https://freesound.org/people/abhisheky948/sounds/625501/) |
+| `Audio/SFX/dog_howl_cc0.mp3` | **Dog singing during the night (Brazil)**, por Felix Blume (trecho de 5,5 s) | CC0 1.0 | [Freesound #463694](https://freesound.org/people/felix.blume/sounds/463694/) |
 
 O efeito é uma vocalização de cachorro gerada por IA, com duração indicada de 2,6 segundos. A SFXMint informa licença CC0 1.0 e permite uso comercial e redistribuição. O crédito e a licença também estão em `Audio/SFX/dog_bark_cc0_LICENSE.txt`.
 

@@ -81,12 +81,41 @@ public partial class FarmAnimal : Node3D
 
     private void Bark()
     {
-        const string path = "res://Audio/SFX/dog_bark_cc0.mp3";
-        if (!ResourceLoader.Exists(path))
+        bool night = DayNightController.Hour >= 19f || DayNightController.Hour < 5f;
+        float choice = _rng.Randf();
+        string path;
+        float volumeDb;
+        float nextBarkMin;
+        float nextBarkMax;
+
+        if (night && choice < 0.12f)
         {
-            _barkTimer = _rng.RandfRange(6f, 14f);
-            return;
+            // Uivo de campo: raro, só à noite, como resposta a cães distantes.
+            path = "res://Audio/SFX/dog_howl_cc0.mp3";
+            volumeDb = -6f;
+            nextBarkMin = 75f;
+            nextBarkMax = 115f;
         }
+        else if (choice < 0.32f)
+        {
+            // Rosnado e latido bravo como variação ocasional.
+            path = "res://Audio/SFX/dog_growl_cc0.mp3";
+            volumeDb = 1f;
+            nextBarkMin = 22f;
+            nextBarkMax = 38f;
+        }
+        else
+        {
+            // Latido brincalhão principal, aprovado para o Caramelo.
+            path = "res://Audio/SFX/dog_bark_cc0.mp3";
+            volumeDb = 3f;
+            nextBarkMin = 7f;
+            nextBarkMax = 14f;
+        }
+
+        _barkTimer = _rng.RandfRange(nextBarkMin, nextBarkMax);
+        if (!ResourceLoader.Exists(path))
+            return;
 
         if (_bark == null)
         {
@@ -94,16 +123,17 @@ public partial class FarmAnimal : Node3D
             {
                 Bus = AudioManager.SfxBus,
                 UnitSize = 7f,
-                VolumeDb = 3f,
                 Position = new Vector3(0f, 0.6f, 0f),
             };
             AddChild(_bark);
         }
 
         _bark.Stream = GD.Load<AudioStream>(path);
-        _bark.PitchScale = _rng.RandfRange(0.94f, 1.07f);
+        _bark.VolumeDb = volumeDb;
+        _bark.PitchScale = path.Contains("howl")
+            ? _rng.RandfRange(0.96f, 1.04f)
+            : _rng.RandfRange(0.94f, 1.07f);
         _bark.Play();
-        _barkTimer = _rng.RandfRange(7f, 14f);
     }
 
     /// <summary>Segue o jogador a uns 2 m, correndo se ficar para trás. Volta a passear quando o tempo acaba.</summary>

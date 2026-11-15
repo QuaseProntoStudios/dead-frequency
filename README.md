@@ -142,6 +142,8 @@ qualquer versão distribuída continue com o código aberto e sob a mesma licen�
 - [GGBot](https://ggbot.itch.io/psx-style-cars): táxi do pacote PSX Style Cars (CC0).
 - Músicas, efeitos, letreiros e anúncios: gerados por código (`Audio/*.py.txt`, `Assets/Textures/Stores/*.py.txt`).
 - Latido do Caramelo: “Playful Dog Barking 41” ([SFXMint](https://sfxmint.com/sounds/animal-dog-bark-41), vocalização gerada por IA, CC0 1.0).
+- Variação de latido/rosnado: “Animal Dog Bark And Growl 01”, por [abhisheky948](https://freesound.org/people/abhisheky948/sounds/625501/) (Freesound, CC0 1.0).
+- Uivo noturno: trecho de “Dog singing during the night (Brazil)”, por [Felix Blume](https://freesound.org/people/felix.blume/sounds/463694/) (Freesound, CC0 1.0).
 - Rádio 96.6: cinco músicas originais de bandas fictícias, geradas por `Audio/synth_radio.py.txt` (livres de direitos autorais).
 - Siga [twitch.tv/teuzin0dev](https://twitch.tv/teuzin0dev) · [github.com/dieguesmosken](https://github.com/dieguesmosken) · [recadin.com.br](https://recadin.com.br)
 - Lojas, bancos e marcas do jogo são **paródias** e não têm relação com empresas reais.

@@ -1,0 +1,9 @@
+Dog singing during the night (Brazil) — Freesound
+
+Title: Dog singing during the night (Brazil)
+Author: felix.blume (Felix Blume)
+Original source: https://freesound.org/people/felix.blume/sounds/463694/
+License: Creative Commons CC0 1.0 Universal (public-domain dedication)
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+
+The original field recording was made in Rio Acima, Minas Gerais, Brazil, and features Mel howling in response to distant dogs. The source recording is 1:31.989, 96 kHz / 24-bit / stereo. This repository contains a 5.5-second mono MP3 excerpt from 00:39.5 to 00:45.0, faded at the edges and reduced in bitrate for use as a rare nighttime companion-dog howl.

@@ -1,5 +1,5 @@
-// Papel envelhecido aplicado em uma faixa cilíndrica ao redor do poste.
-// A malha fornece UV cilíndrico; o shader acrescenta fibras, manchas e bordas gastas.
+// Papel envelhecido aplicado a uma folha parcialmente curvada ao redor do poste.
+// UV.x percorre a largura do papel; UV.y percorre sua altura.
 shader_type spatial;
 render_mode cull_disabled, diffuse_burley, specular_schlick_ggx;
 
@@ -25,9 +25,11 @@ float noise2(vec2 p) {
 void fragment() {
     float fiber = sin(UV.y * 190.0 + noise2(vec2(UV.x * 22.0, UV.y * 8.0)) * 4.0);
     float stains = noise2(vec2(UV.x * 13.0, UV.y * 17.0));
+    float horizontalEdge = smoothstep(0.0, 0.055, min(UV.x, 1.0 - UV.x));
     float verticalEdge = smoothstep(0.0, 0.045, min(UV.y, 1.0 - UV.y));
+    float intact = horizontalEdge * verticalEdge;
     vec3 paper = paper_color.rgb * (0.9 + fiber * 0.035 + stains * 0.08);
-    paper *= mix(0.72, 1.0, verticalEdge);
+    paper *= mix(0.68, 1.0, intact);
     ALBEDO = paper;
     ROUGHNESS = 1.0;
     SPECULAR = 0.0;

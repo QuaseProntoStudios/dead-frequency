@@ -10,7 +10,7 @@ public partial class CityGenerator
 {
     private ArrayMesh _wireMesh;
     private StandardMaterial3D _wireMaterial;
-    private CylinderMesh _flyerWrapMesh;
+    private readonly Dictionary<int, ArrayMesh> _flyerWrapMeshes = new();
     private readonly Dictionary<int, ShaderMaterial> _flyerPapers = new();
 
     private static readonly string[] FlyerTexts =
@@ -161,28 +161,121 @@ public partial class CityGenerator
     }
 
     /// <summary>Faixa de papel curva ao redor do poste; o texto fica na face voltada à calçada.</summary>
+    private ArrayMesh GetFlyerWrapMesh(float poleRadius, float bandHeight)
+    {
+        int key = Mathf.RoundToInt(poleRadius * 1000f);
+        if (_flyerWrapMeshes.TryGetValue(key, out ArrayMesh cached))
+            return cached;
+
+        float wrapRadius = poleRadius + 0.006f;
+        float paperWidth = Mathf.Clamp(poleRadius * 1.8f, 0.16f, 0.29f);
+        float arc = Mathf.Clamp(paperWidth / wrapRadius, 1.15f, 1.9f);
+        float halfArc = arc * 0.5f;
+        float halfHeight = bandHeight * 0.5f;
+
+        var surface = new SurfaceTool();
+        surface.Begin(Mesh.PrimitiveType.Triangles);
+        const int segments = 20;
+
+        for (int i = 0; i < segments; i++)
+        {
+            float u0 = i / (float)segments;
+            float u1 = (i + 1) / (float)segments;
+            float a0 = Mathf.Lerp(-halfArc, halfArc, u0);
+            float a1 = Mathf.Lerp(-halfArc, halfArc, u1);
+            Vector3 n0 = new(Mathf.Sin(a0), 0f, Mathf.Cos(a0));
+            Vector3 n1 = new(Mathf.Sin(a1), 0f, Mathf.Cos(a1));
+
+            float bottom0 = -halfHeight + Mathf.Sin(a0 * 4f + 0.7f) * 0.003f;
+            float bottom1 = -halfHeight + Mathf.Sin(a1 * 4f + 0.7f) * 0.003f;
+            float top0 = halfHeight + Mathf.Sin(a0 * 3f + 0.3f) * 0.004f;
+            float top1 = halfHeight + Mathf.Sin(a1 * 3f + 0.3f) * 0.004f;
+
+            Vector3 pBottom0 = new(n0.X * wrapRadius, bottom0, n0.Z * wrapRadius);
+            Vector3 pBottom1 = new(n1.X * wrapRadius, bottom1, n1.Z * wrapRadius);
+            Vector3 pTop0 = new(n0.X * wrapRadius, top0, n0.Z * wrapRadius);
+            Vector3 pTop1 = new(n1.X * wrapRadius, top1, n1.Z * wrapRadius);
+
+            AddFlyerVertex(surface, pBottom0, n0, new Vector2(u0, 0f));
+            AddFlyerVertex(surface, pBottom1, n1, new Vector2(u1, 0f));
+            AddFlyerVertex(surface, pTop0, n0, new Vector2(u0, 1f));
+
+            AddFlyerVertex(surface, pBottom1, n1, new Vector2(u1, 0f));
+            AddFlyerVertex(surface, pTop1, n1, new Vector2(u1, 1f));
+            AddFlyerVertex(surface, pTop0, n0, new Vector2(u0, 1f));
+        }
+
+        ArrayMesh mesh = surface.Commit();
+        _flyerWrapMeshes[key] = mesh;
+        return mesh;
+    }
+
+    private static void AddFlyerVertex(SurfaceTool surface, Vector3 position, Vector3 normal, Vector2 uv)
+    {
+        surface.SetNormal(normal);
+        surface.SetUV(uv);
+        surface.AddVertex(position);
+    }
+
+    private void AddCurvedFlyerText(Node3D flyer, string text, float wrapRadius, float poleRadius, float bandHeight)
+    {
+        string[] lines = text.Split('\n');
+        int maxChars = 1;
+        foreach (string line in lines)
+            maxChars = Mathf.Max(maxChars, line.Length);
+
+        float paperWidth = Mathf.Clamp(poleRadius * 1.8f, 0.16f, 0.29f);
+        float availableWidth = paperWidth - 0.035f;
+        float glyphStep = Mathf.Min(0.023f, availableWidth / maxChars);
+        float textRadius = wrapRadius + 0.0025f;
+        float rowStep = bandHeight / (lines.Length + 1f);
+
+        for (int row = 0; row < lines.Length; row++)
+        {
+            string line = lines[row];
+            float lineSpan = Mathf.Max(0, line.Length - 1) * glyphStep;
+            float y = bandHeight * 0.5f - rowStep * (row + 1);
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                float alongArc = i * glyphStep - lineSpan * 0.5f;
+                float angle = alongArc / textRadius;
+                var glyph = new Label3D
+                {
+                    Text = line[i].ToString(),
+                    FontSize = 18,
+                    PixelSize = 0.00115f,
+                    Width = 18f,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Modulate = new Color(0.08f, 0.07f, 0.06f),
+                    OutlineSize = 0,
+                    Shaded = false,
+                    DoubleSided = false,
+                    Position = new Vector3(
+                        Mathf.Sin(angle) * textRadius,
+                        y,
+                        Mathf.Cos(angle) * textRadius),
+                    Rotation = new Vector3(0f, angle, 0f),
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                };
+                flyer.AddChild(glyph);
+            }
+        }
+    }
+
+    /// <summary>Folha de papel estreita, parcialmente curvada e encostada ao poste; as letras acompanham a curva.</summary>
     private void AddPoleFlyer(Node3D pole, Vector3 basePos, Vector3 towardRoad, float poleRadius)
     {
         int hash = AssetProps.Hash(basePos, 71);
         if (hash % 100 >= 65)
             return;
 
-        _flyerWrapMesh ??= new CylinderMesh
-        {
-            TopRadius = 0.5f,
-            BottomRadius = 0.5f,
-            Height = 1f,
-            RadialSegments = 12,
-            CapTop = false,
-            CapBottom = false,
-        };
-
         int colorIndex = hash / 100 % FlyerColors.Length;
-        float wrapRadius = poleRadius + 0.025f;
-        float bandHeight = 0.58f;
+        float bandHeight = 0.50f;
+        float wrapRadius = poleRadius + 0.006f;
         bool streetAlongX = Mathf.Abs(towardRoad.Z) > 0.5f;
         float yaw = streetAlongX ? Mathf.Pi * 0.5f : 0f;
-        Vector3 normal = streetAlongX ? Vector3.Right : Vector3.Back;
         float side = hash / 1000 % 2 == 0 ? 1f : -1f;
         float faceYaw = yaw + (side > 0f ? 0f : Mathf.Pi);
 
@@ -192,31 +285,20 @@ public partial class CityGenerator
             Position = new Vector3(0f, 1.9f + hash / 10000 % 4 * 0.1f, 0f),
             Rotation = new Vector3(0f, faceYaw, 0f),
         };
+
         flyer.AddChild(new MeshInstance3D
         {
             Name = "PapelCurvo",
-            Mesh = _flyerWrapMesh,
-            Scale = new Vector3(wrapRadius * 2f, bandHeight, wrapRadius * 2f),
+            Mesh = GetFlyerWrapMesh(poleRadius, bandHeight),
             MaterialOverride = GetFlyerPaperMaterial(colorIndex),
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         });
 
-        // O plano do texto é estreito e fica ligeiramente à frente da superfície curva.
-        float labelWidth = Mathf.Clamp(wrapRadius * 1.75f, 0.23f, 0.34f);
-        flyer.AddChild(new Label3D
-        {
-            Text = FlyerTexts[hash / 7 % FlyerTexts.Length],
-            FontSize = 24,
-            PixelSize = 0.0017f,
-            Width = 220f,
-            Modulate = new Color(0.08f, 0.07f, 0.06f),
-            OutlineSize = 0,
-            Shaded = false,
-            DoubleSided = false,
-            Position = new Vector3(0f, 0f, wrapRadius + 0.008f),
-            Scale = new Vector3(labelWidth / 0.34f, 1f, 1f),
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        });
+        AddCurvedFlyerText(
+            flyer,
+            FlyerTexts[hash / 7 % FlyerTexts.Length],
+            wrapRadius,
+            poleRadius,
+            bandHeight);
         pole.AddChild(flyer);
-    }
-}
+    }}
