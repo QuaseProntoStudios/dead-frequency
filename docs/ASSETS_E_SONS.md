@@ -9,7 +9,7 @@ do jogo, sempre com crédito (README → Créditos e um `LICENSE.txt` na pasta d
 |---|---|---|
 | [Freesound](https://freesound.org) | Sons: passos, ambiente de cidade e sítio, motores, portas | Só **CC0** (filtro "Creative Commons 0"). CC-BY só se o crédito for registrado. Nada de CC-BY-NC. |
 | [OpenGameArt](https://opengameart.org) | Sons, músicas, texturas e modelos | CC0, CC-BY (com crédito) |
-| [Kenney](https://kenney.nl) | Sons de interface e impacto, modelos | CC0 |
+| [Kenney](https://kenney.nl) | Sons de interface e impacto, modelos, Prototype Textures (muros do limite da cidade, provisório) | CC0 |
 | [itch.io](https://itch.io) | Pacotes de assets (modelos PSX, sons) | Só os que dizem CC0 ou licença compatível na página |
 | [Godot Shaders](https://godotshaders.com) | Shaders | O que estiver marcado CC0 ou MIT na página |
 

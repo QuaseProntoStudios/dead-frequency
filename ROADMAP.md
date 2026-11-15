@@ -1,10 +1,10 @@
 # Dead Frequency — roadmap da cidade simulada
 
-Atualizado em 13/11/2026 (v0.10.0 "Modo História" lançada; ideias novas do documento "Roadmap Dead Frequency"). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
+Atualizado em 15/11/2026 (v0.10.3 "Acessos e guias corretos" em preparação na Internal; v0.10.2 "Hotbar com ícones" integrada; v0.10.0 "Modo História" lançada; ideias novas do documento "Roadmap Dead Frequency"). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
 **cidade simulada na zona morta**: cada jogador escolhe uma profissão, ganha um apartamento, ouve a
 rádio 96.6 e ajuda a cidade a funcionar. Ordem sugerida: de cima para baixo; cada fase deixa o jogo jogável.
 
-## Onde estamos (v0.9)
+## Onde estamos (v0.10.3)
 
 | Área | O que já tem |
 |---|---|
@@ -131,6 +131,21 @@ streaming por chunks) estar na Internal.
 | **Online entre PC e celular** | Mesmo servidor e protocolo (WebSocket): sem mudança no `server/`. Testar sala com PC e celular juntos. |
 | 🚧 **Distribuição** | O prerelease da Internal (`vX.Y.Z.N-pre`) traz o `DeadFrequency-…-android.apk`. **Atualizador no próprio jogo** (`AppUpdater`): no celular o menu confere o GitHub, mostra "Nova versão", baixa o APK com progresso e abre o instalador do Android (se não abrir, usa o navegador). Quem tem build da Internal recebe os `-pre`; quem tem o público, só os públicos. O CI grava o build exato em `application/config/version` (`GameVersion.Build`). Instalar por cima precisa da chave do Matheus (segredos `ANDROID_KEYSTORE_*`); com chave de debug, desinstale antes. Link no site e Play Store ficam para depois. |
 
+### v0.10.2 — Hotbar com ícones ✅
+Implementada e testada no jogo (15/11/2026).
+| Ideia | Como funciona no jogo |
+|---|---|
+| ✅ **Ícones na barra rápida** | Os nomes extensos dos itens foram substituídos por ícones próprios nos espaços da hotbar. O nome completo continua disponível no tooltip. Pacote com 18 texturas: radar, mochila, luvas, visão noturna, energético, guaraná, kit de reparo, fita isolante, café, marmitex, espetinho, chinelos, repelente, lanterna, prego, lã de aço, fusível e galão de gasolina. |
+
+### v0.10.3 — Acessos e guias corretos ✅
+Implementada e testada no jogo (15/11/2026).
+| Ideia | Como funciona no jogo |
+|---|---|
+| ✅ **Rampas sem pintura de estacionamento** | As faixas amarelas e brancas do meio-fio respeitam as rampas de entrada e saída, inclusive quando o acesso fica no canto do quarteirão. |
+| ✅ **Postes e placas sem bloquear acessos** | Elementos próximos às rampas são movidos para uma posição livre quando possível; sem espaço seguro, não são gerados naquele ponto. |
+| ✅ **Drenagem fora das entradas** | Bocas de lobo e tampas de bueiro não aparecem nas áreas abertas de acesso de veículos. |
+| ✅ **Pintura de ENTRADA/SAÍDA** | Textos no piso ficam com aparência de tinta discreta e sem brilho artificial. |
+
 ### v0.10.1 — Correções de interface, modelos e animações
 Versão de correção aberta também para ajustes pedidos antes e tarefas em andamento (ideias do documento "Roadmap Dead Frequency", 14/11/2026).
 | Ideia | Como funciona no jogo |
@@ -139,7 +154,7 @@ Versão de correção aberta também para ajustes pedidos antes e tarefas em and
 | ✅ **Locutor: E toca os comerciais gravados** | Na mesa de som, ler o comercial no ar também toca o áudio gravado da 96.6. |
 | ✅ **Idle respirando** | Jogador e NPCs parados respiram em vez de ficar virando a cabeça. |
 | ✅ **Animações nos veículos** | Ajustar a pose do personagem pilotando a moto e dirigindo o táxi (a moto continua a mesma). |
-| 🚧 **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. Código pronto: cada tipo de morador (`npc_senhor`, `npc_rapaz`, `npc_escritorio`, `npc_moca`, `npc_dona`, `npc_senhora`) tem 3 falas próprias (`SidewalkTalk.KindLines`) que tocam `Audio/Street/<morador>_<n>.ogg` junto do balão, ouvidas até ~14 m; sem o áudio, só o balão. Roteiro em `docs/radio/falas_de_rua.csv`. Falta gravar as 18 falas no Google AI Studio (uma geração por morador, cortada com `tools/tts/cortar_falas.py`). |
+| ✅ **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. Código pronto: cada tipo de morador (`npc_senhor`, `npc_rapaz`, `npc_escritorio`, `npc_moca`, `npc_dona`, `npc_senhora`) tem 3 falas próprias (`SidewalkTalk.KindLines`) que tocam `Audio/Street/<morador>_<n>.ogg` junto do balão, ouvidas até ~14 m; sem o áudio, só o balão. Roteiro em `docs/radio/falas_de_rua.csv`. As 18 falas foram gravadas no Google AI Studio (uma geração por morador) e cortadas por silêncio, ainda sem conferir de ouvido: ouvir principalmente `npc_senhora_*` e `npc_escritorio_*`. |
 | ✅ **Cidade Brazilcore (Fase 1)** | Lombadas, lixeiras de grade, árvores caiadas, fios e cartazes nos postes, remendos no asfalto, bueiros abertos com galho e bocas de lobo nas guias. |
 | ✅ **Telas de carregamento** | Loading do Modo História e do offline mais bonito, no tema CRT verde. |
 | ✅ **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
@@ -329,7 +344,7 @@ Documentação completa em [`docs/README_PARA_IAS.md`](docs/README_PARA_IAS.md).
 - [ ] **Fase 2 · Rancho (reconstrução):** estradas de terra vermelha em circuito, sítios, *packing house* de banana/palmito, lago com pesqueiro e sinalização rústica.
 
 ### Próximas — Imersão e novos cenários (cenas isoladas)
-- [ ] **IK nos personagens:** `TwoBoneIK3D` para mãos na caixa/saco/volante e `LookAtModifier3D` para NPCs olharem o jogador.
+- [x] **IK nos personagens:** `TwoBoneIK3D` para mãos na caixa/saco/volante (feito). O `LookAtModifier3D` dos NPCs olhando o jogador foi desligado na v0.10.1: bugava a animação dos parados.
 - [ ] **Otimização de renderização:** `MultiMeshInstance3D` para vegetação/postes e *occlusion culling*.
 - [ ] **Fase 3 · O Bananal (`Bananal.tscn`):** navegação pelo sinal da 96.6 (radar sonoro).
 - [ ] **Fase 4 · Gruta da Estática (`Gruta.tscn`):** caverna de calcário com salas modulares, lanterna e visão noturna.

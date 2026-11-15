@@ -161,8 +161,13 @@ public partial class CityGenerator
     private void BuildGasStation(Node3D block, Vector3 center, string brand, bool withCarWash)
     {
         // Frente do posto para a avenida (+Z). y = topo da calçada.
-        ForbidParking(center + new Vector3(12f, 0f, BlockSize * 0.5f), Vector3.Right, 5.5f);
-        ForbidParking(center + new Vector3(-13f, 0f, BlockSize * 0.5f), Vector3.Right, 5.5f);
+        // As duas rampas são áreas sem estacionamento, mas precisam manter a guia visualmente aberta.
+        Vector3 entranceClearance = center + new Vector3(12f, 0f, BlockSize * 0.5f);
+        Vector3 exitClearance = center + new Vector3(-13f, 0f, BlockSize * 0.5f);
+        KeepClear(entranceClearance, Vector3.Right, 5.5f);
+        KeepClear(exitClearance, Vector3.Right, 5.5f);
+        ForbidParking(entranceClearance, Vector3.Right, 5.5f);
+        ForbidParking(exitClearance, Vector3.Right, 5.5f);
         var st = new Node3D { Name = "Posto_" + brand, Position = center + new Vector3(0f, CurbHeight, 0f) };
         block.AddChild(st);
         Color brandColor = brand switch
@@ -266,14 +271,16 @@ public partial class CityGenerator
                 AddBox(st, new Vector3(x0 - 0.15f, -CurbHeight * 0.5f + 0.002f, edge - 0.3f - i * 0.6f), new Vector3(0.3f, CurbHeight + 0.01f, 0.3f), i % 2 == 0 ? yellow : _darkMetal, false);
                 AddBox(st, new Vector3(x1 + 0.15f, -CurbHeight * 0.5f + 0.002f, edge - 0.3f - i * 0.6f), new Vector3(0.3f, CurbHeight + 0.01f, 0.3f), i % 2 == 0 ? yellow : _darkMetal, false);
             }
-            // Seta pintada no chão do posto.
+            // Texto pintado no piso. Mantém o material padrão do Label3D para preservar
+            // a textura dos glifos; o shader de guia não pode substituir essa textura.
             st.AddChild(new Label3D
             {
                 Text = label,
                 FontSize = 64,
                 PixelSize = 0.01f,
-                Modulate = new Color(0.95f, 0.95f, 0.9f),
+                Modulate = new Color(0.78f, 0.77f, 0.72f),
                 OutlineSize = 0,
+                Shaded = true,
                 Position = new Vector3((x0 + x1) * 0.5f, 0.03f, edge - 2.6f),
                 Rotation = new Vector3(-Mathf.Pi * 0.5f, 0f, 0f),
             });

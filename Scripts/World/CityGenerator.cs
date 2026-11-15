@@ -97,6 +97,9 @@ public partial class CityGenerator : Node3D
 
     private Node3D _staticRoot;
     private Node3D _lightsRoot;
+    private Node3D _eastExitGatePivot;
+    private CollisionShape3D _eastExitGateShape;
+    private bool _eastExitOpening;
     private bool _useLogicalWorldData;
     private bool _useLogicalServiceData;
     private bool _useLogicalBlockPlans;
@@ -1038,6 +1041,7 @@ public partial class CityGenerator : Node3D
         _sidewalkMaterial.SetShaderParameter("block_period", Period);
         _sidewalkMaterial.SetShaderParameter("block_half", BlockSize * 0.5f);
         _sidewalkMaterial.SetShaderParameter("curb_height", CurbHeight);
+        UpdateSidewalkKeepClearShader();
 
         _darkMetal = Flat(new Color(0.12f, 0.12f, 0.13f), 0.6f);
         _concrete = Flat(new Color(0.38f, 0.37f, 0.35f));
@@ -1333,7 +1337,7 @@ public partial class CityGenerator : Node3D
         float litRatio = _rng.RandfRange(0.15f, 0.45f);
 
         MeshInstance3D main = AddBox(parent, baseCenter + new Vector3(0f, height * 0.5f, 0f), new Vector3(width, height, depth), _buildingMaterial);
-        SetBuildingParams(main, wall, lightSeed, litRatio);
+        SetBuildingParams(main, wall, lightSeed, litRatio, height);
 
         float roofY = baseCenter.Y + height;
 
@@ -1344,7 +1348,7 @@ public partial class CityGenerator : Node3D
             float topW = width * _rng.RandfRange(0.5f, 0.75f);
             float topD = depth * _rng.RandfRange(0.5f, 0.75f);
             MeshInstance3D top = AddBox(parent, new Vector3(baseCenter.X, roofY + topH * 0.5f, baseCenter.Z), new Vector3(topW, topH, topD), _buildingMaterial);
-            SetBuildingParams(top, wall * 0.92f, lightSeed + 7f, litRatio);
+            SetBuildingParams(top, wall * 0.92f, lightSeed + 7f, litRatio, topH);
             roofY += topH;
             width = topW;
             depth = topD;
@@ -1381,7 +1385,7 @@ public partial class CityGenerator : Node3D
         }
     }
 
-    private static void SetBuildingParams(GeometryInstance3D mesh, Color wall, float seed, float litRatio, int wallKind = -1)
+    private static void SetBuildingParams(GeometryInstance3D mesh, Color wall, float seed, float litRatio, float height, int wallKind = -1)
     {
         // Acabamento (v0.9.7: reboco, tijolo, pastilha, chapisco) tirado do seed que já existe,
         // sem gastar sorteio do _rng (a cidade tem que sair igual pra todo mundo no online).
@@ -1391,6 +1395,7 @@ public partial class CityGenerator : Node3D
         mesh.SetInstanceShaderParameter("wall_color", wall);
         mesh.SetInstanceShaderParameter("light_seed", seed);
         mesh.SetInstanceShaderParameter("lit_ratio", litRatio);
+        mesh.SetInstanceShaderParameter("building_height", height);
     }
 
     /// <summary>Caramelos de rua (v0.9.5) nas esquinas: dê um espetinho e um deles segue você.</summary>
@@ -1771,8 +1776,34 @@ public partial class CityGenerator : Node3D
         Vector3 c = BlockCenter(bx, bz);
         float y = CurbHeight; // o depósito também tem calçada (v0.10.1)
         // Lado +X (ilumina a rua vertical) e lado +Z (ilumina a avenida).
-        BuildLamp(c + new Vector3(edge, y, -BlockSize * 0.25f), Vector3.Right);
-        BuildLamp(c + new Vector3(-BlockSize * 0.25f, y, edge), Vector3.Back);
+        BuildLampAvoidingKeepClear(c + new Vector3(edge, y, -BlockSize * 0.25f), Vector3.Right, Vector3.Back);
+        // Na fachada da avenida, tenta deslocar o poste para a direita (+X) se a rampa ocupar sua posição.
+        BuildLampAvoidingKeepClear(c + new Vector3(-BlockSize * 0.25f, y, edge), Vector3.Back, Vector3.Right);
+    }
+
+    private void BuildLampAvoidingKeepClear(Vector3 basePos, Vector3 towardRoad, Vector3 alongCurb)
+    {
+        if (!IsKeepClearAt(basePos))
+        {
+            BuildLamp(basePos, towardRoad);
+            return;
+        }
+
+        // Prioriza o deslocamento positivo ao longo da calçada (à direita na fachada do posto).
+        for (float offset = SidewalkWidth + 1f; offset <= 12f; offset += 2f)
+        {
+            foreach (float sign in new[] { 1f, -1f })
+            {
+                Vector3 candidate = basePos + alongCurb * (offset * sign);
+                if (IsKeepClearAt(candidate))
+                    continue;
+
+                BuildLamp(candidate, towardRoad);
+                return;
+            }
+        }
+
+        // Sem espaço livre: não cria um poste dentro da rampa.
     }
 
     private void BuildLamp(Vector3 basePos, Vector3 towardRoad)
@@ -2022,8 +2053,9 @@ public partial class CityGenerator : Node3D
         float first = -half + cornerClearance;
         float last = half - cornerClearance;
 
-        PaintCurbStripe(blockCenter, outward, along, -half + cornerClearance * 0.5f, cornerClearance, _curbYellow);
-        PaintCurbStripe(blockCenter, outward, along, half - cornerClearance * 0.5f, cornerClearance, _curbYellow);
+        // Faixas amarelas de esquina também respeitam vãos de garagem e guias rebaixadas.
+        PaintCurbStripeAvoidingKeepClear(blockCenter, outward, along, -half + cornerClearance * 0.5f, cornerClearance);
+        PaintCurbStripeAvoidingKeepClear(blockCenter, outward, along, half - cornerClearance * 0.5f, cornerClearance);
 
         for (float start = first; start < last; start += markPitch)
         {
@@ -2032,10 +2064,74 @@ public partial class CityGenerator : Node3D
                 continue;
             float midpoint = start + length * 0.5f;
             Vector3 parkingSpot = blockCenter + outward * (half + RoadWidth * 0.5f - 1.4f) + along * midpoint;
-            // Onde pode parar fica o meio-fio padrão (cinza e branco, no shader da calçada).
-            if (InNoParking(parkingSpot))
-                PaintCurbStripe(blockCenter, outward, along, midpoint, length, _curbYellow);
+            // Só zonas de proibição recebem amarelo; KeepClear bloqueia carros, mas não pinta a guia.
+            if (InNoParkingPaintZone(parkingSpot) && !IsKeepClearAt(parkingSpot))
+                PaintCurbStripeAvoidingKeepClear(blockCenter, outward, along, midpoint, length);
         }
+    }
+
+    private void PaintCurbStripeAvoidingKeepClear(
+        Vector3 blockCenter, Vector3 outward, Vector3 along, float midpoint, float length)
+    {
+        float start = midpoint - length * 0.5f;
+        float end = midpoint + length * 0.5f;
+        const float sampleStep = 0.25f;
+        float segmentStart = float.NaN;
+
+        // Avalia a posição real da pintura na guia, não o centro do quarteirão.
+        // Isso também detecta rampas em quinas, onde a faixa vem da aresta perpendicular.
+        for (float sampleStart = start; sampleStart < end; sampleStart += sampleStep)
+        {
+            float sampleEnd = Mathf.Min(sampleStart + sampleStep, end);
+            float sampleMidpoint = (sampleStart + sampleEnd) * 0.5f;
+            Vector3 curbPosition = blockCenter
+                + outward * (BlockSize * 0.5f + 0.015f)
+                + along * sampleMidpoint;
+            bool blocked = IsKeepClearAt(curbPosition);
+
+            if (!blocked && float.IsNaN(segmentStart))
+                segmentStart = sampleStart;
+
+            if ((blocked || sampleEnd >= end) && !float.IsNaN(segmentStart))
+            {
+                float segmentEnd = blocked ? sampleStart : sampleEnd;
+                float segmentLength = segmentEnd - segmentStart;
+                if (segmentLength > 0.05f)
+                {
+                    PaintCurbStripe(blockCenter, outward, along,
+                        (segmentStart + segmentEnd) * 0.5f, segmentLength, _curbYellow);
+                }
+                segmentStart = float.NaN;
+            }
+        }
+    }
+
+    private bool InNoParkingPaintZone(Vector3 position)
+    {
+        foreach ((Vector3 center, Vector3 dir, float halfLength, WorldChunkCoordinate owner) in _noParking)
+        {
+            Vector3 delta = position - center;
+            delta.Y = 0f;
+            float along = delta.Dot(dir);
+            float across = (delta - dir * along).Length();
+            if (Mathf.Abs(along) < halfLength && across < 6f)
+                return true;
+        }
+        return false;
+    }
+
+    private bool IsKeepClearAt(Vector3 position)
+    {
+        foreach ((Vector3 center, Vector3 dir, float halfLength) in _keepClear)
+        {
+            Vector3 delta = position - center;
+            delta.Y = 0f;
+            float along = delta.Dot(dir);
+            float across = (delta - dir * along).Length();
+            if (Mathf.Abs(along) < halfLength && across < 6f)
+                return true;
+        }
+        return false;
     }
 
     private void PaintCurbStripe(Vector3 blockCenter, Vector3 outward, Vector3 along, float midpoint, float length, Material material)
@@ -2057,6 +2153,11 @@ public partial class CityGenerator : Node3D
 
     private void PaintNoParkingCurb(Vector3 center, Vector3 dir, float halfLength)
     {
+        // Uma zona de proibição pode coincidir com a entrada de um imóvel. Nesse caso,
+        // mantém-se a restrição a carros, mas a guia e a faixa no asfalto ficam interrompidas.
+        if (IsKeepClearAt(center))
+            return;
+
         float length = Mathf.Max(1f, halfLength * 2f + 0.2f);
         if (Mathf.Abs(dir.Z) > 0.5f)
         {
@@ -2064,7 +2165,7 @@ public partial class CityGenerator : Node3D
             foreach (float side in new[] { -1f, 1f })
             {
                 Vector3 parkingSpot = new(roadX + side * (RoadWidth * 0.5f - 1.4f), 0f, center.Z);
-                if (!InNoParking(parkingSpot))
+                if (!InNoParkingPaintZone(parkingSpot) || IsKeepClearAt(parkingSpot))
                     continue;
                 Vector3 curb = new(roadX + side * (RoadWidth * 0.5f - 0.045f), CurbHeight * 0.5f, center.Z);
                 AddBox(_activeChunkRoot ?? _staticRoot, curb, new Vector3(0.03f, CurbHeight, length), _curbYellow, false);
@@ -2077,7 +2178,7 @@ public partial class CityGenerator : Node3D
             foreach (float side in new[] { -1f, 1f })
             {
                 Vector3 parkingSpot = new(center.X, 0f, roadZ + side * (RoadWidth * 0.5f - 1.4f));
-                if (!InNoParking(parkingSpot))
+                if (!InNoParkingPaintZone(parkingSpot) || IsKeepClearAt(parkingSpot))
                     continue;
                 Vector3 curb = new(center.X, CurbHeight * 0.5f, roadZ + side * (RoadWidth * 0.5f - 0.045f));
                 AddBox(_activeChunkRoot ?? _staticRoot, curb, new Vector3(length, CurbHeight, 0.03f), _curbYellow, false);
@@ -2092,6 +2193,7 @@ public partial class CityGenerator : Node3D
     public void KeepClear(Vector3 center, Vector3 dir, float halfLength)
     {
         _keepClear.Add((center, dir.Normalized(), halfLength));
+        UpdateSidewalkKeepClearShader();
         for (int i = _parkedCars.Count - 1; i >= 0; i--)
         {
             if (IsInstanceValid(_parkedCars[i]) && InNoParking(_parkedCars[i].Position))
@@ -2100,6 +2202,26 @@ public partial class CityGenerator : Node3D
                 _parkedCars.RemoveAt(i);
             }
         }
+    }
+
+    private void UpdateSidewalkKeepClearShader()
+    {
+        if (_sidewalkMaterial == null)
+            return;
+
+        // O shader da calçada desenha as faixas brancas. Envia as mesmas áreas de acesso
+        // para que a pintura branca também seja interrompida sobre rampas e portões.
+        var zones = new Godot.Collections.Array<Vector4>();
+        const int maxShaderZones = 128;
+        foreach ((Vector3 center, Vector3 dir, float halfLength) in _keepClear)
+        {
+            if (zones.Count >= maxShaderZones)
+                break;
+            zones.Add(new Vector4(center.X, center.Z, halfLength, Mathf.Atan2(dir.Z, dir.X)));
+        }
+
+        _sidewalkMaterial.SetShaderParameter("keep_clear_zones", zones);
+        _sidewalkMaterial.SetShaderParameter("keep_clear_count", zones.Count);
     }
 
     private bool InNoParking(Vector3 p)
@@ -2202,7 +2324,7 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
 
                 Vector3 roadNormal = new(-side, 0f, 0f);
                 Vector3 basePos = new(roadX + side * (RoadWidth * 0.5f + sidewalkOffset), CurbHeight, center.Z);
-                if (!InsideDepot(basePos))
+                if (!InsideDepot(basePos) && !IsKeepClearAt(basePos))
                     BuildNoParkingSign(basePos, roadNormal, label);
             }
         }
@@ -2217,7 +2339,7 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
 
                 Vector3 roadNormal = new(0f, 0f, -side);
                 Vector3 basePos = new(center.X, CurbHeight, roadZ + side * (RoadWidth * 0.5f + sidewalkOffset));
-                if (!InsideDepot(basePos))
+                if (!InsideDepot(basePos) && !IsKeepClearAt(basePos))
                     BuildNoParkingSign(basePos, roadNormal, label);
             }
         }
@@ -2309,9 +2431,135 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
         float limit = (Radius + 1) * Period;
         float length = limit * 2f;
         const float h = 6f;
-        AddBox(_staticRoot, new Vector3(limit, h * 0.5f, 0f), new Vector3(1f, h, length), _concrete);
-        AddBox(_staticRoot, new Vector3(-limit, h * 0.5f, 0f), new Vector3(1f, h, length), _concrete);
-        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, limit), new Vector3(length, h, 1f), _concrete);
-        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, -limit), new Vector3(length, h, 1f), _concrete);
+        // Textura provisória: grade 3D xadrez (Shaders/grid_3d.gdshader) em coordenadas de mundo.
+        Material mat = BoundaryGridMaterial() ?? _concrete;
+        StoryManager story = StoryManager.Instance;
+        bool hasStoryExit = Biome == WorldBiome.City && story?.Active == true && story.CurrentChapter == 1;
+        if (hasStoryExit)
+        {
+            // A avenida leste usada pela saída fica em Z negativo (ex.: -24 na grade padrão).
+            const float openingHalfWidth = 10f;
+            float roadZ = -Period * 0.5f;
+            float openingStart = roadZ - openingHalfWidth;
+            float openingEnd = roadZ + openingHalfWidth;
+            float leftLength = limit + openingStart;
+            float rightLength = limit - openingEnd;
+            if (leftLength > 0.5f)
+                AddBox(_staticRoot, new Vector3(limit, h * 0.5f, (-limit + openingStart) * 0.5f),
+                    new Vector3(1f, h, leftLength), mat);
+            if (rightLength > 0.5f)
+                AddBox(_staticRoot, new Vector3(limit, h * 0.5f, (openingEnd + limit) * 0.5f),
+                    new Vector3(1f, h, rightLength), mat);
+            BuildEastExitGate(limit, roadZ, openingHalfWidth);
+            if (story.CanAdvance)
+                OpenEastExit();
+        }
+        else
+        {
+            AddBox(_staticRoot, new Vector3(limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
+        }
+
+        AddBox(_staticRoot, new Vector3(-limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
+        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, limit), new Vector3(length, h, 1f), mat);
+        AddBox(_staticRoot, new Vector3(0f, h * 0.5f, -limit), new Vector3(length, h, 1f), mat);
+    }
+
+    private void BuildEastExitGate(float limit, float roadZ, float halfWidth)
+    {
+        // Pilares baixos e cancela física: a passagem só abre quando o capítulo I for concluído.
+        float postZ = halfWidth;
+        foreach (float side in new[] { -1f, 1f })
+        {
+            AddBox(_staticRoot,
+                new Vector3(limit, 2.8f, roadZ + side * postZ),
+                new Vector3(1.4f, 5.6f, 1.4f), _concrete);
+            AddBox(_staticRoot,
+                new Vector3(limit - 0.1f, 5.8f, roadZ + side * postZ),
+                new Vector3(1.8f, 0.25f, 1.8f), _darkMetal, false);
+        }
+
+        // Placa voltada para a avenida, legível na aproximação da van.
+        AddBox(_staticRoot, new Vector3(limit - 0.65f, 5.15f, roadZ),
+            new Vector3(0.25f, 1.15f, 8.5f), _signBlue, false);
+        var signText = new Label3D
+        {
+            Text = "ESTRADA DO RANCHO",
+            FontSize = 72,
+            PixelSize = 0.012f,
+            Billboard = BaseMaterial3D.BillboardModeEnum.Disabled,
+            OutlineSize = 8,
+            Rotation = new Vector3(0f, -Mathf.Pi * 0.5f, 0f),
+            Modulate = new Color(0.95f, 0.88f, 0.62f),
+            Position = new Vector3(limit - 0.8f, 5.15f, roadZ),
+        };
+        _staticRoot.AddChild(signText);
+
+        _eastExitGatePivot = new Node3D
+        {
+            Name = "EastExitGatePivot",
+            Position = new Vector3(limit - 0.15f, 1.05f, roadZ - halfWidth),
+        };
+        _staticRoot.AddChild(_eastExitGatePivot);
+        var gateBody = new StaticBody3D { Name = "EastExitGateBody", CollisionLayer = 1, CollisionMask = 0 };
+        _eastExitGatePivot.AddChild(gateBody);
+        _eastExitGateShape = new CollisionShape3D
+        {
+            Shape = new BoxShape3D { Size = new Vector3(0.5f, 0.38f, halfWidth * 2f) },
+            Position = new Vector3(0f, 0f, halfWidth),
+        };
+        gateBody.AddChild(_eastExitGateShape);
+
+        AddBox(_eastExitGatePivot, new Vector3(0f, 0f, halfWidth),
+            new Vector3(0.35f, 0.28f, halfWidth * 2f), _stopRed, false);
+        for (int i = 1; i < 5; i++)
+        {
+            float z = i * (halfWidth * 2f / 5f);
+            AddBox(_eastExitGatePivot, new Vector3(-0.02f, 0.16f, z),
+                new Vector3(0.38f, 0.06f, 0.12f), _signWhite, false);
+        }
+
+        // A cancela é a única barreira visual e física da passagem.
+
+    }
+
+    /// <summary>Abre a cancela da saída leste após a conclusão do primeiro capítulo.</summary>
+    public void OpenEastExit()
+    {
+        if (_eastExitGatePivot == null || _eastExitOpening)
+            return;
+        _eastExitOpening = true;
+        if (_eastExitGateShape != null)
+            _eastExitGateShape.SetDeferred(CollisionShape3D.PropertyName.Disabled, true);
+        CreateTween().BindNode(this)
+            .TweenProperty(_eastExitGatePivot, "rotation:x", -Mathf.Pi * 0.5f, 1.4)
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.InOut);
+    }
+
+    private Material _boundaryMaterial;
+
+    /// <summary>Textura provisória dos muros do limite: Kenney Prototype Textures (CC0); sem ela, o shader grid_3d.</summary>
+    private Material BoundaryGridMaterial()
+    {
+        if (_boundaryMaterial != null)
+            return _boundaryMaterial;
+        if (ResourceLoader.Exists("res://Assets/Textures/Prototype/muro_limite.png"))
+        {
+            _boundaryMaterial = new StandardMaterial3D
+            {
+                AlbedoTexture = GD.Load<Texture2D>("res://Assets/Textures/Prototype/muro_limite.png"),
+                AlbedoColor = new Color(0.62f, 0.62f, 0.62f),
+                Uv1Triplanar = true,
+                Uv1WorldTriplanar = true,
+                Uv1Scale = new Vector3(0.25f, 0.25f, 0.25f), // 4 m por quadro
+                TextureFilter = BaseMaterial3D.TextureFilterEnum.NearestWithMipmaps,
+                Roughness = 1f,
+            };
+        }
+        else if (ResourceLoader.Exists("res://Shaders/grid_3d.gdshader"))
+        {
+            _boundaryMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/grid_3d.gdshader") };
+        }
+        return _boundaryMaterial;
     }
 }

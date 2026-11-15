@@ -55,7 +55,11 @@ public partial class CityGenerator
                 Vector3 manholePosition = blockCenter
                     + Vector3.Back * (BlockSize * 0.5f + RoadWidth * 0.5f)
                     + Vector3.Right * manholeOffset;
-                BuildManhole(root, manholePosition, manholeRim, grateDark);
+                // A tampa também deve ficar fora da área aberta de entradas e saídas.
+                if (!IsKeepClearAt(manholePosition))
+                    // A tampa também deve ficar fora da área aberta de entradas e saídas.
+        if (!IsKeepClearAt(manholePosition))
+            BuildManhole(root, manholePosition, manholeRim, grateDark);
             }
         }
     }
@@ -94,7 +98,9 @@ public partial class CityGenerator
                 + outward * (BlockSize * 0.5f + 0.025f)
                 + along * alongOffset
                 + Vector3.Up * (CurbHeight * 0.5f);
-            BuildStormDrain(root, position, outward, grateDark, grateMetal, waterFlow);
+            // Não instala boca de lobo em guias rebaixadas, rampas ou vãos de acesso.
+            if (!IsKeepClearAt(position))
+                BuildStormDrain(root, position, outward, grateDark, grateMetal, waterFlow);
         }
 
         float manholeOffset = (hash / 97 % 9 - 4) * 1.25f;
@@ -137,7 +143,7 @@ public partial class CityGenerator
             Bus = AudioManager.SfxBus,
             UnitSize = 3f,
             MaxDistance = 11f,
-            VolumeDb = -17f,
+            VolumeDb = -21f,
             Position = position + Vector3.Up * 0.3f,
         };
         parent.AddChild(sound);

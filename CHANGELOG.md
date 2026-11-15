@@ -2,6 +2,21 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.10.3 — Acessos e guias corretos  (15/11/2026)
+
+- Faixas amarelas e brancas do meio-fio deixam livres as rampas de entrada e saída, inclusive nos cantos dos quarteirões.
+- Postes e placas próximos aos acessos são reposicionados quando há espaço seguro ou omitidos para não bloquear as rampas.
+- Bocas de lobo e tampas de bueiro não são geradas nas áreas abertas de entrada e saída de veículos.
+- Textos ENTRADA e SAÍDA no piso usam pintura discreta, sem brilho artificial.
+
+
+## v0.10.2 — Hotbar com ícones  (15/11/2026)
+
+- Barra rápida com ícones próprios para os itens, substituindo os nomes longos e mantendo a identificação completa no tooltip.
+- Pacote com 18 ícones: radar, mochila, luvas, visão noturna, energético, guaraná, kit de reparo, fita isolante, café, marmitex, espetinho, chinelos, repelente, lanterna, prego, lã de aço, fusível e galão de gasolina.
+- Texturas carregadas por item e reutilizadas em cache para evitar recriar recursos a cada atualização da interface.
+
+
 ## v0.10.1 — Cidade viva e rádio por dentro  (15/11/2026)
 
 - Rádio 96.6 por dentro: o estúdio virou seis salas (recepção, cabine do locutor com luz NO AR, gravação, discoteca, escritório). Na discoteca, os discos e as fitas tocam ao mirar e apertar E, e na mesa de som o locutor também toca os comerciais gravados.

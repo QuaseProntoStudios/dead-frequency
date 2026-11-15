@@ -12,6 +12,9 @@ uniform sampler2D pt_tex : source_color, filter_nearest_mipmap, repeat_enable;
 uniform float block_period = 48.0;
 uniform float block_half = 18.0;
 uniform float curb_height = 0.15;
+/** Áreas de acesso (rampas/portões) nas quais as faixas brancas do meio-fio não devem aparecer. */
+uniform vec4 keep_clear_zones[128];
+uniform int keep_clear_count = 0;
 /** Largura da faixa de cima do meio-fio (pintada junto com a lateral). */
 uniform float curb_top = 0.14;
 uniform vec3 curb_paint : source_color = vec3(0.88, 0.88, 0.85);
@@ -28,8 +31,21 @@ void vertex() {
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 }
 
-/** Faixas brancas intercaladas: 1 m pintado, 1 m concreto. */
-float curb_band(float along) {
+/** Faixas brancas intercaladas: 1 m pintado, 1 m concreto, exceto em áreas de acesso. */
+float curb_band(float along, vec3 position) {
+	for (int i = 0; i < 128; i++) {
+		if (i >= keep_clear_count) {
+			break;
+		}
+		vec4 zone = keep_clear_zones[i];
+		vec2 direction = vec2(cos(zone.w), sin(zone.w));
+		vec2 delta = position.xz - zone.xy;
+		float distance_along = dot(delta, direction);
+		float distance_across = length(delta - direction * distance_along);
+		if (abs(distance_along) < zone.z && distance_across < 6.0) {
+			return 0.0;
+		}
+	}
 	return fract(along * 0.5) < 0.5 ? 1.0 : 0.0;
 }
 
@@ -40,7 +56,7 @@ void fragment() {
 	if (world_normal.y > 0.5 && edge < curb_top) {
 		// Topo do meio-fio: mesma pintura da lateral.
 		float along = abs(local.x) > abs(local.y) ? world_pos.z : world_pos.x;
-		col = curb_color(along, 1.0, curb_paint, curb_band(along), 0.0);
+		col = curb_color(along, 1.0, curb_paint, curb_band(along, world_pos), 0.0);
 	} else if (world_normal.y > 0.5) {
 		vec2 cell = world_pos.xz / tile_size;
 		vec2 f = fract(cell);
@@ -56,7 +72,7 @@ void fragment() {
 	} else {
 		float along = abs(world_normal.x) > 0.5 ? world_pos.z : world_pos.x;
 		float h01 = clamp((world_pos.y - (curb_height - 0.15)) / 0.15, 0.0, 1.0);
-		col = curb_color(along, h01, curb_paint, curb_band(along), 1.0);
+		col = curb_color(along, h01, curb_paint, curb_band(along, world_pos), 1.0);
 	}
 	ALBEDO = col;
 	ROUGHNESS = 0.95;
