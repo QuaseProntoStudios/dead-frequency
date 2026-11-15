@@ -23,9 +23,9 @@ Antes de usar um arquivo: abrir a página, confirmar a licença e anotar autor +
 
 | Asset | Obra / autor | Licença | Fonte |
 |---|---|---|---|
-| `Audio/SFX/dog_bark_cc0.mp3` | **Barking Inez 2**, por wateenfotos | CC0 1.0 | [Freesound #749351](https://freesound.org/people/wateenfotos/sounds/749351/) |
+| `Audio/SFX/dog_bark_cc0.mp3` | **Playful Dog Barking 41**, SFXMint (gerado por IA) | CC0 1.0 | [Página do efeito](https://sfxmint.com/sounds/animal-dog-bark-41) |
 
-A gravação original apresenta dois cães portugueses latindo e foi captada com microfone DJI. O arquivo MP3 distribuído no jogo é uma cópia redistribuível do áudio, cujo registro de origem confirma CC0 1.0. O crédito e a licença também estão em `Audio/SFX/dog_bark_cc0_LICENSE.txt`.
+O efeito é uma vocalização de cachorro gerada por IA, com duração indicada de 2,6 segundos. A SFXMint informa licença CC0 1.0 e permite uso comercial e redistribuição. O crédito e a licença também estão em `Audio/SFX/dog_bark_cc0_LICENSE.txt`.
 
 ## Gerados por nós com IA
 

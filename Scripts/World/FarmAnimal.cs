@@ -93,8 +93,8 @@ public partial class FarmAnimal : Node3D
             _bark = new AudioStreamPlayer3D
             {
                 Bus = AudioManager.SfxBus,
-                UnitSize = 5f,
-                VolumeDb = -4f,
+                UnitSize = 7f,
+                VolumeDb = 3f,
                 Position = new Vector3(0f, 0.6f, 0f),
             };
             AddChild(_bark);
