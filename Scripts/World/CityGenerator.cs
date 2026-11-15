@@ -2310,22 +2310,37 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
         float length = limit * 2f;
         const float h = 6f;
         // Textura provisória: grade 3D xadrez (Shaders/grid_3d.gdshader) em coordenadas de mundo.
-        Material mat = (Material)BoundaryGridMaterial() ?? _concrete;
+        Material mat = BoundaryGridMaterial() ?? _concrete;
         AddBox(_staticRoot, new Vector3(limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
         AddBox(_staticRoot, new Vector3(-limit, h * 0.5f, 0f), new Vector3(1f, h, length), mat);
         AddBox(_staticRoot, new Vector3(0f, h * 0.5f, limit), new Vector3(length, h, 1f), mat);
         AddBox(_staticRoot, new Vector3(0f, h * 0.5f, -limit), new Vector3(length, h, 1f), mat);
     }
 
-    private ShaderMaterial _boundaryGrid;
+    private Material _boundaryMaterial;
 
-    private ShaderMaterial BoundaryGridMaterial()
+    /// <summary>Textura provisória dos muros do limite: Kenney Prototype Textures (CC0); sem ela, o shader grid_3d.</summary>
+    private Material BoundaryGridMaterial()
     {
-        if (_boundaryGrid != null)
-            return _boundaryGrid;
-        if (!ResourceLoader.Exists("res://Shaders/grid_3d.gdshader"))
-            return null;
-        _boundaryGrid = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/grid_3d.gdshader") };
-        return _boundaryGrid;
+        if (_boundaryMaterial != null)
+            return _boundaryMaterial;
+        if (ResourceLoader.Exists("res://Assets/Textures/Prototype/muro_limite.png"))
+        {
+            _boundaryMaterial = new StandardMaterial3D
+            {
+                AlbedoTexture = GD.Load<Texture2D>("res://Assets/Textures/Prototype/muro_limite.png"),
+                AlbedoColor = new Color(0.62f, 0.62f, 0.62f),
+                Uv1Triplanar = true,
+                Uv1WorldTriplanar = true,
+                Uv1Scale = new Vector3(0.25f, 0.25f, 0.25f), // 4 m por quadro
+                TextureFilter = BaseMaterial3D.TextureFilterEnum.NearestWithMipmaps,
+                Roughness = 1f,
+            };
+        }
+        else if (ResourceLoader.Exists("res://Shaders/grid_3d.gdshader"))
+        {
+            _boundaryMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/grid_3d.gdshader") };
+        }
+        return _boundaryMaterial;
     }
 }
