@@ -1333,7 +1333,7 @@ public partial class CityGenerator : Node3D
         float litRatio = _rng.RandfRange(0.15f, 0.45f);
 
         MeshInstance3D main = AddBox(parent, baseCenter + new Vector3(0f, height * 0.5f, 0f), new Vector3(width, height, depth), _buildingMaterial);
-        SetBuildingParams(main, wall, lightSeed, litRatio, baseCenter.Y, height);
+        SetBuildingParams(main, wall, lightSeed, litRatio, height);
 
         float roofY = baseCenter.Y + height;
 
@@ -1344,7 +1344,7 @@ public partial class CityGenerator : Node3D
             float topW = width * _rng.RandfRange(0.5f, 0.75f);
             float topD = depth * _rng.RandfRange(0.5f, 0.75f);
             MeshInstance3D top = AddBox(parent, new Vector3(baseCenter.X, roofY + topH * 0.5f, baseCenter.Z), new Vector3(topW, topH, topD), _buildingMaterial);
-            SetBuildingParams(top, wall * 0.92f, lightSeed + 7f, litRatio, roofY, topH);
+            SetBuildingParams(top, wall * 0.92f, lightSeed + 7f, litRatio, topH);
             roofY += topH;
             width = topW;
             depth = topD;
@@ -1381,7 +1381,7 @@ public partial class CityGenerator : Node3D
         }
     }
 
-    private static void SetBuildingParams(GeometryInstance3D mesh, Color wall, float seed, float litRatio, float baseY, float height, int wallKind = -1)
+    private static void SetBuildingParams(GeometryInstance3D mesh, Color wall, float seed, float litRatio, float height, int wallKind = -1)
     {
         // Acabamento (v0.9.7: reboco, tijolo, pastilha, chapisco) tirado do seed que já existe,
         // sem gastar sorteio do _rng (a cidade tem que sair igual pra todo mundo no online).
@@ -1391,7 +1391,6 @@ public partial class CityGenerator : Node3D
         mesh.SetInstanceShaderParameter("wall_color", wall);
         mesh.SetInstanceShaderParameter("light_seed", seed);
         mesh.SetInstanceShaderParameter("lit_ratio", litRatio);
-        mesh.SetInstanceShaderParameter("building_base_y", baseY);
         mesh.SetInstanceShaderParameter("building_height", height);
     }
 
