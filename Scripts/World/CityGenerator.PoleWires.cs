@@ -301,4 +301,5 @@ public partial class CityGenerator
             poleRadius,
             bandHeight);
         pole.AddChild(flyer);
-    }}
+    }
+}
