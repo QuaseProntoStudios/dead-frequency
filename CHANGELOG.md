@@ -2,6 +2,16 @@
 
 Todas as atualizações do Dead Frequency. O jogo mostra a mesma lista em **Novidades** no menu.
 
+## v0.10.1 — Cidade viva e rádio por dentro  (15/11/2026)
+
+- Rádio 96.6 por dentro: o estúdio virou seis salas (recepção, cabine do locutor com luz NO AR, gravação, discoteca, escritório). Na discoteca, os discos e as fitas tocam ao mirar e apertar E, e na mesa de som o locutor também toca os comerciais gravados.
+- Falas de rua com voz: os moradores da calçada (senhor, rapaz, moça, senhora, dona e o do escritório) falam de verdade, umas três falas cada, quando você passa perto.
+- Cidade mais viva: lombadas nas ruas, lixeiras de grade, árvores com a base caiada, cartazes de lambe-lambe e fios nos postes, remendos no asfalto, bueiros abertos sinalizados com galho de árvore e bocas de lobo nas guias (que nunca apareciam por um erro de sorteio).
+- Personagens parados respiram em vez de ficar virando a cabeça, e o personagem do menu não gira mais. Mãos na caixa, no volante e na escada, e pés em degrau e meio-fio, acompanham o que você faz.
+- Escada da caixa d'água municipal para ver a cidade de cima, ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário novos, calçadas que faltavam em volta da central e janelas sem corte nas quinas dos prédios.
+- Painel da van com monitor CRT mais legível, telas de carregamento no tema CRT verde, orelhão da Telefóbica com texto e tecla H para esconder o quadro lateral.
+- Mais leve: as luzes da cidade acendem até 30 m no celular (70 m no PC), letreiros pequenos somem de longe, rádios e pedestres distantes pausam o que não dá para ver e rádios, TVs e orelhões desligados não gastam mais processamento.
+
 ## v0.10.0 — Modo História  (13/11/2026)
 
 - Modo História (Iniciar turno > Modo História): a campanha "Dead Frequency" conta como o vale tenta salvar a Rádio 96.6, cujo sinal piora porque as válvulas da Repetidora Landell, lá na serra, estão no fim.

@@ -140,6 +140,7 @@ Versão de correção aberta também para ajustes pedidos antes e tarefas em and
 | ✅ **Idle respirando** | Jogador e NPCs parados respiram em vez de ficar virando a cabeça. |
 | ✅ **Animações nos veículos** | Ajustar a pose do personagem pilotando a moto e dirigindo o táxi (a moto continua a mesma). |
 | 🚧 **Falas de rua com voz** | NPCs da calçada falam de verdade (umas três falas por NPC), só quando o jogador está perto. Código pronto: cada tipo de morador (`npc_senhor`, `npc_rapaz`, `npc_escritorio`, `npc_moca`, `npc_dona`, `npc_senhora`) tem 3 falas próprias (`SidewalkTalk.KindLines`) que tocam `Audio/Street/<morador>_<n>.ogg` junto do balão, ouvidas até ~14 m; sem o áudio, só o balão. Roteiro em `docs/radio/falas_de_rua.csv`. Falta gravar as 18 falas no Google AI Studio (uma geração por morador, cortada com `tools/tts/cortar_falas.py`). |
+| ✅ **Cidade Brazilcore (Fase 1)** | Lombadas, lixeiras de grade, árvores caiadas, fios e cartazes nos postes, remendos no asfalto, bueiros abertos com galho e bocas de lobo nas guias. |
 | ✅ **Telas de carregamento** | Loading do Modo História e do offline mais bonito, no tema CRT verde. |
 | ✅ **Ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário** | Modelos novos (Meshy) no estilo atual. |
 | ✅ **Painel da van** | Monitor CRT mais legível. |
@@ -324,7 +325,7 @@ A rádio deve anunciar os próprios estabelecimentos e acontecimentos do mundo d
 Documentação completa em [`docs/README_PARA_IAS.md`](docs/README_PARA_IAS.md). Tom: cotidiano e aventura leve, **sem terror**.
 
 ### Em andamento — Mundo e polimento (foco atual)
-- [ ] **Fase 1 · Cidade (ambientação Brazilcore):** ✅ lombadas com colisão em rampa (`CityGenerator.SpeedBumps.cs`), ✅ lixeiras de grade (`CityGenerator.TrashBins.cs`), ✅ árvores com a base caiada (shader na casca, `AddWhitewash`); falta: asfalto remendado/bueiros, postes com fios e cartazes (em revisão), orelhões, calçadas irregulares.
+- [x] **Fase 1 · Cidade (ambientação Brazilcore):** feita na v0.10.1: lombadas com colisão em rampa (`CityGenerator.SpeedBumps.cs`), lixeiras de grade (`TrashBins`), árvores com a base caiada (`AddWhitewash`), fios e cartazes nos postes (`PoleWires`), remendos, valetas e bueiros abertos com galho (`RoadPatches`), bocas de lobo corrigidas (`Drainage`) e orelhões. Calçadas irregulares ficaram de fora por decisão do Matheus.
 - [ ] **Fase 2 · Rancho (reconstrução):** estradas de terra vermelha em circuito, sítios, *packing house* de banana/palmito, lago com pesqueiro e sinalização rústica.
 
 ### Próximas — Imersão e novos cenários (cenas isoladas)
