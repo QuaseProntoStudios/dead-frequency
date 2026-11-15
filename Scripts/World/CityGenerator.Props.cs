@@ -9,6 +9,50 @@ namespace DeadFrequency;
 
 public partial class CityGenerator
 {
+    private static Shader _whitewashShader;
+    private readonly System.Collections.Generic.Dictionary<Texture2D, ShaderMaterial> _whitewashMaterials = new();
+
+    /// <summary>
+    /// Base do tronco pintada de cal, como nas árvores de praça do Brasil. Em vez de uma peça separada (o tronco
+    /// de cada modelo nasce torto e a faixa ficava descentralizada), o material da casca clareia os vértices
+    /// de baixo. Só visual: não mexe em sorteio nem colisão. A superfície 0 dos modelos da Quaternius é a casca.
+    /// </summary>
+    private void AddWhitewash(Node3D tree, float meshScale)
+    {
+        MeshInstance3D mi = null;
+        foreach (Node child in tree.GetChildren())
+        {
+            if (child is MeshInstance3D m)
+            {
+                mi = m;
+                break;
+            }
+        }
+        if (mi?.Mesh == null || mi.Mesh.GetSurfaceCount() < 2 || mi.Mesh.SurfaceGetMaterial(0) is not StandardMaterial3D bark || bark.AlbedoTexture == null)
+            return;
+        _whitewashShader ??= new Shader
+        {
+            Code = @"shader_type spatial;
+uniform sampler2D bark : source_color, filter_nearest_mipmap;
+uniform float band = 1.2;
+varying float ly;
+void vertex() { ly = VERTEX.y; }
+void fragment() {
+    vec3 c = texture(bark, UV).rgb;
+    float k = 1.0 - smoothstep(band - 0.08, band, ly);
+    ALBEDO = mix(c, vec3(0.9, 0.89, 0.82), k);
+    ROUGHNESS = 1.0;
+}",
+        };
+        if (!_whitewashMaterials.TryGetValue(bark.AlbedoTexture, out ShaderMaterial mat))
+        {
+            mat = new ShaderMaterial { Shader = _whitewashShader };
+            mat.SetShaderParameter("bark", bark.AlbedoTexture);
+            _whitewashMaterials[bark.AlbedoTexture] = mat;
+        }
+        mi.SetSurfaceOverrideMaterial(0, mat);
+    }
+
     // ------------------------------------------------------------------ cidade
 
     private void BuildStreetProps()

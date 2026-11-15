@@ -324,7 +324,7 @@ A rádio deve anunciar os próprios estabelecimentos e acontecimentos do mundo d
 Documentação completa em [`docs/README_PARA_IAS.md`](docs/README_PARA_IAS.md). Tom: cotidiano e aventura leve, **sem terror**.
 
 ### Em andamento — Mundo e polimento (foco atual)
-- [ ] **Fase 1 · Cidade (ambientação Brazilcore):** lombadas com física de suspensão, asfalto remendado/bueiros, postes com fios e cartazes, orelhões, lixeiras de grade, calçadas irregulares e árvores com a base pintada de branco.
+- [ ] **Fase 1 · Cidade (ambientação Brazilcore):** lombadas com física de suspensão, asfalto remendado/bueiros, postes com fios e cartazes, orelhões, lixeiras de grade, calçadas irregulares e árvores com a base pintada de branco (árvores caiadas: feito, shader na casca em `AddWhitewash`).
 - [ ] **Fase 2 · Rancho (reconstrução):** estradas de terra vermelha em circuito, sítios, *packing house* de banana/palmito, lago com pesqueiro e sinalização rústica.
 
 ### Próximas — Imersão e novos cenários (cenas isoladas)
