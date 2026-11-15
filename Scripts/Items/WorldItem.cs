@@ -9,6 +9,10 @@ public partial class WorldItem : RigidBody3D, IInteractable
     public string WorldId { get; private set; } = "";
     public string ItemId { get; private set; } = "";
 
+    private Vector3 _spawnPosition;
+    private Quaternion _spawnRotation = Quaternion.Identity;
+    private bool _respawning;
+
     public static WorldItem Create(string worldId, string itemId, Vector3 position, Quaternion rotation)
     {
         ItemDef def = ItemCatalog.Get(itemId);
@@ -50,6 +54,33 @@ public partial class WorldItem : RigidBody3D, IInteractable
     }
 
     public override void _EnterTree() => AddToGroup(GroupName);
+
+    public override void _Ready()
+    {
+        _spawnPosition = GlobalPosition;
+        _spawnRotation = GlobalBasis.GetRotationQuaternion();
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_respawning || GlobalPosition.Y >= -100f ||
+            (NetClient.Instance != null && NetClient.Instance.IsOnline))
+            return;
+
+        _respawning = true;
+        Callable.From(RespawnAtOriginalPosition).CallDeferred();
+    }
+
+    private void RespawnAtOriginalPosition()
+    {
+        if (!IsInsideTree())
+            return;
+        Node parent = GetParent();
+        WorldItem replacement = Create(WorldId, ItemId, _spawnPosition, _spawnRotation);
+        if (replacement != null && parent != null)
+            parent.AddChild(replacement);
+        QueueFree();
+    }
 
     public string GetInteractionPrompt(PlayerController player)
     {
