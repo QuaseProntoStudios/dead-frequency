@@ -359,6 +359,7 @@ public partial class CityGenerator : Node3D
             int x = chunk.Coordinate.X;
             int z = chunk.Coordinate.Z;
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetLampForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildElectricalPolesForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildPoleWiresForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildBikeLanesForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetDrainageForBlock(x, z));
@@ -428,6 +429,7 @@ public partial class CityGenerator : Node3D
         int bx = coordinate.X;
         int bz = coordinate.Z;
         BuildStreetLampForBlock(bx, bz);
+        BuildElectricalPolesForBlock(bx, bz);
         BuildPoleWiresForBlock(bx, bz);
         BuildBikeLanesForBlock(bx, bz);
         BuildStreetDrainageForBlock(bx, bz);
@@ -767,6 +769,7 @@ public partial class CityGenerator : Node3D
             BuildStreetDrainage();
             BuildSpeedBumps();
             BuildStreetLamps();
+            BuildElectricalPoles();
             BuildPoleWires();
             BuildStreetSigns();
             BuildPhoneBooths();
@@ -1775,10 +1778,14 @@ public partial class CityGenerator : Node3D
         float edge = BlockSize * 0.5f - 0.7f;
         Vector3 c = BlockCenter(bx, bz);
         float y = CurbHeight; // o depósito também tem calçada (v0.10.1)
-        // Lado +X (ilumina a rua vertical) e lado +Z (ilumina a avenida).
-        BuildLampAvoidingKeepClear(c + new Vector3(edge, y, -BlockSize * 0.25f), Vector3.Right, Vector3.Back);
-        // Na fachada da avenida, tenta deslocar o poste para a direita (+X) se a rampa ocupar sua posição.
-        BuildLampAvoidingKeepClear(c + new Vector3(-BlockSize * 0.25f, y, edge), Vector3.Back, Vector3.Right);
+        // Na zona comercial, a distribuição elétrica tem postes próprios. As luminárias
+        // ficam separadas e aparecem com menor frequência para não poluir as calçadas.
+        Vector3 lampA = c + new Vector3(edge, y, -BlockSize * 0.25f);
+        Vector3 lampB = c + new Vector3(-BlockSize * 0.25f, y, edge);
+        if (AssetProps.Hash(lampA, 109) % 100 < 40)
+            BuildLampAvoidingKeepClear(lampA, Vector3.Right, Vector3.Back);
+        if (AssetProps.Hash(lampB, 109) % 100 < 40)
+            BuildLampAvoidingKeepClear(lampB, Vector3.Back, Vector3.Right);
     }
 
     private void BuildLampAvoidingKeepClear(Vector3 basePos, Vector3 towardRoad, Vector3 alongCurb)
