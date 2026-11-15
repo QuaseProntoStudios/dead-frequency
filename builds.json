@@ -2,6 +2,67 @@
   "descricao": "Histórico completo das builds do Dead Frequency (gerado pelos workflows).",
   "builds": [
     {
+      "tag": "v0.10.1.2-pre",
+      "canal": "interna",
+      "versao": "0.10.1",
+      "build": 2,
+      "titulo": "v0.10.1.2-pre — Internal",
+      "data": "2026-11-15T13:58:40Z",
+      "commit": "66d764b7a72e23887f7fcd4c8d87373d379f9173",
+      "pr": {
+        "numero": 85,
+        "titulo": "Áudio: motores de ônibus/carro de som sem alcance infinito",
+        "branch": "chore/audit-sons",
+        "url": "https://github.com/QuaseProntoStudios/dead-frequency/pull/85"
+      },
+      "notas": "![Dead Frequency](https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/hero.jpg)\n\n## v0.10.1 — Cidade viva e rádio por dentro\n*15/11/2026*\n\n- Rádio 96.6 por dentro: o estúdio virou seis salas (recepção, cabine do locutor com luz NO AR, gravação, discoteca, escritório). Na discoteca, os discos e as fitas tocam ao mirar e apertar E, e na mesa de som o locutor também toca os comerciais gravados.\n- Falas de rua com voz: os moradores da calçada (senhor, rapaz, moça, senhora, dona e o do escritório) falam de verdade, umas três falas cada, quando você passa perto.\n- Cidade mais viva: lombadas nas ruas, lixeiras de grade, árvores com a base caiada, cartazes de lambe-lambe e fios nos postes, remendos no asfalto, bueiros abertos sinalizados com galho de árvore e bocas de lobo nas guias (que nunca apareciam por um erro de sorteio).\n- Personagens parados respiram em vez de ficar virando a cabeça, e o personagem do menu não gira mais. Mãos na caixa, no volante e na escada, e pés em degrau e meio-fio, acompanham o que você faz.\n- Escada da caixa d'água municipal para ver a cidade de cima, ciclista, empilhadeira, carro do ovo, Kombi e carros de cenário novos, calçadas que faltavam em volta da central e janelas sem corte nas quinas dos prédios.\n- Painel da van com monitor CRT mais legível, telas de carregamento no tema CRT verde, orelhão da Telefóbica com texto e tecla H para esconder o quadro lateral.\n- Mais leve: as luzes da cidade acendem até 30 m no celular (70 m no PC), letreiros pequenos somem de longe, rádios e pedestres distantes pausam o que não dá para ver e rádios, TVs e orelhões desligados não gastam mais processamento.\n\n### Fotos desta versão\n\n<p><img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/v0.10.1/arvore_caiada.jpg\" width=\"32%\" alt=\"Árvores das praças com a base do tronco caiada\" title=\"Árvores das praças com a base do tronco caiada\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/v0.10.1/lombada.jpg\" width=\"32%\" alt=\"Lombada amarela com faixa preta atravessando a rua\" title=\"Lombada amarela com faixa preta atravessando a rua\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/v0.10.1/lixeira_grade.jpg\" width=\"32%\" alt=\"Lixeira de grade na calçada de pedra portuguesa\" title=\"Lixeira de grade na calçada de pedra portuguesa\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/v0.10.1/poste_cartaz.jpg\" width=\"32%\" alt=\"Poste de luz com cartaz de lambe-lambe e fios\" title=\"Poste de luz com cartaz de lambe-lambe e fios\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/v0.10.1/bueiro_galho.jpg\" width=\"32%\" alt=\"Bueiro aberto sinalizado com um galho de árvore\" title=\"Bueiro aberto sinalizado com um galho de árvore\"> <img src=\"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/Internal/site/assets/shots/v0.10.1/boca_de_lobo.jpg\" width=\"32%\" alt=\"Boca de lobo na guia da calçada\" title=\"Boca de lobo na guia da calçada\"></p>\n\n### Baixar\n\n| | Arquivo |\n|---|---|\n| **Recomendado (Windows)** — instala e atualiza sozinho | [DeadFrequencyLauncher-windows.exe](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequencyLauncher-windows.exe) |\n| Launcher Linux (`chmod +x` e abrir) | [DeadFrequencyLauncher-linux](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequencyLauncher-linux) |\n| Jogo completo Windows (extraia e abra `DeadFrequency.exe`) | [DeadFrequency-v0.10.1-windows.zip](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequency-v0.10.1-windows.zip) |\n| Jogo completo Linux (extraia e rode `./DeadFrequency.x86_64`) | [DeadFrequency-v0.10.1-linux.zip](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequency-v0.10.1-linux.zip) |\n\n### Verificar o download\n\n- Confira o SHA-256 com o [SHA256SUMS.txt](https://github.com/dieguesmosken/dead-frequency/releases/download/v0.10.1.2-pre/SHA256SUMS.txt) (no Windows: `certutil -hashfile ARQUIVO SHA256`).\n- A partir da v0.9.5, os arquivos têm atestado de build do GitHub (prova que saíram do GitHub Actions deste repositório): `gh attestation verify ARQUIVO --repo dieguesmosken/dead-frequency`.\n\n🌐 Site: https://www.teuzin.com.br/dead-frequency/ · 📜 [Histórico completo](https://www.teuzin.com.br/dead-frequency/#novidades) · 💚 [Apoie o projeto (Pix)](https://www.teuzin.com.br/dead-frequency/#apoie)\n",
+      "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/tag/v0.10.1.2-pre",
+      "downloads": [
+        {
+          "nome": "DeadFrequency-v0.10.1.2-pre-android.apk",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequency-v0.10.1.2-pre-android.apk",
+          "tamanho": 145621085
+        },
+        {
+          "nome": "DeadFrequency-v0.10.1.2-pre-linux.zip",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequency-v0.10.1.2-pre-linux.zip",
+          "tamanho": 105002184
+        },
+        {
+          "nome": "DeadFrequency-v0.10.1.2-pre-windows.zip",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequency-v0.10.1.2-pre-windows.zip",
+          "tamanho": 114568966
+        },
+        {
+          "nome": "DeadFrequencyLauncher-linux",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequencyLauncher-linux",
+          "tamanho": 73690552
+        },
+        {
+          "nome": "DeadFrequencyLauncher-windows.exe",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1.2-pre/DeadFrequencyLauncher-windows.exe",
+          "tamanho": 109439624
+        },
+        {
+          "nome": "launcher-version.txt",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1.2-pre/launcher-version.txt",
+          "tamanho": 2
+        },
+        {
+          "nome": "SHA256SUMS.txt",
+          "url": "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/v0.10.1.2-pre/SHA256SUMS.txt",
+          "tamanho": 597
+        }
+      ],
+      "estado": "publicada",
+      "historico": [
+        {
+          "quando": "2026-11-15T13:58:40Z",
+          "evento": "publicada"
+        }
+      ]
+    },
+    {
       "tag": "v0.10.1",
       "canal": "estavel",
       "versao": "0.10.1",
@@ -374,7 +435,7 @@
           "tamanho": 600
         }
       ],
-      "estado": "publicada",
+      "estado": "removida",
       "historico": [
         {
           "quando": "2026-11-15T13:24:41Z",
@@ -383,9 +444,14 @@
         {
           "quando": "2026-11-15T13:54:19Z",
           "evento": "mesclada na main: entrou na release v0.10.1"
+        },
+        {
+          "quando": "2026-11-15T13:58:43Z",
+          "evento": "removida da página de Releases (limpeza: ficam as 5 internas mais novas; tag mantida)"
         }
       ],
-      "incluida_em": "v0.10.1"
+      "incluida_em": "v0.10.1",
+      "removida_em": "2026-11-15T13:58:43Z"
     },
     {
       "tag": "v0.10.0.26-pre",
@@ -5224,5 +5290,5 @@
       ]
     }
   ],
-  "atualizado": "2026-11-15T13:54:19Z"
+  "atualizado": "2026-11-15T13:58:43Z"
 }
