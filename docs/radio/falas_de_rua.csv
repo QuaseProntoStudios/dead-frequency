@@ -1,0 +1,19 @@
+id,morador,texto,falado,arquivo
+npc_senhor_1,npc_senhor,"No meu tempo a gente entregava tudo de bicicleta, sabia?",,Audio/Street/npc_senhor_1.ogg
+npc_senhor_2,npc_senhor,"Vou ali na praça jogar dominó. Se a patroa perguntar, eu fui no médico.",,Audio/Street/npc_senhor_2.ogg
+npc_senhor_3,npc_senhor,Liga o rádio na 96.6 que daqui a pouco tem o programa do Seu Waldir.,Liga o rádio na noventa e seis ponto seis que daqui a pouco tem o programa do Seu Waldir.,Audio/Street/npc_senhor_3.ogg
+npc_rapaz_1,npc_rapaz,"E aí, firmeza? Tá entregando o quê hoje?",,Audio/Street/npc_rapaz_1.ogg
+npc_rapaz_2,npc_rapaz,Tô juntando pra comprar um Fuska. Falta só... quase tudo.,,Audio/Street/npc_rapaz_2.ogg
+npc_rapaz_3,npc_rapaz,"Viu o jogo ontem? Nem eu, caiu a antena de novo.",,Audio/Street/npc_rapaz_3.ogg
+npc_escritorio_1,npc_escritorio,Atrasado de novo... o relógio de ponto não perdoa.,,Audio/Street/npc_escritorio_1.ogg
+npc_escritorio_2,npc_escritorio,Três reuniões hoje e nenhuma resolveu nada.,,Audio/Street/npc_escritorio_2.ogg
+npc_escritorio_3,npc_escritorio,Será que o fax chegou? Mandei faz dois dias.,,Audio/Street/npc_escritorio_3.ogg
+npc_moca_1,npc_moca,Oi! Você sabe se as lojas do shopping já abriram?,,Audio/Street/npc_moca_1.ogg
+npc_moca_2,npc_moca,Tô esperando o 966 faz meia hora. Já decorei o ponto inteiro.,Tô esperando o nove meia meia faz meia hora. Já decorei o ponto inteiro.,Audio/Street/npc_moca_2.ogg
+npc_moca_3,npc_moca,Pede pra tocar a minha música na 96.6? Eu liguei três vezes e nada.,Pede pra tocar a minha música na noventa e seis ponto seis? Eu liguei três vezes e nada.,Audio/Street/npc_moca_3.ogg
+npc_dona_1,npc_dona,"Moço, vê se não amassa a minha encomenda, hein!",,Audio/Street/npc_dona_1.ogg
+npc_dona_2,npc_dona,O carro do ovo passou e eu perdi. De novo!,,Audio/Street/npc_dona_2.ogg
+npc_dona_3,npc_dona,Feijão no fogo e eu aqui conversando. Deixa eu ir!,,Audio/Street/npc_dona_3.ogg
+npc_senhora_1,npc_senhora,"Ai, meu filho, me ajuda a atravessar? Brincadeira, eu atravesso sozinha.",,Audio/Street/npc_senhora_1.ogg
+npc_senhora_2,npc_senhora,Você é neto da Dona Cida? Tem a cara dela.,,Audio/Street/npc_senhora_2.ogg
+npc_senhora_3,npc_senhora,"Leva um casaco, que essa neblina pega a gente.",,Audio/Street/npc_senhora_3.ogg
