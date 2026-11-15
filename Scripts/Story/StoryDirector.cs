@@ -120,7 +120,7 @@ public partial class StoryDirector : Node
         Refresh();
     }
 
-    /// <summary>Saída leste: avenida em z = Period/2 até o muro do limite. A zona fica 70 m antes do muro.</summary>
+    /// <summary>Saída leste: avenida em Z negativo; o gatilho fica antes da cancela e o marcador junto ao limite.</summary>
     private void BuildCityExit()
     {
         float limit = (_city.Radius + 1) * _city.Period;
@@ -143,8 +143,9 @@ public partial class StoryDirector : Node
         zone.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(6f, 4f, 16f) }, Position = new Vector3(0f, 2f, 0f) });
         GetParent().AddChild(zone);
 
-        // Marcador da saída (só aparece com a meta cumprida): feixe verde e placa.
-        _exitMarker = new Node3D { Name = "ExitMarker", Position = start };
+        // Marcador no próprio portão (só aparece com a meta cumprida).
+        Vector3 markerPosition = _city.GlobalTransform * new Vector3(limit - 5f, 0f, roadZ);
+        _exitMarker = new Node3D { Name = "ExitMarker", Position = markerPosition };
         GetParent().AddChild(_exitMarker);
         var beamMat = new StandardMaterial3D
         {
