@@ -1,10 +1,10 @@
 # Dead Frequency — roadmap da cidade simulada
 
-Atualizado em 13/11/2026 (v0.10.0 "Modo História" lançada; ideias novas do documento "Roadmap Dead Frequency"). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
+Atualizado em 15/11/2026 (v0.10.2 "Hotbar com ícones" em integração; v0.10.0 "Modo História" lançada; ideias novas do documento "Roadmap Dead Frequency"). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
 **cidade simulada na zona morta**: cada jogador escolhe uma profissão, ganha um apartamento, ouve a
 rádio 96.6 e ajuda a cidade a funcionar. Ordem sugerida: de cima para baixo; cada fase deixa o jogo jogável.
 
-## Onde estamos (v0.9)
+## Onde estamos (v0.10.2)
 
 | Área | O que já tem |
 |---|---|
@@ -130,6 +130,12 @@ streaming por chunks) estar na Internal.
 | ✅ **Vozes da 96.6, dos carros e do Modo História** | 55 falas geradas com o Gemini 3.8 Flash TTS (AI Studio): 34 intervalos da 96.6 (comerciais, eventos, comunicados, vinhetas) tocando entre as músicas, ainda sincronizados pelo relógio; 4 falas do carro do ovo com filtro de megafone; 17 falas dos capítulos I e II, que a caixa de diálogo toca. Vozes e estilos em `docs/radio/VOZES.md`. As 6 falas do capítulo II foram geradas depois (Algenib e Mako). O `tools/tts/gerar_audios.py` (Amazon Polly) fica de reserva. Depois: vender ovo de verdade (item novo + preço no servidor). |
 | **Online entre PC e celular** | Mesmo servidor e protocolo (WebSocket): sem mudança no `server/`. Testar sala com PC e celular juntos. |
 | 🚧 **Distribuição** | O prerelease da Internal (`vX.Y.Z.N-pre`) traz o `DeadFrequency-…-android.apk`. **Atualizador no próprio jogo** (`AppUpdater`): no celular o menu confere o GitHub, mostra "Nova versão", baixa o APK com progresso e abre o instalador do Android (se não abrir, usa o navegador). Quem tem build da Internal recebe os `-pre`; quem tem o público, só os públicos. O CI grava o build exato em `application/config/version` (`GameVersion.Build`). Instalar por cima precisa da chave do Matheus (segredos `ANDROID_KEYSTORE_*`); com chave de debug, desinstale antes. Link no site e Play Store ficam para depois. |
+
+### v0.10.2 — Hotbar com ícones ✅
+Implementada e testada no jogo (15/11/2026).
+| Ideia | Como funciona no jogo |
+|---|---|
+| ✅ **Ícones na barra rápida** | Os nomes extensos dos itens foram substituídos por ícones próprios nos espaços da hotbar. O nome completo continua disponível no tooltip. Pacote com 18 texturas: radar, mochila, luvas, visão noturna, energético, guaraná, kit de reparo, fita isolante, café, marmitex, espetinho, chinelos, repelente, lanterna, prego, lã de aço, fusível e galão de gasolina. |
 
 ### v0.10.1 — Correções de interface, modelos e animações
 Versão de correção aberta também para ajustes pedidos antes e tarefas em andamento (ideias do documento "Roadmap Dead Frequency", 14/11/2026).
