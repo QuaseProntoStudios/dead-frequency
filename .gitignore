@@ -4,6 +4,7 @@
 *.translation
 *.uid
 *.import
+addons 
 
 # .NET
 .mono/
