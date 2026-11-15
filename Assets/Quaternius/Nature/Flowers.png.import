@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://6r1syuon8gnk"
 path.s3tc="res://.godot/imported/Flowers.png-9a325d0f97c850c4b21843ab2e40a0b0.s3tc.ctex"
+path.etc2="res://.godot/imported/Flowers.png-9a325d0f97c850c4b21843ab2e40a0b0.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Assets/Quaternius/Nature/Flowers.png"
-dest_files=["res://.godot/imported/Flowers.png-9a325d0f97c850c4b21843ab2e40a0b0.s3tc.ctex"]
+dest_files=["res://.godot/imported/Flowers.png-9a325d0f97c850c4b21843ab2e40a0b0.s3tc.ctex", "res://.godot/imported/Flowers.png-9a325d0f97c850c4b21843ab2e40a0b0.etc2.ctex"]
 
 [params]
 
