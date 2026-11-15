@@ -2075,48 +2075,34 @@ public partial class CityGenerator : Node3D
     {
         float start = midpoint - length * 0.5f;
         float end = midpoint + length * 0.5f;
-        var segments = new List<(float Start, float End)> { (start, end) };
+        const float sampleStep = 0.25f;
+        float segmentStart = float.NaN;
 
-        foreach ((Vector3 center, Vector3 dir, float halfLength) in _keepClear)
+        // Avalia a posição real da pintura na guia, não o centro do quarteirão.
+        // Isso também detecta rampas em quinas, onde a faixa vem da aresta perpendicular.
+        for (float sampleStart = start; sampleStart < end; sampleStart += sampleStep)
         {
-            if (Mathf.Abs(dir.Dot(along)) < 0.9f)
-                continue;
+            float sampleEnd = Mathf.Min(sampleStart + sampleStep, end);
+            float sampleMidpoint = (sampleStart + sampleEnd) * 0.5f;
+            Vector3 curbPosition = blockCenter
+                + outward * (BlockSize * 0.5f + 0.015f)
+                + along * sampleMidpoint;
+            bool blocked = IsKeepClearAt(curbPosition);
 
-            Vector3 delta = center - blockCenter;
-            delta.Y = 0f;
-            float clearMidpoint = delta.Dot(along);
-            float across = (delta - along * clearMidpoint).Length();
-            if (across >= 6f)
-                continue;
+            if (!blocked && float.IsNaN(segmentStart))
+                segmentStart = sampleStart;
 
-            float clearStart = clearMidpoint - halfLength;
-            float clearEnd = clearMidpoint + halfLength;
-            var remaining = new List<(float Start, float End)>();
-            foreach ((float segmentStart, float segmentEnd) in segments)
+            if ((blocked || sampleEnd >= end) && !float.IsNaN(segmentStart))
             {
-                if (clearEnd <= segmentStart || clearStart >= segmentEnd)
+                float segmentEnd = blocked ? sampleStart : sampleEnd;
+                float segmentLength = segmentEnd - segmentStart;
+                if (segmentLength > 0.05f)
                 {
-                    remaining.Add((segmentStart, segmentEnd));
-                    continue;
+                    PaintCurbStripe(blockCenter, outward, along,
+                        (segmentStart + segmentEnd) * 0.5f, segmentLength, _curbYellow);
                 }
-
-                if (clearStart > segmentStart)
-                    remaining.Add((segmentStart, Mathf.Min(clearStart, segmentEnd)));
-                if (clearEnd < segmentEnd)
-                    remaining.Add((Mathf.Max(clearEnd, segmentStart), segmentEnd));
+                segmentStart = float.NaN;
             }
-            segments = remaining;
-            if (segments.Count == 0)
-                return;
-        }
-
-        foreach ((float segmentStart, float segmentEnd) in segments)
-        {
-            float segmentLength = segmentEnd - segmentStart;
-            if (segmentLength <= 0.05f)
-                continue;
-            PaintCurbStripe(blockCenter, outward, along,
-                (segmentStart + segmentEnd) * 0.5f, segmentLength, _curbYellow);
         }
     }
 
