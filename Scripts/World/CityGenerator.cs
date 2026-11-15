@@ -1041,6 +1041,7 @@ public partial class CityGenerator : Node3D
         _sidewalkMaterial.SetShaderParameter("block_period", Period);
         _sidewalkMaterial.SetShaderParameter("block_half", BlockSize * 0.5f);
         _sidewalkMaterial.SetShaderParameter("curb_height", CurbHeight);
+        UpdateSidewalkKeepClearShader();
 
         _darkMetal = Flat(new Color(0.12f, 0.12f, 0.13f), 0.6f);
         _concrete = Flat(new Color(0.38f, 0.37f, 0.35f));
