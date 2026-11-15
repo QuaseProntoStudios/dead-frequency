@@ -243,9 +243,9 @@ public partial class CityGenerator
                 var glyph = new Label3D
                 {
                     Text = line[i].ToString(),
-                    FontSize = 18,
-                    PixelSize = 0.00115f,
-                    Width = 18f,
+                    FontSize = 22,
+                    PixelSize = 0.00105f,
+                    Width = 20f,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
                     Modulate = new Color(0.08f, 0.07f, 0.06f),

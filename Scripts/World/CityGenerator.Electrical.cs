@@ -227,7 +227,7 @@ public partial class CityGenerator
         if (hasTransformer)
             AddElectricalTransformer(details, roadDirection);
         if (hasFlyer)
-            AddPoleFlyer(details, basePosition, roadDirection, wooden ? 0.235f : 0.16f);
+            AddPoleFlyer(details, basePosition, roadDirection, wooden ? 0.235f : 0.145f);
         root.AddChild(details);
     }
 
