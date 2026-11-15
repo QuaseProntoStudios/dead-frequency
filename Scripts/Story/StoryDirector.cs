@@ -128,7 +128,7 @@ public partial class StoryDirector : Node
         float roadZ = -_city.Period * 0.5f;
         // A van percorre cerca de 35 m durante o banner; o gatilho fica perto o bastante
         // para atravessar a cancela antes da troca de cena.
-        Vector3 start = _city.GlobalTransform * new Vector3(limit - 32f, 0f, roadZ);
+        Vector3 start = _city.GlobalTransform * new Vector3(limit - 25f, 0f, roadZ);
         var zone = new ChapterTransitionZone
         {
             Name = "ExitToRanch",
