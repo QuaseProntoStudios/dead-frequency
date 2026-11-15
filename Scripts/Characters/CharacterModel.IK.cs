@@ -1,7 +1,7 @@
 // Scripts/Characters/CharacterModel.IK.cs
 // Inverse Kinematics dos personagens (v0.10.1), só com os nós novos da Godot 4 (SkeletonModifier3D):
 //  - TwoBoneIK3D nos braços (ombro → cotovelo → mão) e nas pernas (coxa → joelho → pé);
-//  - LookAtModifier3D na cabeça (NPC olhando o jogador que passa perto);
+//  - LookAtModifier3D na cabeça (API LookTarget; os NPCs parados NÃO viram mais a cabeça: bugava a animação);
 //  - FootPlacer (pés no chão em degrau, meio-fio e escada), que move os alvos das pernas antes do TwoBoneIK3D.
 // Usos: ciclista (mãos no guidão, pés nos pedais), subir a escada de marinheiro (mãos e pés nos degraus),
 // jogadores andando em degrau e NPCs virando a cabeça. Nomes dos ossos conferidos nos modelos do Meshy e
@@ -136,26 +136,6 @@ public partial class CharacterModel
 
     public bool Climbing => _climbing;
 
-    private float _lookCheck;
-
-    /// <summary>NPC que conversa (Chatty): vira a cabeça para o jogador que chega perto (até ~5 m).</summary>
-    private void UpdateLookAtPlayer(float dt)
-    {
-        _lookCheck -= dt;
-        if (_lookCheck > 0f)
-            return;
-        _lookCheck = 0.3f;
-        PlayerController player = ProfessionManager.Instance?.Player;
-        Camera3D cam = GetViewport()?.GetCamera3D();
-        bool near = player != null && IsInstanceValid(player) && cam != null && Visible
-            && player.State == PlayerState.Walking
-            && player.GlobalPosition.DistanceSquaredTo(GlobalPosition) < 25f;
-        if (near && (_lookGoal < 1f || LookTarget != cam))
-            LookTarget = cam;
-        else if (!near && _lookGoal > 0f)
-            LookTarget = null;
-    }
-
     private const float RungStep = 0.3f;
 
     /// <summary>Degraus de 30 cm: cada mão/pé fica num degrau e troca de degrau na sua vez.</summary>
@@ -183,8 +163,6 @@ public partial class CharacterModel
     /// <summary>Chamado no _Process: entra/sai o IK suave (sem estalo) e atualiza a escada.</summary>
     private void UpdateIK(float dt)
     {
-        if (Chatty && HasIK)
-            UpdateLookAtPlayer(dt);
         if (_armIK == null && _lookIK == null)
             return;
         if (_climbing)
