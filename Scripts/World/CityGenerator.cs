@@ -364,6 +364,7 @@ public partial class CityGenerator : Node3D
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildHydrantsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStreetPropsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildStrayDogsForBlock(x, z));
+            await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildRoadPatchesForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildNoParkingSignsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildCurbMarkingsForBlock(x, z));
             await RunChunkVisualStepAsync(chunk.Coordinate, root, chunkRandom, () => BuildTrashBinsForBlock(x, z));
@@ -430,6 +431,7 @@ public partial class CityGenerator : Node3D
         BuildHydrantsForBlock(bx, bz);
         BuildStreetPropsForBlock(bx, bz);
         BuildStrayDogsForBlock(bx, bz);
+        BuildRoadPatchesForBlock(bx, bz);
         BuildNoParkingSignsForBlock(bx, bz);
         BuildCurbMarkingsForBlock(bx, bz);
         BuildTrashBinsForBlock(bx, bz);
@@ -763,6 +765,7 @@ public partial class CityGenerator : Node3D
             BuildTrashBins();
             BuildStreetProps();
             BuildStrayDogs();
+            BuildRoadPatches();
             BuildParkedCars();
             float legacyOutside = Radius * Period + Period * 0.5f + RoadWidth * 0.5f + 6f;
             BuildRadioTower(new Vector3(-legacyOutside, 0f, -legacyOutside));
