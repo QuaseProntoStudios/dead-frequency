@@ -6,6 +6,7 @@ render_mode diffuse_lambert, specular_schlick_ggx;
 instance uniform vec4 wall_color : source_color = vec4(0.45, 0.42, 0.38, 1.0);
 instance uniform float light_seed = 0.0;
 instance uniform float lit_ratio = 0.3;
+instance uniform float building_height = 20.0;
 /** Acabamento da fachada (v0.9.7): 0 reboco, 1 tijolo, 2 pastilha, 3 chapisco. */
 instance uniform float wall_kind = 0.0;
 
@@ -23,9 +24,9 @@ uniform vec3 cold_light : source_color = vec3(0.55, 0.85, 1.0);
 varying vec3 world_pos;
 varying vec3 world_normal;
 varying vec3 local_pos;
-varying vec3 local_normal;
-/** Meia largura da caixa (BoxMesh sem subdivisão: os 4 vértices de cada face têm o mesmo |x| e |z|). */
-varying vec2 half_ext;
+varying float facade_local_u;
+varying float facade_axis_scale;
+varying float facade_edge_distance;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -35,8 +36,10 @@ void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	local_pos = VERTEX;
-	local_normal = NORMAL;
-	half_ext = abs(VERTEX.xz);
+	bool x_facing = abs(NORMAL.x) > 0.5;
+	facade_local_u = x_facing ? VERTEX.z : VERTEX.x;
+	facade_axis_scale = x_facing ? length(MODEL_MATRIX[2].xyz) : length(MODEL_MATRIX[0].xyz);
+	facade_edge_distance = max(0.0, (0.5 - abs(facade_local_u)) * facade_axis_scale);
 }
 
 void fragment() {
@@ -58,26 +61,42 @@ void fragment() {
 		vec3 tex = textureGrad(wall_atlas, (tile + fract(full)) * 0.5, dFdx(full) * 0.5, dFdy(full) * 0.5).rgb;
 		col = kind == 1.0 ? mix(col * tex * 1.8, tex, 0.75) : col * tex * 1.8;
 		col += grain * 0.5;
-		// Janelas: número inteiro por face e centradas, para nenhuma ficar cortada na quina (v0.10.1).
-		bool along_z = abs(local_normal.x) > 0.5;
-		float half_w = along_z ? half_ext.y : half_ext.x;
-		float lu = along_z ? local_pos.z : local_pos.x;
-		float n = max(1.0, floor(2.0 * half_w / window_spacing));
-		float spacing = 2.0 * half_w / n;
-		vec2 cell = vec2((lu + half_w) / spacing, world_pos.y / floor_height);
+		// Janelas repetidas em espaçamento fixo no mundo: mantém várias divisões
+		// pequenas em cada fachada, independentemente da escala do BoxMesh.
+		float relative_y = (local_pos.y + 0.5) * building_height;
+		vec2 cell = vec2(u / window_spacing, relative_y / floor_height);
 		vec2 f = fract(cell);
 		vec2 id = floor(cell);
 		// Faixa entre andares.
 		if (f.y < 0.08) {
 			col *= 0.75;
 		}
-		bool window_area = f.x > 0.2 && f.x < 0.8 && f.y > 0.32 && f.y < 0.82 && id.y >= 1.0;
-		// Peitoril claro embaixo da janela.
-		if (id.y >= 1.0 && f.x > 0.17 && f.x < 0.83 && f.y > 0.28 && f.y < 0.32) {
+		float window_top = (id.y + 0.82) * floor_height;
+		bool complete_window = window_top <= building_height - 0.25;
+
+		// Só desenha a janela se a abertura inteira couber antes da quina.
+		// O centro da célula é reconstruído a partir da posição interpolada.
+		float window_center_u = facade_local_u + (0.5 - f.x) * window_spacing / max(facade_axis_scale, 0.001);
+		float window_center_edge_distance = (0.5 - abs(window_center_u)) * facade_axis_scale;
+		float window_half_width = window_spacing * 0.30;
+		bool fits_before_corner = window_center_edge_distance >= window_half_width + 0.08;
+
+		bool window_area = f.x > 0.2 && f.x < 0.8 && f.y > 0.32 && f.y < 0.82
+			&& id.y >= 1.0 && complete_window && fits_before_corner;
+
+		// Peitoril claro embaixo da janela; também não pode atravessar a quina.
+		if (id.y >= 1.0 && f.x > 0.17 && f.x < 0.83 && f.y > 0.28 && f.y < 0.32
+			&& complete_window && fits_before_corner) {
 			col = vec3(0.62, 0.6, 0.56);
 		}
 		if (window_area) {
-			float h = hash(id + vec2(light_seed, light_seed * 1.7) + sign(world_normal.x + world_normal.z) * 13.0);
+			// Sorteio individual por janela.
+			// A coluna mais próxima da quina usa uma chave compartilhada entre as duas fachadas.
+			float corner_key = (sign(local_pos.x) + 1.0) * 2.0 + (sign(local_pos.z) + 1.0);
+			bool corner_column = window_center_edge_distance < window_half_width + window_spacing * 0.9;
+			float h = corner_column
+				? hash(vec2(corner_key + light_seed, id.y + light_seed * 1.7))
+				: hash(vec2(id.x + light_seed * 13.0, id.y + light_seed * 1.7));
 			col = vec3(0.05, 0.06, 0.07);
 			rough = 0.25;
 			float ratio = lit_ratio * mix(0.08, 1.0, night);
