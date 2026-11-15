@@ -1775,8 +1775,34 @@ public partial class CityGenerator : Node3D
         Vector3 c = BlockCenter(bx, bz);
         float y = CurbHeight; // o depósito também tem calçada (v0.10.1)
         // Lado +X (ilumina a rua vertical) e lado +Z (ilumina a avenida).
-        BuildLamp(c + new Vector3(edge, y, -BlockSize * 0.25f), Vector3.Right);
-        BuildLamp(c + new Vector3(-BlockSize * 0.25f, y, edge), Vector3.Back);
+        BuildLampAvoidingKeepClear(c + new Vector3(edge, y, -BlockSize * 0.25f), Vector3.Right, Vector3.Back);
+        // Na fachada da avenida, tenta deslocar o poste para a direita (+X) se a rampa ocupar sua posição.
+        BuildLampAvoidingKeepClear(c + new Vector3(-BlockSize * 0.25f, y, edge), Vector3.Back, Vector3.Right);
+    }
+
+    private void BuildLampAvoidingKeepClear(Vector3 basePos, Vector3 towardRoad, Vector3 alongCurb)
+    {
+        if (!IsKeepClearAt(basePos))
+        {
+            BuildLamp(basePos, towardRoad);
+            return;
+        }
+
+        // Prioriza o deslocamento positivo ao longo da calçada (à direita na fachada do posto).
+        for (float offset = SidewalkWidth + 1f; offset <= 12f; offset += 2f)
+        {
+            foreach (float sign in new[] { 1f, -1f })
+            {
+                Vector3 candidate = basePos + alongCurb * (offset * sign);
+                if (IsKeepClearAt(candidate))
+                    continue;
+
+                BuildLamp(candidate, towardRoad);
+                return;
+            }
+        }
+
+        // Sem espaço livre: não cria um poste dentro da rampa.
     }
 
     private void BuildLamp(Vector3 basePos, Vector3 towardRoad)
@@ -2152,7 +2178,7 @@ public partial class CityGenerator : Node3D
             foreach (float side in new[] { -1f, 1f })
             {
                 Vector3 parkingSpot = new(roadX + side * (RoadWidth * 0.5f - 1.4f), 0f, center.Z);
-                if (!InNoParkingPaintZone(parkingSpot))
+                if (!InNoParkingPaintZone(parkingSpot) || IsKeepClearAt(parkingSpot))
                     continue;
                 Vector3 curb = new(roadX + side * (RoadWidth * 0.5f - 0.045f), CurbHeight * 0.5f, center.Z);
                 AddBox(_activeChunkRoot ?? _staticRoot, curb, new Vector3(0.03f, CurbHeight, length), _curbYellow, false);
@@ -2165,7 +2191,7 @@ public partial class CityGenerator : Node3D
             foreach (float side in new[] { -1f, 1f })
             {
                 Vector3 parkingSpot = new(center.X, 0f, roadZ + side * (RoadWidth * 0.5f - 1.4f));
-                if (!InNoParkingPaintZone(parkingSpot))
+                if (!InNoParkingPaintZone(parkingSpot) || IsKeepClearAt(parkingSpot))
                     continue;
                 Vector3 curb = new(center.X, CurbHeight * 0.5f, roadZ + side * (RoadWidth * 0.5f - 0.045f));
                 AddBox(_activeChunkRoot ?? _staticRoot, curb, new Vector3(length, CurbHeight, 0.03f), _curbYellow, false);
@@ -2180,6 +2206,7 @@ public partial class CityGenerator : Node3D
     public void KeepClear(Vector3 center, Vector3 dir, float halfLength)
     {
         _keepClear.Add((center, dir.Normalized(), halfLength));
+        UpdateSidewalkKeepClearShader();
         for (int i = _parkedCars.Count - 1; i >= 0; i--)
         {
             if (IsInstanceValid(_parkedCars[i]) && InNoParking(_parkedCars[i].Position))
@@ -2188,6 +2215,26 @@ public partial class CityGenerator : Node3D
                 _parkedCars.RemoveAt(i);
             }
         }
+    }
+
+    private void UpdateSidewalkKeepClearShader()
+    {
+        if (_sidewalkMaterial == null)
+            return;
+
+        // O shader da calçada desenha as faixas brancas. Envia as mesmas áreas de acesso
+        // para que a pintura branca também seja interrompida sobre rampas e portões.
+        var zones = new Godot.Collections.Array<Vector4>();
+        const int maxShaderZones = 128;
+        foreach ((Vector3 center, Vector3 dir, float halfLength) in _keepClear)
+        {
+            if (zones.Count >= maxShaderZones)
+                break;
+            zones.Add(new Vector4(center.X, center.Z, halfLength, Mathf.Atan2(dir.Z, dir.X)));
+        }
+
+        _sidewalkMaterial.SetShaderParameter("keep_clear_zones", zones);
+        _sidewalkMaterial.SetShaderParameter("keep_clear_count", zones.Count);
     }
 
     private bool InNoParking(Vector3 p)
@@ -2290,7 +2337,7 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
 
                 Vector3 roadNormal = new(-side, 0f, 0f);
                 Vector3 basePos = new(roadX + side * (RoadWidth * 0.5f + sidewalkOffset), CurbHeight, center.Z);
-                if (!InsideDepot(basePos))
+                if (!InsideDepot(basePos) && !IsKeepClearAt(basePos))
                     BuildNoParkingSign(basePos, roadNormal, label);
             }
         }
@@ -2305,7 +2352,7 @@ StaticBatcher.Merge(car, 170f); // o carro inteiro vira uma ou duas malhas (e so
 
                 Vector3 roadNormal = new(0f, 0f, -side);
                 Vector3 basePos = new(center.X, CurbHeight, roadZ + side * (RoadWidth * 0.5f + sidewalkOffset));
-                if (!InsideDepot(basePos))
+                if (!InsideDepot(basePos) && !IsKeepClearAt(basePos))
                     BuildNoParkingSign(basePos, roadNormal, label);
             }
         }
