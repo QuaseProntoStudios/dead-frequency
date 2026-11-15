@@ -1,47 +1,19 @@
-id,locutor,tipo,texto,arquivo
-rua_dia_01_m,rua_homem,Calçada (dia a dia),Esse ônibus 966 nunca passa no horário...,Audio/Street/Calcada/rua_dia_01_m.ogg
-rua_dia_01_f,rua_mulher,Calçada (dia a dia),Esse ônibus 966 nunca passa no horário...,Audio/Street/Calcada/rua_dia_01_f.ogg
-rua_dia_02_m,rua_homem,Calçada (dia a dia),Tá sabendo? Disseram que a 96.6 toca sozinha de madrugada.,Audio/Street/Calcada/rua_dia_02_m.ogg
-rua_dia_02_f,rua_mulher,Calçada (dia a dia),Tá sabendo? Disseram que a 96.6 toca sozinha de madrugada.,Audio/Street/Calcada/rua_dia_02_f.ogg
-rua_dia_03_m,rua_homem,Calçada (dia a dia),"O pão de sal subiu de novo, acredita?",Audio/Street/Calcada/rua_dia_03_m.ogg
-rua_dia_03_f,rua_mulher,Calçada (dia a dia),"O pão de sal subiu de novo, acredita?",Audio/Street/Calcada/rua_dia_03_f.ogg
-rua_dia_04_m,rua_homem,Calçada (dia a dia),Meu primo conserta qualquer coisa. Qualquer coisa MESMO.,Audio/Street/Calcada/rua_dia_04_m.ogg
-rua_dia_04_f,rua_mulher,Calçada (dia a dia),Meu primo conserta qualquer coisa. Qualquer coisa MESMO.,Audio/Street/Calcada/rua_dia_04_f.ogg
-rua_dia_05_m,rua_homem,Calçada (dia a dia),Ê calor... ou é frio? Nessa cidade nunca sei.,Audio/Street/Calcada/rua_dia_05_m.ogg
-rua_dia_05_f,rua_mulher,Calçada (dia a dia),Ê calor... ou é frio? Nessa cidade nunca sei.,Audio/Street/Calcada/rua_dia_05_f.ogg
-rua_dia_06_m,rua_homem,Calçada (dia a dia),Você viu um orelhão da Telefóbica? Dizem que ainda tem um.,Audio/Street/Calcada/rua_dia_06_m.ogg
-rua_dia_06_f,rua_mulher,Calçada (dia a dia),Você viu um orelhão da Telefóbica? Dizem que ainda tem um.,Audio/Street/Calcada/rua_dia_06_f.ogg
-rua_dia_07_m,rua_homem,Calçada (dia a dia),Eu só vim comprar um guaraná e já tô aqui faz duas horas.,Audio/Street/Calcada/rua_dia_07_m.ogg
-rua_dia_07_f,rua_mulher,Calçada (dia a dia),Eu só vim comprar um guaraná e já tô aqui faz duas horas.,Audio/Street/Calcada/rua_dia_07_f.ogg
-rua_dia_08_m,rua_homem,Calçada (dia a dia),"Essa neblina não sai nunca, né?",Audio/Street/Calcada/rua_dia_08_m.ogg
-rua_dia_08_f,rua_mulher,Calçada (dia a dia),"Essa neblina não sai nunca, né?",Audio/Street/Calcada/rua_dia_08_f.ogg
-rua_dia_09_m,rua_homem,Calçada (dia a dia),Ligaram no orelhão da tchau e caiu antes do alô.,Audio/Street/Calcada/rua_dia_09_m.ogg
-rua_dia_09_f,rua_mulher,Calçada (dia a dia),Ligaram no orelhão da tchau e caiu antes do alô.,Audio/Street/Calcada/rua_dia_09_f.ogg
-rua_dia_10_m,rua_homem,Calçada (dia a dia),Vou na Tia da Quentinha que hoje é dia de feijoada.,Audio/Street/Calcada/rua_dia_10_m.ogg
-rua_dia_10_f,rua_mulher,Calçada (dia a dia),Vou na Tia da Quentinha que hoje é dia de feijoada.,Audio/Street/Calcada/rua_dia_10_f.ogg
-rua_dia_11_m,rua_homem,Calçada (dia a dia),"Cuidado com o Churrasquinho do Duvidoso... mas é bom, viu?",Audio/Street/Calcada/rua_dia_11_m.ogg
-rua_dia_11_f,rua_mulher,Calçada (dia a dia),"Cuidado com o Churrasquinho do Duvidoso... mas é bom, viu?",Audio/Street/Calcada/rua_dia_11_f.ogg
-rua_dia_12_m,rua_homem,Calçada (dia a dia),Já ouviu a vinheta nova da 96.6? Gruda na cabeça.,Audio/Street/Calcada/rua_dia_12_m.ogg
-rua_dia_12_f,rua_mulher,Calçada (dia a dia),Já ouviu a vinheta nova da 96.6? Gruda na cabeça.,Audio/Street/Calcada/rua_dia_12_f.ogg
-rua_dia_13_m,rua_homem,Calçada (dia a dia),"Moço, onde fica a Rua Estática? Ninguém sabe me dizer.",Audio/Street/Calcada/rua_dia_13_m.ogg
-rua_dia_13_f,rua_mulher,Calçada (dia a dia),"Moço, onde fica a Rua Estática? Ninguém sabe me dizer.",Audio/Street/Calcada/rua_dia_13_f.ogg
-rua_carga_01_m,rua_homem,Calçada (carga),"Isso aí na caixa é biscoito ou bolacha? Porque é BOLACHA, tá?",Audio/Street/Calcada/rua_carga_01_m.ogg
-rua_carga_01_f,rua_mulher,Calçada (carga),"Isso aí na caixa é biscoito ou bolacha? Porque é BOLACHA, tá?",Audio/Street/Calcada/rua_carga_01_f.ogg
-rua_carga_02_m,rua_homem,Calçada (carga),Biscoito! Lá em casa sempre foi biscoito. Pode entregar que eu confirmo.,Audio/Street/Calcada/rua_carga_02_m.ogg
-rua_carga_02_f,rua_mulher,Calçada (carga),Biscoito! Lá em casa sempre foi biscoito. Pode entregar que eu confirmo.,Audio/Street/Calcada/rua_carga_02_f.ogg
-rua_carga_03_m,rua_homem,Calçada (carga),"Bolacha é o que a gente come, biscoito é o que a gente vende. Anota aí.",Audio/Street/Calcada/rua_carga_03_m.ogg
-rua_carga_03_f,rua_mulher,Calçada (carga),"Bolacha é o que a gente come, biscoito é o que a gente vende. Anota aí.",Audio/Street/Calcada/rua_carga_03_f.ogg
-rua_noite_01_m,rua_homem,Calçada (madrugada),Essa hora na rua? Toma um Café Marreta que passa.,Audio/Street/Calcada/rua_noite_01_m.ogg
-rua_noite_01_f,rua_mulher,Calçada (madrugada),Essa hora na rua? Toma um Café Marreta que passa.,Audio/Street/Calcada/rua_noite_01_f.ogg
-rua_noite_02_m,rua_homem,Calçada (madrugada),Madrugada aqui é esquisita... o rádio chia sozinho.,Audio/Street/Calcada/rua_noite_02_m.ogg
-rua_noite_02_f,rua_mulher,Calçada (madrugada),Madrugada aqui é esquisita... o rádio chia sozinho.,Audio/Street/Calcada/rua_noite_02_f.ogg
-rua_noite_03_m,rua_homem,Calçada (madrugada),Tô morrendo de sono. Você também tá com essa cara.,Audio/Street/Calcada/rua_noite_03_m.ogg
-rua_noite_03_f,rua_mulher,Calçada (madrugada),Tô morrendo de sono. Você também tá com essa cara.,Audio/Street/Calcada/rua_noite_03_f.ogg
-rua_chinelo_01_m,rua_homem,Calçada (chinelo),"Ploc, ploc, ploc... de Legítimas, é? Respeito.",Audio/Street/Calcada/rua_chinelo_01_m.ogg
-rua_chinelo_01_f,rua_mulher,Calçada (chinelo),"Ploc, ploc, ploc... de Legítimas, é? Respeito.",Audio/Street/Calcada/rua_chinelo_01_f.ogg
-rua_chinelo_02_m,rua_homem,Calçada (chinelo),Correr de chinelo na lama? Prepara o prego.,Audio/Street/Calcada/rua_chinelo_02_m.ogg
-rua_chinelo_02_f,rua_mulher,Calçada (chinelo),Correr de chinelo na lama? Prepara o prego.,Audio/Street/Calcada/rua_chinelo_02_f.ogg
-rua_cao_01_m,rua_homem,Calçada (caramelo),Que caramelo bonito! É seu?,Audio/Street/Calcada/rua_cao_01_m.ogg
-rua_cao_01_f,rua_mulher,Calçada (caramelo),Que caramelo bonito! É seu?,Audio/Street/Calcada/rua_cao_01_f.ogg
-rua_cao_02_m,rua_homem,Calçada (caramelo),"Esse caramelo não larga de você, hein.",Audio/Street/Calcada/rua_cao_02_m.ogg
-rua_cao_02_f,rua_mulher,Calçada (caramelo),"Esse caramelo não larga de você, hein.",Audio/Street/Calcada/rua_cao_02_f.ogg
+id,morador,texto,falado,arquivo
+npc_senhor_1,npc_senhor,"No meu tempo a gente entregava tudo de bicicleta, sabia?",,Audio/Street/npc_senhor_1.ogg
+npc_senhor_2,npc_senhor,"Vou ali na praça jogar dominó. Se a patroa perguntar, eu fui no médico.",,Audio/Street/npc_senhor_2.ogg
+npc_senhor_3,npc_senhor,Liga o rádio na 96.6 que daqui a pouco tem o programa do Seu Waldir.,Liga o rádio na noventa e seis ponto seis que daqui a pouco tem o programa do Seu Waldir.,Audio/Street/npc_senhor_3.ogg
+npc_rapaz_1,npc_rapaz,"E aí, firmeza? Tá entregando o quê hoje?",,Audio/Street/npc_rapaz_1.ogg
+npc_rapaz_2,npc_rapaz,Tô juntando pra comprar um Fuska. Falta só... quase tudo.,,Audio/Street/npc_rapaz_2.ogg
+npc_rapaz_3,npc_rapaz,"Viu o jogo ontem? Nem eu, caiu a antena de novo.",,Audio/Street/npc_rapaz_3.ogg
+npc_escritorio_1,npc_escritorio,Atrasado de novo... o relógio de ponto não perdoa.,,Audio/Street/npc_escritorio_1.ogg
+npc_escritorio_2,npc_escritorio,Três reuniões hoje e nenhuma resolveu nada.,,Audio/Street/npc_escritorio_2.ogg
+npc_escritorio_3,npc_escritorio,Será que o fax chegou? Mandei faz dois dias.,,Audio/Street/npc_escritorio_3.ogg
+npc_moca_1,npc_moca,Oi! Você sabe se as lojas do shopping já abriram?,,Audio/Street/npc_moca_1.ogg
+npc_moca_2,npc_moca,Tô esperando o 966 faz meia hora. Já decorei o ponto inteiro.,Tô esperando o nove meia meia faz meia hora. Já decorei o ponto inteiro.,Audio/Street/npc_moca_2.ogg
+npc_moca_3,npc_moca,Pede pra tocar a minha música na 96.6? Eu liguei três vezes e nada.,Pede pra tocar a minha música na noventa e seis ponto seis? Eu liguei três vezes e nada.,Audio/Street/npc_moca_3.ogg
+npc_dona_1,npc_dona,"Moço, vê se não amassa a minha encomenda, hein!",,Audio/Street/npc_dona_1.ogg
+npc_dona_2,npc_dona,O carro do ovo passou e eu perdi. De novo!,,Audio/Street/npc_dona_2.ogg
+npc_dona_3,npc_dona,Feijão no fogo e eu aqui conversando. Deixa eu ir!,,Audio/Street/npc_dona_3.ogg
+npc_senhora_1,npc_senhora,"Ai, meu filho, me ajuda a atravessar? Brincadeira, eu atravesso sozinha.",,Audio/Street/npc_senhora_1.ogg
+npc_senhora_2,npc_senhora,Você é neto da Dona Cida? Tem a cara dela.,,Audio/Street/npc_senhora_2.ogg
+npc_senhora_3,npc_senhora,"Leva um casaco, que essa neblina pega a gente.",,Audio/Street/npc_senhora_3.ogg

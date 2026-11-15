@@ -36,6 +36,8 @@ public partial class CharacterModel : Node3D
     };
     private int _variant;
     private string _meshyName;
+    /// <summary>Tipo de morador (npc_senhor, npc_moca...), ou null no jogador. Escolhe as falas com voz.</summary>
+    public string NpcKind => _player ? null : _meshyName;
     /// <summary>Os modelos vêm com ~5,2 unidades de altura; 0,34 deixa com ~1,77 m.</summary>
     private const float ModelScale = 0.34f;
 
@@ -59,8 +61,6 @@ public partial class CharacterModel : Node3D
     public bool Chatty { get; set; }
     /// <summary>Frases próprias (ex.: o comerciante oferecendo produtos); vazio = frases da calçada.</summary>
     public string[] Lines { get; set; }
-    /// <summary>As três frases do dia a dia deste pedestre (com voz), sorteadas na primeira fala.</summary>
-    private SidewalkTalk.Line[] _ownLines;
     private float _talkCheck, _talkCooldown;
     private bool _mountsReady;
 
@@ -447,8 +447,11 @@ public partial class CharacterModel : Node3D
             SidewalkTalk.Say(this, Lines[GD.Randi() % (uint)Lines.Length], 2.05f * Scale.Y);
             return;
         }
-        _ownLines ??= SidewalkTalk.PickOwnLines(GetInstanceId());
-        SidewalkTalk.Say(this, SidewalkTalk.PickLine(player, _ownLines), IsWoman, 2.05f * Scale.Y);
+        // Metade das vezes, uma das falas com voz do tipo de morador; senão, as frases de calçada (só balão).
+        if (GD.Randf() < 0.5f && SidewalkTalk.TryKindLine(NpcKind, out int index, out string text))
+            SidewalkTalk.SayVoiced(this, NpcKind, index, text, 2.05f * Scale.Y);
+        else
+            SidewalkTalk.Say(this, SidewalkTalk.LineFor(player), 2.05f * Scale.Y);
     }
 
     /// <summary>Leva os pontos de encaixe para onde os ossos estão neste quadro.</summary>
