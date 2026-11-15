@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpl7c8r7gb17m"
 path.s3tc="res://.godot/imported/Rocks_Diffuse.png-61333d46917993da9acc1c536401d3fd.s3tc.ctex"
+path.etc2="res://.godot/imported/Rocks_Diffuse.png-61333d46917993da9acc1c536401d3fd.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Assets/Quaternius/Nature/Rocks_Diffuse.png"
-dest_files=["res://.godot/imported/Rocks_Diffuse.png-61333d46917993da9acc1c536401d3fd.s3tc.ctex"]
+dest_files=["res://.godot/imported/Rocks_Diffuse.png-61333d46917993da9acc1c536401d3fd.s3tc.ctex", "res://.godot/imported/Rocks_Diffuse.png-61333d46917993da9acc1c536401d3fd.etc2.ctex"]
 
 [params]
 

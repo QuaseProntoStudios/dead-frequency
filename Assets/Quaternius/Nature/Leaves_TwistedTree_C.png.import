@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bw48yduutj8u4"
 path.s3tc="res://.godot/imported/Leaves_TwistedTree_C.png-39a865b16488f4e21ec4dc051834aec1.s3tc.ctex"
+path.etc2="res://.godot/imported/Leaves_TwistedTree_C.png-39a865b16488f4e21ec4dc051834aec1.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://Assets/Quaternius/Nature/Leaves_TwistedTree_C.png"
-dest_files=["res://.godot/imported/Leaves_TwistedTree_C.png-39a865b16488f4e21ec4dc051834aec1.s3tc.ctex"]
+dest_files=["res://.godot/imported/Leaves_TwistedTree_C.png-39a865b16488f4e21ec4dc051834aec1.s3tc.ctex", "res://.godot/imported/Leaves_TwistedTree_C.png-39a865b16488f4e21ec4dc051834aec1.etc2.ctex"]
 
 [params]
 
