@@ -155,16 +155,6 @@ public partial class StoryDirector : Node
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
         };
         _exitMarker.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 1.2f, BottomRadius = 1.2f, Height = 40f, RadialSegments = 12 }, Position = new Vector3(0f, 20f, 0f), MaterialOverride = beamMat, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
-        _exitMarker.AddChild(new Label3D
-        {
-            Text = "ESTRADA DO RANCHO →",
-            FontSize = 96,
-            PixelSize = 0.02f,
-            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
-            Modulate = new Color(0.55f, 1f, 0.62f),
-            OutlineSize = 12,
-            Position = new Vector3(0f, 6f, 0f),
-        });
         _exitMarker.AddToGroup(MinimapView.MarkerGroup);
         _exitMarker.SetMeta("map_kind", "poi");
         _exitMarker.SetMeta("map_label", "→");
