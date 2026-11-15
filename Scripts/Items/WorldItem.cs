@@ -78,7 +78,13 @@ public partial class WorldItem : RigidBody3D, IInteractable
         Node parent = GetParent();
         WorldItem replacement = Create(WorldId, ItemId, _spawnPosition, _spawnRotation);
         if (replacement != null && parent != null)
+        {
             parent.AddChild(replacement);
+            replacement.GlobalPosition = _spawnPosition;
+            replacement.GlobalBasis = new Basis(_spawnRotation);
+            replacement._spawnPosition = _spawnPosition;
+            replacement._spawnRotation = _spawnRotation;
+        }
         QueueFree();
     }
 
