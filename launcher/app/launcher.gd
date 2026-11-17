@@ -11,7 +11,7 @@
 # Suba LAUNCHER_VERSION só quando mudar o launcher: sem mudança, o CI reaproveita o launcher da release anterior.
 extends Control
 
-const REPO := "dieguesmosken/dead-frequency"
+const REPO := "QuaseProntoStudios/dead-frequency"
 ## Versão do launcher (inteiro). Suba quando mudar este app: é o que faz os launchers antigos se atualizarem.
 const LAUNCHER_VERSION := 2
 const API := "https://api.github.com/repos/%s/releases/latest" % REPO
