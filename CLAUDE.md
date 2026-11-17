@@ -65,13 +65,13 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
    ✅ v0.9.6 Oficina: CharacterLook + CharacterPanel (aparência no menu, campo "lk" no tick), PlayerState.Riding
       (carona: VanController.PassengerSeat), st=2 no servidor, câmera estável no carro, Fusca via CarModels.Loft,
       muro+serra no sítio, ícone (Assets/Textures/icon.py.txt) e UiStyle.AlphaBadge.
-   🚧 v0.9.7 (em andamento): texturas da cidade (Assets/Textures/City/city_textures.py.txt), GrassTufts (capim),
-      CityGenerator.OptimizeVisibility, ShopStock (abas por vendedor), concessionária (CityGenerator.Dealer + CarGarage +
-      VehicleFactory.BuildCar; carros = CARS/VEHICLES/SHOP_PRICES no servidor, room.cars), ForbidParking.
-   🚧 v0.9.9 (Internal): Shopping Marconi, táxi da cooperativa (VehicleFactory.BuildTaxi, modelo Assets/GGBot, NetId "taxi";
+      ✅ v0.9.7: texturas da cidade, GrassTufts (capim), CityGenerator.OptimizeVisibility, ShopStock (abas por vendedor),
+      concessionária (CityGenerator.Dealer + CarGarage + VehicleFactory.BuildCar; carros = CARS/VEHICLES/SHOP_PRICES
+      no servidor, room.cars) e ForbidParking.
+      ✅ v0.9.9: Shopping Marconi, táxi da cooperativa (VehicleFactory.BuildTaxi, modelo Assets/GGBot, NetId "taxi";
       TaxiJob só aceita CityGenerator.Taxi), van de viagem (CarType.Van80, NetId "van_viagem" = CityGenerator.TravelVan),
       portão -X da central, grade nos muros (CityGenerator.Railing.cs), portãozinho da rádio, KeepClear (sem placa),
-      céu procedural (Shaders/Sky/procedural_sky.gdshader, parâmetros pelo DayNightController). VEHICLES no servidor.
+      céu procedural (Shaders/Sky/procedural_sky.gdshader, parâmetros pelo DayNightController) e VEHICLES no servidor.
 3. ✅ Painel diegético (só a caminhonete, Kind "van"): VanDashboard (mostradores, botões, caixa de fusíveis), DashMonitor (CRT verde,
    Shaders/Vehicle/crt_monitor.gdshader), DashboardButton, EngineSystem (partida, tanque, temperatura), ElectricalSystem (bateria,
    fusíveis, interferência da carga). VanController chama Tick() e aplica em faróis/rádio. Itens fusivel/galao = SHOP_PRICES no servidor.
@@ -86,7 +86,7 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
 
 ## Versões e GitHub
 
-- Repositório: <https://github.com/dieguesmosken/dead-frequency> (público).
+- Repositório: <https://github.com/QuaseProntoStudios/dead-frequency> (público).
 - A cada atualização: subir `GameVersion.Current`, escrever a entrada em `GameVersion.Changelog`,
   regenerar `CHANGELOG.md`, fazer um commit "vX.Y.Z — título" e criar a tag `vX.Y.Z`.
 - Site: `site/` (GitHub Pages via .github/workflows/pages.yml). `site/build.py` gera data/site.json do GameVersion.cs;
@@ -106,7 +106,7 @@ Entregador solitário dirigindo uma van utilitária anos 90 por uma zona perigos
 
 ## Foco Atual (Controle de Escopo)
 
-- **Prioridade imediata:** Detalhamento da **Fase 1 (Cidade)** e reconstrução da **Fase 2 (Rancho)**.
+- **Manutenção imediata:** manter `ROADMAP.md` e os documentos técnicos sincronizados com o código; usar `main`/`Internal` como referências atuais, sem reabrir tarefas já implementadas. A Fase 1 (Cidade) está concluída; a Fase 2 (Rancho) permanece fora do escopo desta rodada de manutenção.
 - **Cenas isoladas:** As novas fases (`Bananal.tscn`, `Gruta.tscn`, `Serra.tscn`) devem ser criadas como cenas fechadas e independentes, sem alterar o fluxo principal do jogo até que estejam prontas para serem conectadas via corredores de transição na estrada (`ChapterTransitionZone`).
 
 ## Convenções Técnicas (Godot 4.7 · .NET 10 / C#)
