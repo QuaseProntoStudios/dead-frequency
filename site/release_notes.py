@@ -8,10 +8,10 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ver = sys.argv[1].lstrip("v")
 ref = sys.argv[2] if len(sys.argv) > 2 else "main"
-RAW = f"https://raw.githubusercontent.com/dieguesmosken/dead-frequency/{ref}/site/assets/shots/"
+RAW = f"https://raw.githubusercontent.com/QuaseProntoStudios/dead-frequency/{ref}/site/assets/shots/"
 SITE = "https://www.teuzin.com.br/dead-frequency/"
 release_tag = sys.argv[3] if len(sys.argv) > 3 else "v" + ver
-DL = "https://github.com/dieguesmosken/dead-frequency/releases/download/" + release_tag + "/"
+DL = "https://github.com/QuaseProntoStudios/dead-frequency/releases/download/" + release_tag + "/"
 
 src = open(os.path.join(ROOT, "Scripts", "Core", "GameVersion.cs"), encoding="utf-8").read()
 m = re.search(r'new\("' + re.escape(ver) + r'"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*new\[\]\s*\{(.*?)\}\),', src, re.S)
@@ -40,7 +40,7 @@ out += [
     "", "### Verificar o download", "",
     f"- Confira o SHA-256 com o [SHA256SUMS.txt]({DL}SHA256SUMS.txt) (no Windows: `certutil -hashfile ARQUIVO SHA256`).",
     "- A partir da v0.9.5, os arquivos têm atestado de build do GitHub (prova que saíram do GitHub Actions deste repositório): "
-    "`gh attestation verify ARQUIVO --repo dieguesmosken/dead-frequency`.",
+    "`gh attestation verify ARQUIVO --repo QuaseProntoStudios/dead-frequency`.",
     "", f"🌐 Site: {SITE} · 📜 [Histórico completo]({SITE}#novidades) · 💚 [Apoie o projeto (Pix)]({SITE}#apoie)",
 ]
 print("\n".join(out))
