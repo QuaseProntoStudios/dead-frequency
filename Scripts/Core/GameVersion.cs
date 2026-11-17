@@ -270,7 +270,7 @@ public static class GameVersion
         {
             "Matheus (teuzin0dev) — direção, design e testes",
             "Código, cidade procedural, servidor e áudio sintetizado feitos com o Claude (Anthropic)",
-            "Código aberto sob a licença GNU GPL v3.0 · github.com/dieguesmosken/dead-frequency",
+            "Código aberto sob a licença GNU GPL v3.0 · github.com/QuaseProntoStudios/dead-frequency",
         }),
         new("Motor", new[]
         {

@@ -4,7 +4,7 @@
 
 - **SHA256SUMS.txt** em cada release (o CI calcula; releases antigos recebem pelo workflow *Notas dos releases*).
 - **Atestado de build** (`actions/attest-build-provenance`) a partir da próxima versão: prova que o arquivo
-  saiu do GitHub Actions deste repositório. Verificar: `gh attestation verify ARQUIVO --repo dieguesmosken/dead-frequency`.
+  saiu do GitHub Actions deste repositório. Verificar: `gh attestation verify ARQUIVO --repo QuaseProntoStudios/dead-frequency`.
 - **Commits assinados** pelo mantenedor (chave SSH de assinatura no GitHub → selo *Verified*).
 
 ## SignPath Foundation (assinatura grátis para código aberto)

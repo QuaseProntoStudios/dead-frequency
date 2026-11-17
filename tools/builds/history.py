@@ -18,7 +18,7 @@ import re
 import subprocess
 import sys
 
-REPO = os.environ.get("GITHUB_REPOSITORY", "dieguesmosken/dead-frequency")
+REPO = os.environ.get("GITHUB_REPOSITORY", "QuaseProntoStudios/dead-frequency")
 
 
 def gh(*args, check=True):

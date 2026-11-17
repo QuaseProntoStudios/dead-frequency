@@ -3,7 +3,7 @@
 Janela pequena (feita em Godot, só GDScript) que instala e mantém o jogo atualizado:
 
 1. **Primeira vez:** pergunta a pasta de instalação (cria a pasta) e se você quer atualizações automáticas.
-2. Confere o último release em [github.com/dieguesmosken/dead-frequency/releases](https://github.com/dieguesmosken/dead-frequency/releases).
+2. Confere o último release em [github.com/QuaseProntoStudios/dead-frequency/releases](https://github.com/QuaseProntoStudios/dead-frequency/releases).
 3. **Jogo não instalado:** pergunta se quer baixar agora. **Versão nova:** baixa sozinho (ou pergunta, se as automáticas estiverem desligadas).
 4. Barra de progresso no download (MB e velocidade) e na instalação, depois o botão **JOGAR**.
 5. A **engrenagem** troca a pasta, liga/desliga as automáticas, abre a pasta, verifica agora e reinstala.

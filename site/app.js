@@ -1,6 +1,6 @@
 // Dead Frequency — site. Sem dependências: lê data/site.json (gerado pelo site/build.py a partir do
 // GameVersion.cs), a última versão no GitHub e as estatísticas públicas do servidor.
-const REPO = "dieguesmosken/dead-frequency";
+const REPO = "QuaseProntoStudios/dead-frequency";
 const SERVER = "https://dead-frequency.teuzin0dev.workers.dev";
 const $ = (s, el = document) => el.querySelector(s);
 const fmt = (n) => (typeof n === "number" ? n.toLocaleString("pt-BR") : "—");
@@ -68,7 +68,7 @@ async function loadSite() {
   try {
     data = await (await fetch("data/site.json", { cache: "no-cache" })).json();
   } catch {
-    $("#changelog").innerHTML = '<p class="dim">Não foi possível carregar o histórico. Veja o <a href="https://github.com/dieguesmosken/dead-frequency/blob/main/CHANGELOG.md">CHANGELOG.md</a>.</p>';
+    $("#changelog").innerHTML = '<p class="dim">Não foi possível carregar o histórico. Veja o <a href="https://github.com/QuaseProntoStudios/dead-frequency/blob/main/CHANGELOG.md">CHANGELOG.md</a>.</p>';
     return;
   }
   $("#pix-code").textContent = data.pix || "";

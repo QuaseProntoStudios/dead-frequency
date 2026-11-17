@@ -56,8 +56,7 @@ Regra geral: **coisa que se repete vira `MultiMeshInstance3D`**.
 - `OccluderInstance3D` nas áreas fechadas (bananal denso, quarteirões de prédio, gruta): o que está atrás da
   parede não é desenhado. Precisa ligar *Occlusion Culling* em Project Settings → Rendering.
 - Luzes: poucas `OmniLight3D` com sombra. Longe, apaga (também já é feito no `OptimizeVisibility`).
-- A otimização para PC fraco (streaming por chunks) está sendo feita na branch `hotfix/pc-fraco`. Fases novas
-  devem nascer compatíveis com ela: nada de guardar referência a nó de chunk que pode ser descarregado.
+- O streaming por chunks já está integrado em `main` e `Internal`; não depende mais da branch histórica `hotfix/pc-fraco`. A cidade e o rancho têm gerenciamento de chunks, e a geração visual deve continuar evitando referências persistentes a nós que podem ser descarregados. Mudanças novas devem ser medidas em hardware modesto, especialmente quando houver geração síncrona de conteúdo.
 
 ## Multiplayer
 

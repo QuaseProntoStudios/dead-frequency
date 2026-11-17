@@ -108,9 +108,7 @@ Detalhes que o modelo já resolve:
 **A van da viagem já existe** (v0.9.9): `CityGenerator.TravelVan` (NetId `van_viagem`, modelo `CarType.Van80`),
 parada no pátio da central. A zona pode aceitar só ela (`body == City.TravelVan`) quando a história exigir a van.
 
-**Falta no jogo hoje:** a `VanController` não tem piloto automático. Quando for implementar, criar
-`public void SetAutoDrive(bool on, float speedMs)` na `VanController` (acelera até a velocidade e
-mantém o volante reto). A zona chama esse método direto, sem `Call("...")` por string.
+**Implementado:** `VanController.SetAutoDrive(bool on, float speedMs)` já existe e é acionado pela `ChapterTransitionZone` durante a transição Cidade → Rancho. Não recriar esse método; mudanças futuras devem preservar o carregamento em segundo plano, o banner e a condição offline.
 
 Modelo: [`templates/ChapterTransitionZone.cs.txt`](../templates/ChapterTransitionZone.cs.txt).
 
