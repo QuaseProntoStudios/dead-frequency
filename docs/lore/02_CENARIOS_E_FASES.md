@@ -1,18 +1,12 @@
 # Cenários e fases
 
-Ordem de trabalho: de cima para baixo. Fases 1 e 2 são a prioridade; 3 a 5 só depois, como cenas isoladas.
+Este documento descreve o estado dos cenários e o planejamento narrativo. A Fase 1 está concluída; as fases futuras devem permanecer isoladas até estarem prontas para integração.
 
-## Fase 1 · Cidade (em andamento)
+## Fase 1 · Cidade (concluída na v0.10.1)
 
 Cena atual: `Scenes/Levels/test_level.tscn` com `Scripts/World/CityGenerator*.cs` (cidade procedural).
 
-O que falta para a ambientação "Brazilcore":
-
-- Lombadas com física de suspensão (a van tem que pular de verdade).
-- Asfalto remendado e bueiros (bueiros já existem: `CityGenerator.Drainage.cs`).
-- Postes com fios e cartazes colados.
-- Orelhões (já existem: `PhoneBooth`), lixeiras de grade, calçadas irregulares.
-- Árvores com a base pintada de branco.
+A ambientação Brazilcore implementada inclui lombadas com colisão em rampa, asfalto remendado, bueiros e bocas de lobo, postes com fios e cartazes, orelhões, lixeiras de grade e árvores com a base caiada. Calçadas irregulares ficaram fora do escopo por decisão de design.
 
 ## Fase 2 · Rancho (reconstrução)
 
