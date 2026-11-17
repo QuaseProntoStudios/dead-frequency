@@ -9,7 +9,7 @@ namespace DeadFrequency;
 
 public static class UpdateChecker
 {
-    public const string Repo = "dieguesmosken/dead-frequency";
+    public const string Repo = "QuaseProntoStudios/dead-frequency";
     public const string ReleasesPage = "https://github.com/" + Repo + "/releases/latest";
     private static string _latestTag;
     private static string _latestUrl;
