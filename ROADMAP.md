@@ -1,6 +1,6 @@
 # Dead Frequency — roadmap da cidade simulada
 
-Atualizado em 15/11/2026 (v0.10.3 "Acessos e guias corretos" em preparação na Internal; v0.10.2 "Hotbar com ícones" integrada; v0.10.0 "Modo História" lançada; ideias novas do documento "Roadmap Dead Frequency"). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
+Atualizado em 17/11/2026 (v0.10.3 "Acessos e guias corretos" publicada em main; v0.10.2 "Hotbar com ícones" integrada; v0.10.0 "Modo História" lançada). A partir da v0.9 o jogo deixa de ser só "entregas" e vira uma
 **cidade simulada na zona morta**: cada jogador escolhe uma profissão, ganha um apartamento, ouve a
 rádio 96.6 e ajuda a cidade a funcionar. Ordem sugerida: de cima para baixo; cada fase deixa o jogo jogável.
 
@@ -9,7 +9,7 @@ rádio 96.6 e ajuda a cidade a funcionar. Ordem sugerida: de cima para baixo; ca
 | Área | O que já tem |
 |---|---|
 | **Profissões** | Entregador (turnos de caixas), Taxista, Gari, Repositor, Frentista, Locutor da 96.6. Escolha no menu, troca na pausa; no online o criador da sala pode deixar o servidor sortear. Pagamento conferido pelo servidor (valor e intervalo mínimo). |
-| **Rádio 96.6** | Estação com estúdio e torre, 5 músicas originais sincronizadas pelo relógio (todo mundo ouve o mesmo trecho), rádio na caminhonete (R), no escritório, mercado, saguão e apartamentos. Planejado: comerciais das lojas, anúncios de eventos e comunicados da cidade com áudio pt-BR pré-gerado por TTS e sincronizado entre jogadores. |
+| **Rádio 96.6** | Estação com estúdio e torre, 5 músicas originais sincronizadas pelo relógio (todo mundo ouve o mesmo trecho), rádio na caminhonete (R), no escritório, mercado, saguão e apartamentos. Implementado: comerciais das lojas, anúncios de eventos e comunicados da cidade com áudio pt-BR pré-gerado por TTS e sincronizado entre jogadores. |
 | **Moradia** | Edifício Sintonia: um apartamento por jogador (elevador no saguão), cama que salva o jogo, TV com canais, rádio. |
 | **Lugares com interior** | Depósito e escritório, Supermercado Atacadinho (corredores, seções, caixas), rádio, saguão e apartamentos. |
 | **Cidade** | Bancos, lotéricas, padarias, mercados, postos, lava-jato, caixa d'água, bombeiros, delegacia, ônibus 966, pedestres que desviam, outdoors iluminados, orelhões. Fase 2: rancho. |
@@ -108,8 +108,8 @@ Ideias para depois (pesquisa de 12/11 sobre as regras do CTB):
 **Lançada em 13/11/2026 como v0.10.0 "Modo História"** (público, `main`). O APK do Android continua nos pré-releases da
 Internal até a chave de release e os testes nos aparelhos. Escopo: **Modo História inicial + versão Android inicial + carros anunciantes**.
 Planejado em 12/11/2026 (antes a v0.10 era a Carreira, que passou para a v0.11). Objetivo: jogar e testar no
-celular, nos dois aparelhos do Matheus e em outros. Depende da otimização para PC fraco (`hotfix/pc-fraco`,
-streaming por chunks) estar na Internal.
+celular, nos dois aparelhos do Matheus e em outros. O streaming por chunks e a otimização-base para PCs fracos
+já estão integrados ao código de `main`; medições e ajustes específicos por aparelho continuam como validação pendente.
 
 | Ideia | Como funciona no jogo |
 |---|---|
@@ -345,7 +345,7 @@ Documentação completa em [`docs/README_PARA_IAS.md`](docs/README_PARA_IAS.md).
 
 ### Próximas — Imersão e novos cenários (cenas isoladas)
 - [x] **IK nos personagens:** `TwoBoneIK3D` para mãos na caixa/saco/volante (feito). O `LookAtModifier3D` dos NPCs olhando o jogador foi desligado na v0.10.1: bugava a animação dos parados.
-- [ ] **Otimização de renderização:** `MultiMeshInstance3D` para vegetação/postes e *occlusion culling*.
+- [~] **Otimização de renderização (parcial):** streaming por chunks na cidade e no rancho, `StaticBatcher` e `MultiMeshInstance3D` para vegetação já existem no código. Permanecem como trabalho futuro a ampliação/medição do uso de MultiMesh em elementos repetidos (incluindo postes) e a implementação/validação de *occlusion culling*.
 - [ ] **Fase 3 · O Bananal (`Bananal.tscn`):** navegação pelo sinal da 96.6 (radar sonoro).
 - [ ] **Fase 4 · Gruta da Estática (`Gruta.tscn`):** caverna de calcário com salas modulares, lanterna e visão noturna.
 - [ ] **Fase 5 · Estrada da Serra (`Serra.tscn`):** subida sinuosa com neblina e teste de integridade da carga.
