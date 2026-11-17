@@ -6,8 +6,8 @@
 
 <p align="center">
   <b>Cidade simulada na zona morta · primeira pessoa · estilo PS1 · Godot 4.7 (.NET / C#)</b><br>
-  <a href="https://github.com/dieguesmosken/dead-frequency/releases/latest"><img alt="Versão" src="https://img.shields.io/github/v/release/dieguesmosken/dead-frequency?label=vers%C3%A3o&color=2a9a4a"></a>
-  <a href="https://github.com/dieguesmosken/dead-frequency/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/dieguesmosken/dead-frequency/total?label=downloads&color=2a9a4a"></a>
+  <a href="https://github.com/QuaseProntoStudios/dead-frequency/releases/latest"><img alt="Versão" src="https://img.shields.io/github/v/release/QuaseProntoStudios/dead-frequency?label=vers%C3%A3o&color=2a9a4a"></a>
+  <a href="https://github.com/QuaseProntoStudios/dead-frequency/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/QuaseProntoStudios/dead-frequency/total?label=downloads&color=2a9a4a"></a>
   <img alt="Godot 4.7" src="https://img.shields.io/badge/Godot-4.7%20.NET-478cbf">
   <a href="LICENSE"><img alt="Licença GPL-3.0" src="https://img.shields.io/badge/licen%C3%A7a-GPL--3.0-blue"></a>
   <img alt="Plataformas" src="https://img.shields.io/badge/Windows%20%7C%20Linux-grátis-4dff7a">
@@ -15,7 +15,7 @@
 
 <p align="center">
   <a href="https://www.teuzin.com.br/dead-frequency/"><b>🌐 Site</b></a> ·
-  <a href="https://github.com/dieguesmosken/dead-frequency/releases/latest/download/DeadFrequencyLauncher-windows.exe"><b>⬇ Baixar (Windows)</b></a> ·
+  <a href="https://github.com/QuaseProntoStudios/dead-frequency/releases/latest/download/DeadFrequencyLauncher-windows.exe"><b>⬇ Baixar (Windows)</b></a> ·
   <a href="https://www.teuzin.com.br/dead-frequency/#servidor">📡 Status do servidor</a> ·
   <a href="https://www.teuzin.com.br/dead-frequency/#apoie">💚 Apoie (Pix)</a>
 </p>
@@ -39,7 +39,7 @@ Mais fotos na [galeria do site](https://www.teuzin.com.br/dead-frequency/#galeri
 
 ## Baixar e jogar
 
-Baixe o **launcher** no [site](https://www.teuzin.com.br/dead-frequency/#baixar) ou em [Releases](https://github.com/dieguesmosken/dead-frequency/releases/latest)
+Baixe o **launcher** no [site](https://www.teuzin.com.br/dead-frequency/#baixar) ou em [Releases](https://github.com/QuaseProntoStudios/dead-frequency/releases/latest)
 (`DeadFrequencyLauncher-windows.exe` ou `-linux`) e abra: ele pergunta onde instalar, baixa o jogo
 e instala as próximas atualizações (sozinho ou perguntando antes). Também dá para baixar o zip do jogo direto.
 
